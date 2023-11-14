@@ -10,6 +10,10 @@ dependencies:
   flutter:
     sdk: flutter
   haptic_feedback: ^0.4.2
+  camera: ^latest_version
+  arcore_flutter_plugin: ^latest_version
+  popup_dialog: ^latest_version
+
 
 dev_dependencies:
   flutter_test:

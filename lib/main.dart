@@ -1,7 +1,9 @@
 import 'package:flutter/services.dart';
 import 'package:flutter/material.dart';
-
 import 'package:haptic_feedback/haptic_feedback.dart';
+
+import 'section.dart';
+import 'product.dart';
 
 void main() => runApp(MyApp());
 
@@ -27,12 +29,10 @@ class HomePage extends StatelessWidget {
                 child: ElevatedButton(
                   style: ElevatedButton.styleFrom(primary: Colors.blue),
                   onPressed: () {
-                    /*
                     Navigator.push(
                       context,
                       MaterialPageRoute(builder: (context) => SectionPage()),
                     );
-                    */
                     heavy_vibration(1);
                   },
                   child: null, // 버튼 1의 텍스트나 아이콘을 추가하려면 이곳에 작성
@@ -45,12 +45,10 @@ class HomePage extends StatelessWidget {
                 child: ElevatedButton(
                   style: ElevatedButton.styleFrom(primary: Colors.red),
                   onPressed: () {
-                    /*
                     Navigator.push(
                       context,
                       MaterialPageRoute(builder: (context) => ProductPage()),
                     );
-                    */
                     heavy_vibration(2);
                   },
                   child: null, // 버튼 2의 텍스트나 아이콘을 추가하려면 이곳에 작성
