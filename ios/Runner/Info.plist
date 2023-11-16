@@ -45,7 +45,11 @@
 	<true/>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
-    <key>NSPhotoLibraryUsageDescription</key>
-    <string>사진 저장</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>사진 저장</string>
+	<key>NSCameraUsageDescription</key>
+	<string>사진 촬영</string>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>Error 방지</string>
 </dict>
 </plist>
