@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
-import 'splash_screen.dart'; // 스플래쉬 스크린에 대한 참조
+import 'package:haptic_feedback/haptic_feedback.dart';
+
+import 'splash_screen.dart'; // Assuming SplashScreen, MapScreen, and ProductScreen are defined elsewhere
 import 'map.dart';
 import 'product.dart';
 
@@ -11,7 +13,8 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      home: SplashScreen(), // 스플래쉬 스크린을 초기 스크린으로 설정
+      //home: SplashScreen(),
+      home: MainScreen(),
     );
   }
 }
@@ -20,44 +23,42 @@ class MainScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Color(0xFFFFF9E6),
-      body: Stack(
-        children: <Widget>[
-          CustomPaint(
-            painter: BackgroundPainter(),
-            size: Size(double.infinity, double.infinity),
-          ),
-          Column(
-            children: <Widget>[
-              Expanded(
-                child: _buildButton(
-                  context,
-                  "현재 위치",
-                  "assets/images/public/maps.png",
-                  EdgeInsets.fromLTRB(10, 30, 10, 10),
-                  () => Navigator.push(context,
-                      MaterialPageRoute(builder: (context) => MapScreen())),
+      backgroundColor: const Color(0xFFFFF9E6),
+      body: SafeArea( // Wrap the content in SafeArea
+        child: Stack(
+          children: <Widget>[
+            CustomPaint(
+              painter: BackgroundPainter(),
+              size: const Size(double.infinity, double.infinity),
+            ),
+            Column(
+              children: <Widget>[
+                Expanded(
+                  child:_buildButton(context, "현재 위치", "assets/images/public/maps.png",
+                    const EdgeInsets.fromLTRB(10, 30, 10, 10), () {
+                  heavyVibration(3);
+                  Navigator.push(context,
+                      MaterialPageRoute(builder: (context) => MapScreen()));
+                }),
                 ),
-              ),
-              Expanded(
-                child: _buildButton(
-                  context,
-                  "제품 확인",
-                  "assets/images/public/coke.png",
-                  EdgeInsets.fromLTRB(10, 10, 10, 30),
-                  () => Navigator.push(context,
-                      MaterialPageRoute(builder: (context) => ProductScreen())),
+                Expanded(
+                  child:_buildButton(context, "제품 확인", "assets/images/public/coke.png",
+                    const EdgeInsets.fromLTRB(10, 10, 10, 30), () {
+                  heavyVibration(3);
+                  Navigator.push(context,
+                      MaterialPageRoute(builder: (context) => ProductScreen()));
+                }),
                 ),
-              ),
-            ],
-          ),
-        ],
+              ],
+            ),
+          ],
+        ),
       ),
     );
   }
 
   Widget _buildButton(BuildContext context, String text, String imagePath,
-      EdgeInsets margin, VoidCallback onPressed) {
+    EdgeInsets margin, VoidCallback onPressed) {
     return Container(
       margin: margin,
       width: double.infinity,
@@ -79,10 +80,10 @@ class MainScreen extends StatelessWidget {
               mainAxisAlignment: MainAxisAlignment.center,
               children: <Widget>[
                 Image.asset(imagePath, width: imageSize),
-                SizedBox(width: 15),
+                const SizedBox(width: 15),
                 Text(
                   text,
-                  style: TextStyle(
+                  style: const TextStyle(
                     color: Colors.red,
                     fontWeight: FontWeight.bold,
                     fontFamily: 'CustomFont',
@@ -96,13 +97,31 @@ class MainScreen extends StatelessWidget {
       ),
     );
   }
+
+  Future<void> heavyVibration(int rep) async {
+    if (await Haptics.canVibrate()) {
+      for (int i = 0; i < rep; i++) {
+        await Haptics.vibrate(HapticsType.heavy);
+        await Future.delayed(const Duration(milliseconds: 300));
+      }
+    }
+  }
+
+  Future<void> rigidVibration(int rep) async {
+    if (await Haptics.canVibrate()) {
+      for (int i = 0; i < rep; i++) {
+        await Haptics.vibrate(HapticsType.rigid);
+        await Future.delayed(const Duration(milliseconds: 300));
+      }
+    }
+  }
 }
 
 class BackgroundPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
-    var paintSmall = Paint()..color = Color(0xFFFFF2CC);
-    var paintLarge = Paint()..color = Color(0xFFFFF2CC);
+    var paintSmall = Paint()..color = const Color(0xFFFFF2CC);
+    var paintLarge = Paint()..color = const Color(0xFFFFF2CC);
 
     canvas.drawCircle(
         Offset(size.width * 0.2, size.height * 0.1), 100, paintSmall);
