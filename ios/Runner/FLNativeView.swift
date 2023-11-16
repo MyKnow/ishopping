@@ -58,6 +58,11 @@ class FLNativeView: NSObject, FlutterPlatformView {
         arView.addGestureRecognizer(tapGesture)
     }
 
+    deinit {
+        // ARSession을 일시정지시키는 코드
+        arView.session.pause()
+    }
+
     // Tap 하면 실행
     @objc func handleTap(_ sender: UITapGestureRecognizer) {
         if sender.state == .ended {
