@@ -1,15 +1,20 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
+import 'package:flutter/services.dart';
 
 class SectionPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text('Section Page'),
-      ),
-      body: Center(
-        child: Text('This is the Section Page'),
-      ),
-    );
-  }
+  // This is used in the platform side to register the view.
+  const String viewType = '<platform-view-type>';
+  // Pass parameters to the platform side.
+  final Map<String, dynamic> creationParams = <String, dynamic>{};
+
+  return UiKitView(
+    viewType: viewType,
+    layoutDirection: TextDirection.ltr,
+    creationParams: creationParams,
+    creationParamsCodec: const StandardMessageCodec(),
+  );
+}
 }

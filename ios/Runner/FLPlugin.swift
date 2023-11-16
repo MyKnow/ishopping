@@ -1,8 +1,10 @@
-//
-//  FLPlugin.swift
-//  Runner
-//
-//  Created by 정민호 on 11/16/23.
-//
+import Flutter
+import UIKit
 
-import Foundation
+class FLPlugin: NSObject, FlutterPlugin {
+    public static func register(with registrar: FlutterPluginRegistrar) {
+        let factory = FLNativeViewFactory(messenger: registrar.messenger())
+        registrar.register(factory, withId: "<platform-view-type>")
+    }
+}
+
