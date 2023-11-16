@@ -1,5 +1,6 @@
 import Flutter
 import UIKit
+import ARKit
 
 // Fluter에서 사용자 정의 플랫폼 뷰를 생성하는 데 필요함
 class FLNativeViewFactory: NSObject, FlutterPlatformViewFactory {
@@ -36,7 +37,7 @@ class FLNativeViewFactory: NSObject, FlutterPlatformViewFactory {
 // FlutterPlatformView 프로토콜을 구현하여 Flutter 뷰로 사용될 수 있음
 class FLNativeView: NSObject, FlutterPlatformView {
     // 기본적인 네이티브 iOS 뷰
-    private var _view: UIView
+    private var arView: ARSCNView
 
     // 뷰의 프레임, 뷰 식별자, 선택적 인자, 그리고 바이너리 메신저를 사용하여 네이티브 뷰를 초기화
     init(
@@ -45,25 +46,23 @@ class FLNativeView: NSObject, FlutterPlatformView {
         arguments args: Any?,
         binaryMessenger messenger: FlutterBinaryMessenger?
     ) {
-        _view = UIView()
+        arView = ARSCNView(frame: frame)
         super.init()
-        // createNativeView를 호출하여 네이티브 뷰를 설정
-        createNativeView(view: _view)
+        // setupARView 호출하여 AR뷰를 설정
+        setupARView()
     }
 
     // 기본 UIView 객체를 반환
     func view() -> UIView {
-        return _view
+        return arView
     }
 
-    // 네이티브 뷰(_view)를 설정
-    func createNativeView(view _view: UIView){
-        _view.backgroundColor = UIColor.black
-        let nativeLabel = UILabel()
-        nativeLabel.text = "Native text from iOS"
-        nativeLabel.textColor = UIColor.white
-        nativeLabel.textAlignment = .center
-        nativeLabel.frame = CGRect(x: 0, y: 0, width: 180, height: 48.0)
-        _view.addSubview(nativeLabel)
+    // ARView를 설정
+    private func setupARView() {
+        // AR 세션 구성 및 시작
+        let configuration = ARWorldTrackingConfiguration()
+        arView.session.run(configuration)
+        
+        // ARSCNView의 추가적인 설정 (예: 디버그 옵션, 델리게이트 설정 등)은 여기에서 수행합니다.
     }
 }
