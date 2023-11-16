@@ -1,6 +1,7 @@
 import Flutter
 import UIKit
 import ARKit
+import Photos
 
 // Fluter에서 사용자 정의 플랫폼 뷰를 생성하는 데 필요함
 class FLNativeViewFactory: NSObject, FlutterPlatformViewFactory {
@@ -48,8 +49,44 @@ class FLNativeView: NSObject, FlutterPlatformView {
     ) {
         arView = ARSCNView(frame: frame)
         super.init()
+
         // setupARView 호출하여 AR뷰를 설정
         setupARView()
+
+        // 화면 터치 감지를 위한 탭 제스처 추가
+        let tapGesture = UITapGestureRecognizer(target: self, action: #selector(handleTap))
+        arView.addGestureRecognizer(tapGesture)
+    }
+
+    // Tap 하면 실행
+    @objc func handleTap(_ sender: UITapGestureRecognizer) {
+        if sender.state == .ended {
+            // 스크린샷 캡처 및 저장
+            captureAndSaveImage()
+        }
+    }
+
+    private func captureAndSaveImage() {
+        // 스크린샷 캡처
+        let snapshot = arView.snapshot()
+
+        // 사진 라이브러리에 접근 권한 요청
+        PHPhotoLibrary.requestAuthorization { status in
+            if status == .authorized {
+                // 사진 갤러리에 이미지 저장
+                PHPhotoLibrary.shared().performChanges({
+                    PHAssetChangeRequest.creationRequestForAsset(from: snapshot)
+                }, completionHandler: { success, error in
+                    if success {
+                        // 저장 성공
+                        print("Image saved successfully.")
+                    } else {
+                        // 저장 실패
+                        print("Error saving image: \(String(describing: error))")
+                    }
+                })
+            }
+        }
     }
 
     // 기본 UIView 객체를 반환
