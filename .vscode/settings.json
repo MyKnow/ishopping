@@ -1,3 +1,4 @@
 {
-    "dart.flutterSdkPath": "~/flutter"
+    "dart.flutterSdkPath": "~/development/flutter",
+    "cmake.configureOnOpen": false
 }
