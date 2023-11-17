@@ -2,6 +2,7 @@ import Flutter
 import UIKit
 import ARKit
 import Photos
+import Metal
 
 // Fluter에서 사용자 정의 플랫폼 뷰를 생성하는 데 필요함
 class FLNativeViewFactory: NSObject, FlutterPlatformViewFactory {
@@ -36,22 +37,35 @@ class FLNativeViewFactory: NSObject, FlutterPlatformViewFactory {
 }
 
 // FlutterPlatformView 프로토콜을 구현하여 Flutter 뷰로 사용될 수 있음
-class FLNativeView: NSObject, FlutterPlatformView {
+class FLNativeView: NSObject, FlutterPlatformView, ARSCNViewDelegate {
     // 기본적인 네이티브 iOS 뷰
     private var arView: ARSCNView
 
-    // 뷰의 프레임, 뷰 식별자, 선택적 인자, 그리고 바이너리 메신저를 사용하여 네이티브 뷰를 초기화
+    // 거리
+    private var distanceLabel: UILabel!
+
+     // 뷰의 프레임, 뷰 식별자, 선택적 인자, 그리고 바이너리 메신저를 사용하여 네이티브 뷰를 초기화
     init(
         frame: CGRect,
         viewIdentifier viewId: Int64,
         arguments args: Any?,
         binaryMessenger messenger: FlutterBinaryMessenger?
     ) {
-        arView = ARSCNView(frame: frame)
+        // Metal 디바이스 생성
+        guard let metalDevice = MTLCreateSystemDefaultDevice() else {
+            fatalError("Metal is not supported on this device")
+        }
+
+        // ARSCNView 인스턴스 생성 및 초기화
+        arView = ARSCNView(frame: frame, options: [SCNView.Option.preferredDevice.rawValue: metalDevice])
+
         super.init()
 
         // setupARView 호출하여 AR뷰를 설정
         setupARView()
+
+        // 거리 표시용 UILabel 설정
+        setupDistanceLabel()
 
         // 화면 터치 감지를 위한 탭 제스처 추가
         let tapGesture = UITapGestureRecognizer(target: self, action: #selector(handleTap))
@@ -69,6 +83,54 @@ class FLNativeView: NSObject, FlutterPlatformView {
             // 스크린샷 캡처 및 저장
             captureAndSaveImage()
         }
+    }
+
+    // 거리 계산 함수
+    func calculateDistance(from cameraTransform: simd_float4x4, to hitTransform: matrix_float4x4) -> Float {
+        let cameraPosition = cameraTransform.columns.3
+        let hitPosition = hitTransform.columns.3
+        return sqrt(
+            pow(cameraPosition.x - hitPosition.x, 2) +
+            pow(cameraPosition.y - hitPosition.y, 2) +
+            pow(cameraPosition.z - hitPosition.z, 2)
+        )
+    }
+
+    // 거리 표시용 UILabel 설정
+    private func setupDistanceLabel() {
+        distanceLabel = UILabel(frame: CGRect(x: 20, y: arView.safeAreaInsets.top + 20, width: 200, height: 40))
+        distanceLabel.textColor = .white
+        distanceLabel.backgroundColor = .black.withAlphaComponent(0.5)
+        distanceLabel.text = "거리 측정"
+        arView.addSubview(distanceLabel)
+    }
+
+     // ARSCNViewDelegate 메서드
+    func renderer(_ renderer: SCNSceneRenderer, updateAtTime time: TimeInterval) {
+        DispatchQueue.main.async {
+            print("rendering")
+            self.updateDistanceDisplay()
+        }
+    }
+
+    private func updateDistanceDisplay() {
+        // 화면 중앙 좌표 얻기
+        let screenCenter = CGPoint(x: arView.bounds.midX, y: arView.bounds.midY)
+
+        // 화면 중앙의 3D 좌표 찾기
+        guard let hitTestResults = arView.hitTest(screenCenter, types: .featurePoint).first else { return }
+        let hitPoint = hitTestResults.worldTransform
+
+
+        // 카메라 위치 얻기
+        guard let currentFrame = arView.session.currentFrame else { return }
+        let cameraPosition = currentFrame.camera.transform
+
+        // 거리 계산
+        let distance = calculateDistance(from: cameraPosition, to: hitPoint)
+
+        // 거리 정보를 ARView에 표시
+        self.distanceLabel.text = String(format: "%.2f meters", distance)
     }
 
     private func captureAndSaveImage() {
@@ -104,7 +166,6 @@ class FLNativeView: NSObject, FlutterPlatformView {
         // AR 세션 구성 및 시작
         let configuration = ARWorldTrackingConfiguration()
         arView.session.run(configuration)
-        
-        // ARSCNView의 추가적인 설정 (예: 디버그 옵션, 델리게이트 설정 등)은 여기에서 수행합니다.
+        arView.delegate = self
     }
 }
