@@ -44,6 +44,8 @@ class FLNativeView: NSObject, FlutterPlatformView, ARSCNViewDelegate {
     // 거리
     private var distanceLabel: UILabel!
 
+    private var gridDots: [UIView] = []
+
      // 뷰의 프레임, 뷰 식별자, 선택적 인자, 그리고 바이너리 메신저를 사용하여 네이티브 뷰를 초기화
     init(
         frame: CGRect,
@@ -66,6 +68,9 @@ class FLNativeView: NSObject, FlutterPlatformView, ARSCNViewDelegate {
 
         // 거리 표시용 UILabel 설정
         setupDistanceLabel()
+        
+        // 가이드 점
+        setupGridDots() 
 
         // 화면 터치 감지를 위한 탭 제스처 추가
         let tapGesture = UITapGestureRecognizer(target: self, action: #selector(handleTap))
@@ -105,11 +110,46 @@ class FLNativeView: NSObject, FlutterPlatformView, ARSCNViewDelegate {
         arView.addSubview(distanceLabel)
     }
 
-     // ARSCNViewDelegate 메서드
+    private func setupGridDots() {
+        let dotSize: CGFloat = 10
+        let screenWidth = arView.bounds.width
+        let screenHeight = arView.bounds.height
+
+        for row in 0..<3 {
+            for column in 0..<3 {
+                let dot = UIView(frame: CGRect(x: 0, y: 0, width: dotSize, height: dotSize))
+                dot.backgroundColor = .red
+                dot.layer.cornerRadius = dotSize / 2
+
+                let x = CGFloat(column) * screenWidth / 3 + screenWidth / 6
+                let y = CGFloat(row) * screenHeight / 3 + screenHeight / 6
+                dot.center = CGPoint(x: x, y: y)
+
+                arView.addSubview(dot)
+                gridDots.append(dot)
+            }
+        }
+    }
+
+    // ARSCNViewDelegate 메서드
     func renderer(_ renderer: SCNSceneRenderer, updateAtTime time: TimeInterval) {
         DispatchQueue.main.async {
-            print("rendering")
+            self.updateGridDotsPosition()
             self.updateDistanceDisplay()
+        }
+    }
+
+    private func updateGridDotsPosition() {
+        let screenWidth = arView.bounds.width
+        let screenHeight = arView.bounds.height
+
+        for (i, dot) in gridDots.enumerated() {
+            let row = i / 3
+            let column = i % 3
+
+            let x = CGFloat(column) * screenWidth / 3 + screenWidth / 6
+            let y = CGFloat(row) * screenHeight / 3 + screenHeight / 6
+            dot.center = CGPoint(x: x, y: y)
         }
     }
 
