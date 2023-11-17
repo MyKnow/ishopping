@@ -41,10 +41,9 @@ class FLNativeView: NSObject, FlutterPlatformView, ARSCNViewDelegate {
     // 기본적인 네이티브 iOS 뷰
     private var arView: ARSCNView
 
-    // 거리
-    private var distanceLabel: UILabel!
-
+    // 가이드 dot 및 거리 label들
     private var gridDots: [UIView] = []
+    private var gridLabels: [UILabel] = []
 
      // 뷰의 프레임, 뷰 식별자, 선택적 인자, 그리고 바이너리 메신저를 사용하여 네이티브 뷰를 초기화
     init(
@@ -67,7 +66,7 @@ class FLNativeView: NSObject, FlutterPlatformView, ARSCNViewDelegate {
         setupARView()
 
         // 거리 표시용 UILabel 설정
-        setupDistanceLabel()
+        // setupDistanceLabel()
         
         // 가이드 점
         setupGridDots() 
@@ -100,7 +99,7 @@ class FLNativeView: NSObject, FlutterPlatformView, ARSCNViewDelegate {
             pow(cameraPosition.z - hitPosition.z, 2)
         )
     }
-
+    /*
     // 거리 표시용 UILabel 설정
     private func setupDistanceLabel() {
         distanceLabel = UILabel(frame: CGRect(x: 20, y: arView.safeAreaInsets.top + 20, width: 200, height: 40))
@@ -109,24 +108,32 @@ class FLNativeView: NSObject, FlutterPlatformView, ARSCNViewDelegate {
         distanceLabel.text = "거리 측정"
         arView.addSubview(distanceLabel)
     }
-
+    */
     private func setupGridDots() {
         let dotSize: CGFloat = 10
+        let labelHeight: CGFloat = 20
         let screenWidth = arView.bounds.width
         let screenHeight = arView.bounds.height
 
         for row in 0..<3 {
             for column in 0..<3 {
+                // 점 생성
                 let dot = UIView(frame: CGRect(x: 0, y: 0, width: dotSize, height: dotSize))
                 dot.backgroundColor = .red
                 dot.layer.cornerRadius = dotSize / 2
-
                 let x = CGFloat(column) * screenWidth / 3 + screenWidth / 6
                 let y = CGFloat(row) * screenHeight / 3 + screenHeight / 6
                 dot.center = CGPoint(x: x, y: y)
-
                 arView.addSubview(dot)
                 gridDots.append(dot)
+
+                // 레이블 생성
+                let label = UILabel(frame: CGRect(x: x - 50, y: y + dotSize, width: 100, height: labelHeight))
+                label.textAlignment = .center
+                label.textColor = .white
+                label.backgroundColor = .black.withAlphaComponent(0.5)
+                arView.addSubview(label)
+                gridLabels.append(label)
             }
         }
     }
@@ -154,24 +161,32 @@ class FLNativeView: NSObject, FlutterPlatformView, ARSCNViewDelegate {
     }
 
     private func updateDistanceDisplay() {
-        // 화면 중앙 좌표 얻기
-        let screenCenter = CGPoint(x: arView.bounds.midX, y: arView.bounds.midY)
+    let screenWidth = arView.bounds.width
+    let screenHeight = arView.bounds.height
+    let labelHeight: CGFloat = 20
+    let dotSize: CGFloat = 10
 
-        // 화면 중앙의 3D 좌표 찾기
-        guard let hitTestResults = arView.hitTest(screenCenter, types: .featurePoint).first else { return }
+    for (i, dot) in gridDots.enumerated() {
+        let row = i / 3
+        let column = i % 3
+        let x = CGFloat(column) * screenWidth / 3 + screenWidth / 6
+        let y = CGFloat(row) * screenHeight / 3 + screenHeight / 6
+        let screenPoint = CGPoint(x: x, y: y)
+
+        guard let hitTestResults = arView.hitTest(screenPoint, types: .featurePoint).first else {
+            gridLabels[i].text = "N/A"
+            continue
+        }
         let hitPoint = hitTestResults.worldTransform
-
-
-        // 카메라 위치 얻기
         guard let currentFrame = arView.session.currentFrame else { return }
         let cameraPosition = currentFrame.camera.transform
-
-        // 거리 계산
         let distance = calculateDistance(from: cameraPosition, to: hitPoint)
+        gridLabels[i].text = String(format: "%.2f m", distance)
 
-        // 거리 정보를 ARView에 표시
-        self.distanceLabel.text = String(format: "%.2f meters", distance)
+        // 레이블 위치 업데이트
+        gridLabels[i].frame = CGRect(x: x - 50, y: y + dotSize / 2 + labelHeight / 2, width: 100, height: labelHeight)
     }
+}
 
     private func captureAndSaveImage() {
         // 스크린샷 캡처
