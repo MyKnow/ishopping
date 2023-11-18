@@ -3,8 +3,10 @@ import UIKit
 import ARKit
 import Photos
 import Metal
+import AVFoundation
 
 // Fluter에서 사용자 정의 플랫폼 뷰를 생성하는 데 필요함
+@available(iOS 16.0, *)
 class FLNativeViewFactory: NSObject, FlutterPlatformViewFactory {
     // Flutter와 Native 코드 간의 통신을 위한 Flutter 바이너리 메신저에 대한 참조를 저장함
     private var messenger: FlutterBinaryMessenger
@@ -37,55 +39,97 @@ class FLNativeViewFactory: NSObject, FlutterPlatformViewFactory {
 }
 
 // FlutterPlatformView 프로토콜을 구현하여 Flutter 뷰로 사용될 수 있음
+@available(iOS 16.0, *)
 class FLNativeView: NSObject, FlutterPlatformView, ARSCNViewDelegate {
     // 기본적인 네이티브 iOS 뷰
     private var arView: ARSCNView
+
+    private var session: ARSession {
+        return arView.session
+    }
 
     // 가이드 dot 및 거리 label들
     private var gridDots: [UIView] = []
     private var gridLabels: [UILabel] = []
 
      // 뷰의 프레임, 뷰 식별자, 선택적 인자, 그리고 바이너리 메신저를 사용하여 네이티브 뷰를 초기화
-    init(
-        frame: CGRect,
-        viewIdentifier viewId: Int64,
-        arguments args: Any?,
-        binaryMessenger messenger: FlutterBinaryMessenger?
-    ) {
-        // Metal 디바이스 생성
-        guard let metalDevice = MTLCreateSystemDefaultDevice() else {
-            fatalError("Metal is not supported on this device")
-        }
-
+    init( frame: CGRect, viewIdentifier viewId: Int64, arguments args: Any?, binaryMessenger messenger: FlutterBinaryMessenger?) {
         // ARSCNView 인스턴스 생성 및 초기화
-        arView = ARSCNView(frame: frame, options: [SCNView.Option.preferredDevice.rawValue: metalDevice])
-
+        arView = ARSCNView(frame: frame)
         super.init()
 
-        // setupARView 호출하여 AR뷰를 설정
         setupARView()
-
-        // 거리 표시용 UILabel 설정
-        // setupDistanceLabel()
-        
-        // 가이드 점
-        setupGridDots() 
-
-        // 화면 터치 감지를 위한 탭 제스처 추가
-        let tapGesture = UITapGestureRecognizer(target: self, action: #selector(handleTap))
-        arView.addGestureRecognizer(tapGesture)
+        setupGridDots()
+        addTapGesture()
     }
-
     deinit {
         // ARSession을 일시정지시키는 코드
         arView.session.pause()
     }
 
+    // ARView를 설정
+    private func setupARView() {
+        // AR 세션 구성 및 시작
+        let configuration = ARWorldTrackingConfiguration()
+        
+        // 4K 비디오 포맷 확인 및 설정
+        if let fourKVideoFormat = ARWorldTrackingConfiguration.recommendedVideoFormatFor4KResolution {
+            configuration.videoFormat = fourKVideoFormat
+            print("4K video format is supported and set.")
+        } else {
+            print("4K video format is not supported on this device.")
+        }
+        
+        arView.session.run(configuration)
+        arView.delegate = self
+    }
+
     // Tap 하면 실행
     @objc func handleTap(_ sender: UITapGestureRecognizer) {
-        if sender.state == .ended {
-            // 스크린샷 캡처 및 저장
-            captureAndSaveImage()
+        if let currentFrame = session.currentFrame {
+            processFrame(currentFrame)
+        }
+    }
+
+    private func addTapGesture() {
+        let tapGesture = UITapGestureRecognizer(target: self, action: #selector(handleTap))
+        arView.addGestureRecognizer(tapGesture)
+    }
+
+
+    private func processFrame(_ frame: ARFrame) {
+        let pixelBuffer = frame.capturedImage
+        // pixelBuffer에서 고해상도 이미지를 생성 및 처리
+
+        if let image = convertToUIImage(pixelBuffer: pixelBuffer) {
+            saveImageToPhotoLibrary(image)
+        }
+    }
+
+    private func convertToUIImage(pixelBuffer: CVPixelBuffer) -> UIImage? {
+        let ciImage = CIImage(cvPixelBuffer: pixelBuffer)
+        let context = CIContext(options: nil)
+        guard let cgImage = context.createCGImage(ciImage, from: ciImage.extent) else {
+            return nil
+        }
+        // 이미지 방향 설정 (반시계로 돌아가는 문제)
+        return UIImage(cgImage: cgImage, scale: 1.0, orientation: .right)
+    }
+
+
+    private func saveImageToPhotoLibrary(_ image: UIImage) {
+        PHPhotoLibrary.requestAuthorization { status in
+            if status == .authorized {
+                PHPhotoLibrary.shared().performChanges({
+                    PHAssetChangeRequest.creationRequestForAsset(from: image)
+                }, completionHandler: { success, error in
+                    if success {
+                        print("Image saved successfully.")
+                    } else {
+                        print("Error saving image: \(String(describing: error))")
+                    }
+                })
+            }
         }
     }
 
@@ -99,16 +143,7 @@ class FLNativeView: NSObject, FlutterPlatformView, ARSCNViewDelegate {
             pow(cameraPosition.z - hitPosition.z, 2)
         )
     }
-    /*
-    // 거리 표시용 UILabel 설정
-    private func setupDistanceLabel() {
-        distanceLabel = UILabel(frame: CGRect(x: 20, y: arView.safeAreaInsets.top + 20, width: 200, height: 40))
-        distanceLabel.textColor = .white
-        distanceLabel.backgroundColor = .black.withAlphaComponent(0.5)
-        distanceLabel.text = "거리 측정"
-        arView.addSubview(distanceLabel)
-    }
-    */
+
     private func setupGridDots() {
         let dotSize: CGFloat = 10
         let labelHeight: CGFloat = 20
@@ -161,66 +196,36 @@ class FLNativeView: NSObject, FlutterPlatformView, ARSCNViewDelegate {
     }
 
     private func updateDistanceDisplay() {
-    let screenWidth = arView.bounds.width
-    let screenHeight = arView.bounds.height
-    let labelHeight: CGFloat = 20
-    let dotSize: CGFloat = 10
+        let screenWidth = arView.bounds.width
+        let screenHeight = arView.bounds.height
+        let labelHeight: CGFloat = 20
+        let dotSize: CGFloat = 10
 
-    for (i, dot) in gridDots.enumerated() {
-        let row = i / 3
-        let column = i % 3
-        let x = CGFloat(column) * screenWidth / 3 + screenWidth / 6
-        let y = CGFloat(row) * screenHeight / 3 + screenHeight / 6
-        let screenPoint = CGPoint(x: x, y: y)
+        for (i, dot) in gridDots.enumerated() {
+            let row = i / 3
+            let column = i % 3
+            let x = CGFloat(column) * screenWidth / 3 + screenWidth / 6
+            let y = CGFloat(row) * screenHeight / 3 + screenHeight / 6
+            let screenPoint = CGPoint(x: x, y: y)
 
-        guard let hitTestResults = arView.hitTest(screenPoint, types: .featurePoint).first else {
-            gridLabels[i].text = "N/A"
-            continue
-        }
-        let hitPoint = hitTestResults.worldTransform
-        guard let currentFrame = arView.session.currentFrame else { return }
-        let cameraPosition = currentFrame.camera.transform
-        let distance = calculateDistance(from: cameraPosition, to: hitPoint)
-        gridLabels[i].text = String(format: "%.2f m", distance)
-
-        // 레이블 위치 업데이트
-        gridLabels[i].frame = CGRect(x: x - 50, y: y + dotSize / 2 + labelHeight / 2, width: 100, height: labelHeight)
-    }
-}
-
-    private func captureAndSaveImage() {
-        // 스크린샷 캡처
-        let snapshot = arView.snapshot()
-
-        // 사진 라이브러리에 접근 권한 요청
-        PHPhotoLibrary.requestAuthorization { status in
-            if status == .authorized {
-                // 사진 갤러리에 이미지 저장
-                PHPhotoLibrary.shared().performChanges({
-                    PHAssetChangeRequest.creationRequestForAsset(from: snapshot)
-                }, completionHandler: { success, error in
-                    if success {
-                        // 저장 성공
-                        print("Image saved successfully.")
-                    } else {
-                        // 저장 실패
-                        print("Error saving image: \(String(describing: error))")
-                    }
-                })
+            guard let hitTestResults = arView.hitTest(screenPoint, types: .featurePoint).first else {
+                gridLabels[i].text = "N/A"
+                continue
             }
+            let hitPoint = hitTestResults.worldTransform
+            guard let currentFrame = arView.session.currentFrame else { return }
+            let cameraPosition = currentFrame.camera.transform
+            let distance = calculateDistance(from: cameraPosition, to: hitPoint)
+            gridLabels[i].text = String(format: "%.2f m", distance)
+
+            // 레이블 위치 업데이트
+            gridLabels[i].frame = CGRect(x: x - 50, y: y + dotSize / 2 + labelHeight / 2, width: 100, height: labelHeight)
         }
     }
+
 
     // 기본 UIView 객체를 반환
     func view() -> UIView {
         return arView
-    }
-
-    // ARView를 설정
-    private func setupARView() {
-        // AR 세션 구성 및 시작
-        let configuration = ARWorldTrackingConfiguration()
-        arView.session.run(configuration)
-        arView.delegate = self
     }
 }

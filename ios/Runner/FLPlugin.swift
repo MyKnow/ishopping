@@ -1,6 +1,7 @@
 import Flutter
 import UIKit
 
+@available(iOS 16.0, *)
 class FLPlugin: NSObject, FlutterPlugin {
     public static func register(with registrar: FlutterPluginRegistrar) {
         // FLNativeViewFactory 인스턴스를 <platform-view-type>라는 메세지(ID)와 함께 등록함.
