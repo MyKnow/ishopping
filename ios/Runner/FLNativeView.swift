@@ -73,11 +73,11 @@ class FLNativeView: NSObject, FlutterPlatformView, ARSCNViewDelegate {
         let configuration = ARWorldTrackingConfiguration()
         
         // 4K 비디오 포맷 확인 및 설정
-        if let fourKVideoFormat = ARWorldTrackingConfiguration.recommendedVideoFormatFor4KResolution {
-            configuration.videoFormat = fourKVideoFormat
-            print("4K video format is supported and set.")
+        if let bestVideoFormat = ARWorldTrackingConfiguration.supportedVideoFormats.max(by: { $0.imageResolution.height < $1.imageResolution.height }) {
+            configuration.videoFormat = bestVideoFormat
+            print("HI-Res video format is supported and set.")
         } else {
-            print("4K video format is not supported on this device.")
+            print("HI-Res video format is not supported on this device.")
         }
         
         arView.session.run(configuration)
