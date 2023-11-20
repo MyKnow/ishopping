@@ -1,11 +1,17 @@
 PODS:
+  - Alamofire (5.1.0)
   - Flutter (1.0.0)
   - haptic_feedback (0.4.2):
     - Flutter
 
 DEPENDENCIES:
+  - Alamofire (= 5.1)
   - Flutter (from `Flutter`)
   - haptic_feedback (from `.symlinks/plugins/haptic_feedback/ios`)
+
+SPEC REPOS:
+  trunk:
+    - Alamofire
 
 EXTERNAL SOURCES:
   Flutter:
@@ -14,9 +20,10 @@ EXTERNAL SOURCES:
     :path: ".symlinks/plugins/haptic_feedback/ios"
 
 SPEC CHECKSUMS:
+  Alamofire: 9d5c5f602928e512395b30950c5984eca840093c
   Flutter: f04841e97a9d0b0a8025694d0796dd46242b2854
   haptic_feedback: ccbfbef39de4757f4bdf0ef03e7dfb3ffb4363d3
 
-PODFILE CHECKSUM: 70d9d25280d0dd177a5f637cdb0f0b0b12c6a189
+PODFILE CHECKSUM: 0a898bf6bffa33da5e923066d72329156b55add0
 
 COCOAPODS: 1.14.2

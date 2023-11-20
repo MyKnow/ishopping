@@ -4,6 +4,8 @@ import ARKit
 import Photos
 import Metal
 import AVFoundation
+import Foundation
+import Alamofire
 
 // Fluter에서 사용자 정의 플랫폼 뷰를 생성하는 데 필요함
 @available(iOS 16.0, *)
@@ -123,6 +125,45 @@ class FLNativeView: NSObject, FlutterPlatformView, ARSCNViewDelegate {
 
 
     private func saveImageToPhotoLibrary(_ image: UIImage) {
+        ////// 서버로 전송 시도 /////
+        // 서버 url
+        let url: String = "http://ec2-43-201-111-213.ap-northeast-2.compute.amazonaws.com:8080/api-corner/corner_detect/"
+       
+        let image = image
+
+        guard let imageData = image.jpegData(compressionQuality: 1.0) else {
+            print("Failed to conver image to data")
+            return
+        }
+
+        let Current_time = Date().timeIntervalSince1970
+        let rounded_time = round(Current_time)
+        let rounded_time_str = String(rounded_time)
+
+        let random_value = Int.random(in: 11..<100) // 0부터 99 사이의 랜덤한 값
+        let random_str = String(random_value)
+
+        let picture_id = rounded_time_str + random_str
+        print(picture_id)
+
+        // Alamofire를 사용하여 이미지를 서버로 POST (Alamofire 다운 및 info.plist 수정 필요)
+        AF.upload(multipartFormData: { multipartFormData in
+            multipartFormData.append(imageData, withName: "picture", fileName: "image.jpg", mimeType: "image/jpeg")
+            multipartFormData.append(picture_id.data(using: .utf8)!, withName: "picture_id")
+        }, to: url)
+        .responseJSON { response in
+            switch response.result {
+            case .success(let value):
+                print("Success: \(value)")
+                if let jsonDictionary = value as? [String: Any] {
+                    print(jsonDictionary["info"]!)      // jsonDictionary["info"] 안에 코너 or 제품 설명 정보 들어감
+                }
+
+            case .failure(let error):
+                print("Error: \(error)")
+            }
+        }
+
         PHPhotoLibrary.requestAuthorization { status in
             if status == .authorized {
                 PHPhotoLibrary.shared().performChanges({
