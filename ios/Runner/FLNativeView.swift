@@ -58,6 +58,16 @@ class FLNativeView: NSObject, FlutterPlatformView, ARSCNViewDelegate {
     private final var col: Int = 5;
     private final var rw: Int = 7;
 
+    // 거리에 따른 색상을 매핑하는 사전
+    private var distanceColorMap: [Float: UIColor] = [
+        0.2: .red,
+        0.5: .yellow,
+        1.0: .green,
+        2.0: .blue,
+        3.0: .purple,
+        5.0: .black
+    ]
+
 
      // 뷰의 프레임, 뷰 식별자, 선택적 인자, 그리고 바이너리 메신저를 사용하여 네이티브 뷰를 초기화
     init( frame: CGRect, viewIdentifier viewId: Int64, arguments args: Any?, binaryMessenger messenger: FlutterBinaryMessenger?) {
@@ -248,26 +258,43 @@ class FLNativeView: NSObject, FlutterPlatformView, ARSCNViewDelegate {
         let dotSize: CGFloat = 10
 
         for (i, dot) in gridDots.enumerated() {
-            let row = i / col // 가로 줄 개수로 나눔
-            let column = i % col // 가로 줄 개수로 나머지 연산
+            let row = i / col
+            let column = i % col
             let x = CGFloat(column) * screenWidth / CGFloat(col) + screenWidth / CGFloat(2 * col)
             let y = CGFloat(row) * screenHeight / CGFloat(rw) + screenHeight / CGFloat(2 * rw)
             let screenPoint = CGPoint(x: x, y: y)
 
             guard let hitTestResults = arView.hitTest(screenPoint, types: .featurePoint).first else {
                 gridLabels[i].text = "N/A"
+                dot.backgroundColor = .gray
                 continue
             }
             let hitPoint = hitTestResults.worldTransform
             guard let currentFrame = arView.session.currentFrame else { return }
             let cameraPosition = currentFrame.camera.transform
             let distance = calculateDistance(from: cameraPosition, to: hitPoint)
-            gridLabels[i].text = String(format: "%.2f m", distance)
 
-            // 레이블 위치 업데이트
+            // 거리에 따른 색상 설정
+            dot.backgroundColor = colorForDistance(distance)
+
+            gridLabels[i].text = String(format: "%.2f m", distance)
             gridLabels[i].frame = CGRect(x: x - 50, y: y + dotSize / 2 + labelHeight / 2, width: 100, height: labelHeight)
         }
     }
+
+    // 거리에 해당하는 색상을 반환하는 함수
+    private func colorForDistance(_ distance: Float) -> UIColor {
+        // 거리에 따른 색상 매핑 순회
+        for (key, color) in distanceColorMap.sorted(by: { $0.key < $1.key }) {
+            if distance <= key {
+                return color
+            }
+        }
+        // 매핑된 색상이 없는 경우 기본 색상 반환
+        return .white
+    }
+
+
 
 
     // 기본 UIView 객체를 반환
