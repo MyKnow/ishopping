@@ -41,7 +41,7 @@ class FLNativeViewFactory: NSObject, FlutterPlatformViewFactory {
 // FlutterPlatformView 프로토콜을 구현하여 Flutter 뷰로 사용될 수 있음
 @available(iOS 16.0, *)
 class FLNativeView: NSObject, FlutterPlatformView, ARSCNViewDelegate {
-    // 기본적인 네이티브 iOS 뷰
+    // AR 담당 Native View
     private var arView: ARSCNView
 
     private var session: ARSession {
@@ -51,6 +51,11 @@ class FLNativeView: NSObject, FlutterPlatformView, ARSCNViewDelegate {
     // 가이드 dot 및 거리 label들
     private var gridDots: [UIView] = []
     private var gridLabels: [UILabel] = []
+
+    // 조준점 및 라벨의 갯수
+    private final var col: Int = 5;
+    private final var rw: Int = 7;
+
 
      // 뷰의 프레임, 뷰 식별자, 선택적 인자, 그리고 바이너리 메신저를 사용하여 네이티브 뷰를 초기화
     init( frame: CGRect, viewIdentifier viewId: Int64, arguments args: Any?, binaryMessenger messenger: FlutterBinaryMessenger?) {
@@ -150,14 +155,14 @@ class FLNativeView: NSObject, FlutterPlatformView, ARSCNViewDelegate {
         let screenWidth = arView.bounds.width
         let screenHeight = arView.bounds.height
 
-        for row in 0..<3 {
-            for column in 0..<3 {
+        for row in 0..<rw {
+            for column in 0..<col {
                 // 점 생성
                 let dot = UIView(frame: CGRect(x: 0, y: 0, width: dotSize, height: dotSize))
                 dot.backgroundColor = .red
                 dot.layer.cornerRadius = dotSize / 2
-                let x = CGFloat(column) * screenWidth / 3 + screenWidth / 6
-                let y = CGFloat(row) * screenHeight / 3 + screenHeight / 6
+                let x = CGFloat(column) * screenWidth / CGFloat(col) + screenWidth / CGFloat(2*col)
+                let y = CGFloat(row) * screenHeight / CGFloat(rw) + screenHeight / CGFloat(2*rw)
                 dot.center = CGPoint(x: x, y: y)
                 arView.addSubview(dot)
                 gridDots.append(dot)
@@ -186,11 +191,11 @@ class FLNativeView: NSObject, FlutterPlatformView, ARSCNViewDelegate {
         let screenHeight = arView.bounds.height
 
         for (i, dot) in gridDots.enumerated() {
-            let row = i / 3
-            let column = i % 3
+            let rowIndex = i / col // 가로 줄 개수로 나눔
+            let columnIndex = i % col // 가로 줄 개수로 나머지 연산
 
-            let x = CGFloat(column) * screenWidth / 3 + screenWidth / 6
-            let y = CGFloat(row) * screenHeight / 3 + screenHeight / 6
+            let x = CGFloat(columnIndex) * screenWidth / CGFloat(col) + screenWidth / CGFloat(2 * col)
+            let y = CGFloat(rowIndex) * screenHeight / CGFloat(rw) + screenHeight / CGFloat(2 * rw)
             dot.center = CGPoint(x: x, y: y)
         }
     }
@@ -202,10 +207,10 @@ class FLNativeView: NSObject, FlutterPlatformView, ARSCNViewDelegate {
         let dotSize: CGFloat = 10
 
         for (i, dot) in gridDots.enumerated() {
-            let row = i / 3
-            let column = i % 3
-            let x = CGFloat(column) * screenWidth / 3 + screenWidth / 6
-            let y = CGFloat(row) * screenHeight / 3 + screenHeight / 6
+            let row = i / col // 가로 줄 개수로 나눔
+            let column = i % col // 가로 줄 개수로 나머지 연산
+            let x = CGFloat(column) * screenWidth / CGFloat(col) + screenWidth / CGFloat(2 * col)
+            let y = CGFloat(row) * screenHeight / CGFloat(rw) + screenHeight / CGFloat(2 * rw)
             let screenPoint = CGPoint(x: x, y: y)
 
             guard let hitTestResults = arView.hitTest(screenPoint, types: .featurePoint).first else {
