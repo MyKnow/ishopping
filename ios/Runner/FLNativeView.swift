@@ -60,13 +60,14 @@ class FLNativeView: NSObject, FlutterPlatformView, ARSCNViewDelegate {
 
     // 거리에 따른 색상을 매핑하는 사전
     private var distanceColorMap: [Float: UIColor] = [
+        0.1: .white,
         0.3: .red,
         0.6: .yellow,
         0.9: .orange,
         1.2: .green,
-        2.0: .blue,
-        3.0: .purple,
-        5.0: .black
+        3.0: .blue,
+        6.0: .purple,
+        9.0: .black
     ]
 
 
