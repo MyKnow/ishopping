@@ -3,14 +3,13 @@ import 'dart:io';
 
 import 'package:camera/camera.dart';
 import 'package:flutter/material.dart';
-import 'package:image_gallery_saver/image_gallery_saver.dart';
-import 'package:path_provider/path_provider.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:vibration/vibration.dart';
 
 import 'main.dart';
 import 'map_android.dart';
-import 'var_api.dart';
+import 'output.dart';
+import 'server_api.dart';
 
 void main() {
   runApp(MyApp());
@@ -119,15 +118,10 @@ class _CameraScreenState extends State<ProductScreen> {
       final image = await controller?.takePicture();
       if (image == null) return;
 
-      final directory = await getTemporaryDirectory();
-      final imagePath =
-          '${directory.path}/${DateTime.now().toIso8601String()}.png';
+      final File newImage = File(image.path);
 
-      final File newImage = File(imagePath);
-      await newImage.writeAsBytes(await image.readAsBytes());
-
-      final result = await ImageGallerySaver.saveFile(newImage.path);
-      print('Image saved to gallery: $result');
+      // 서버에 이미지 전송
+      await sendImageData(newImage); // server_api.dart 파일의 함수 호출
 
       setState(() {
         _captureCount++; // 촬영 횟수 업데이트

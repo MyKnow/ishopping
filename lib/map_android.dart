@@ -3,14 +3,13 @@ import 'dart:io';
 
 import 'package:camera/camera.dart';
 import 'package:flutter/material.dart';
-import 'package:image_gallery_saver/image_gallery_saver.dart';
-import 'package:path_provider/path_provider.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:vibration/vibration.dart';
 
 import 'main.dart';
+import 'output.dart';
 import 'product.dart';
-import 'var_api.dart'; // var_api.dart 파일 추가
+import 'server_api.dart';
 
 void main() {
   runApp(MyApp());
@@ -123,17 +122,11 @@ class _CameraScreenState extends State<MapAndroidScreen> {
       final image = await controller?.takePicture();
       if (image == null) return;
 
-      final directory = await getTemporaryDirectory();
-      final imagePath =
-          '${directory.path}/${DateTime.now().toIso8601String()}.png';
+      final File newImage = File(image.path);
 
-      final File newImage = File(imagePath);
-      await newImage.writeAsBytes(await image.readAsBytes());
+      // 서버에 이미지 전송
+      await sendImageData(newImage); // server_api.dart 파일의 함수 호출
 
-      final result = await ImageGallerySaver.saveFile(newImage.path);
-      print('Image saved to gallery: $result');
-
-      // var_api.dart 파일의 변수를 사용하여 메시지 출력
       setState(() {
         _captureCount++; // 촬영횟수 업데이트
         setMapCaptureCount(_captureCount);
@@ -143,7 +136,7 @@ class _CameraScreenState extends State<MapAndroidScreen> {
       });
 
       final message =
-          "좌측에 ${session_left}, 우측에 ${session_right}, 정면에 ${session_front}, 촬영 횟수 : ${map_captureCount}";
+          "좌측에 ${session_left}, 우측에 ${session_right}, 정면에 ${session_front}, 촬영 횟수: ${map_captureCount}";
       print(message);
     } catch (e) {
       print('Error capturing image: $e');

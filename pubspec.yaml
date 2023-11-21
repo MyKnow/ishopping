@@ -16,7 +16,8 @@ dependencies:
   permission_handler: ^11.0.1
 
   path_provider: ^2.0.9
-  image_gallery_saver: ^1.7.1
+
+  http: ^0.13.3
 
 dev_dependencies:
   flutter_test:
