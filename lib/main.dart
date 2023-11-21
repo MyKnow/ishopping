@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:haptic_feedback/haptic_feedback.dart';
 
-import 'splash_screen.dart'; // Assuming SplashScreen, MapScreen, and ProductScreen are defined elsewhere
-import 'map.dart';
+import 'map_android.dart';
 import 'product.dart';
+import 'splash_screen.dart';
 
 void main() {
   runApp(MyApp());
@@ -13,8 +13,8 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      //home: SplashScreen(),
-      home: MainScreen(),
+      home: SplashScreen(),
+      //home: MainScreen(),
     );
   }
 }
@@ -24,7 +24,8 @@ class MainScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFFFFF9E6),
-      body: SafeArea( // Wrap the content in SafeArea
+      body: SafeArea(
+        // Wrap the content in SafeArea
         child: Stack(
           children: <Widget>[
             CustomPaint(
@@ -34,20 +35,30 @@ class MainScreen extends StatelessWidget {
             Column(
               children: <Widget>[
                 Expanded(
-                  child:_buildButton(context, "현재 위치", "assets/images/public/maps.png",
-                    const EdgeInsets.fromLTRB(10, 30, 10, 10), () {
-                  heavyVibration(3);
-                  Navigator.push(context,
-                      MaterialPageRoute(builder: (context) => MapScreen()));
-                }),
+                  child: _buildButton(
+                      context,
+                      "세션 모드",
+                      "assets/images/public/maps.png",
+                      const EdgeInsets.fromLTRB(10, 30, 10, 10), () {
+                    heavyVibration(3);
+                    Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                            builder: (context) => MapAndroidScreen()));
+                  }),
                 ),
                 Expanded(
-                  child:_buildButton(context, "제품 확인", "assets/images/public/coke.png",
-                    const EdgeInsets.fromLTRB(10, 10, 10, 30), () {
-                  heavyVibration(3);
-                  Navigator.push(context,
-                      MaterialPageRoute(builder: (context) => ProductScreen()));
-                }),
+                  child: _buildButton(
+                      context,
+                      "제품 모드",
+                      "assets/images/public/coke.png",
+                      const EdgeInsets.fromLTRB(10, 10, 10, 30), () {
+                    heavyVibration(3);
+                    Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                            builder: (context) => ProductScreen()));
+                  }),
                 ),
               ],
             ),
@@ -58,7 +69,7 @@ class MainScreen extends StatelessWidget {
   }
 
   Widget _buildButton(BuildContext context, String text, String imagePath,
-    EdgeInsets margin, VoidCallback onPressed) {
+      EdgeInsets margin, VoidCallback onPressed) {
     return Container(
       margin: margin,
       width: double.infinity,

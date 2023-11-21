@@ -9,21 +9,21 @@ import 'package:permission_handler/permission_handler.dart';
 import 'package:vibration/vibration.dart';
 
 import 'main.dart';
-import 'map_android.dart';
-import 'var_api.dart';
+import 'product.dart';
+import 'var_api.dart'; // var_api.dart 파일 추가
 
 void main() {
   runApp(MyApp());
 }
 
-class ProductScreen extends StatefulWidget {
+class MapAndroidScreen extends StatefulWidget {
   @override
   _CameraScreenState createState() => _CameraScreenState();
 }
 
-class _CameraScreenState extends State<ProductScreen> {
+class _CameraScreenState extends State<MapAndroidScreen> {
   CameraController? controller;
-  String _message = "제품과 기기를 최대한 나란히 하고 촬영하세요."; // 초기 메시지
+  String _message = "모바일 기기를 턱에 가까이 대고 사용해 주세요."; // 초기 메시지
 
   int _captureCount = 0; // 촬영 횟수
 
@@ -77,9 +77,13 @@ class _CameraScreenState extends State<ProductScreen> {
     if (controller?.value.isInitialized == true) {
       return GestureDetector(
         onHorizontalDragEnd: (details) {
-          if (details.primaryVelocity! > 0) {
+          if (details.primaryVelocity! < 0) {
             Navigator.push(context,
-                MaterialPageRoute(builder: (context) => MapAndroidScreen()));
+                MaterialPageRoute(builder: (context) => ProductScreen()));
+          }
+          if (details.primaryVelocity! > 0) {
+            Navigator.push(
+                context, MaterialPageRoute(builder: (context) => MainScreen()));
           }
         },
         onLongPress: () async {
@@ -129,14 +133,17 @@ class _CameraScreenState extends State<ProductScreen> {
       final result = await ImageGallerySaver.saveFile(newImage.path);
       print('Image saved to gallery: $result');
 
+      // var_api.dart 파일의 변수를 사용하여 메시지 출력
       setState(() {
-        _captureCount++; // 촬영 횟수 업데이트
-        setProductCaptureCount(_captureCount);
+        _captureCount++; // 촬영횟수 업데이트
+        setMapCaptureCount(_captureCount);
 
-        _message = "해당 제품은 ${product_name}";
+        _message =
+            "좌측에 ${session_left}, 우측에 ${session_right}, 정면에 ${session_front}";
       });
 
-      final message = "해당 제품은 ${product_name}, 촬영 횟수 : ${product_captureCount}";
+      final message =
+          "좌측에 ${session_left}, 우측에 ${session_right}, 정면에 ${session_front}, 촬영 횟수 : ${map_captureCount}";
       print(message);
     } catch (e) {
       print('Error capturing image: $e');
