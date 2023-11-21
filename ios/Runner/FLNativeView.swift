@@ -55,14 +55,15 @@ class FLNativeView: NSObject, FlutterPlatformView, ARSCNViewDelegate {
     private var gridLabels: [UILabel] = []
 
     // 조준점 및 라벨의 갯수
-    private final var col: Int = 5;
-    private final var rw: Int = 7;
+    private final var col: Int = 10;
+    private final var rw: Int = 20;
 
     // 거리에 따른 색상을 매핑하는 사전
     private var distanceColorMap: [Float: UIColor] = [
-        0.2: .red,
-        0.5: .yellow,
-        1.0: .green,
+        0.3: .red,
+        0.6: .yellow,
+        0.9: .orange,
+        1.2: .green,
         2.0: .blue,
         3.0: .purple,
         5.0: .black
@@ -223,7 +224,7 @@ class FLNativeView: NSObject, FlutterPlatformView, ARSCNViewDelegate {
                 label.textAlignment = .center
                 label.textColor = .white
                 label.backgroundColor = .black.withAlphaComponent(0.5)
-                arView.addSubview(label)
+                //arView.addSubview(label)
                 gridLabels.append(label)
             }
         }
