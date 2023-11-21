@@ -1,0 +1,4 @@
+{
+    "cmake.configureOnOpen": false,
+    "java.compile.nullAnalysis.mode": "disabled"
+}
