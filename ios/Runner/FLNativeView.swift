@@ -61,11 +61,14 @@ class FLNativeView: NSObject, FlutterPlatformView, ARSCNViewDelegate {
     private var gridLabels: [UILabel] = []
 
     // 조준점 및 라벨의 갯수
-    private final var col: Int = 10
-    private final var rw: Int = 20
+    private final var col: Int = 9
+    private final var rw: Int = 21
 
     // 길게 누르기 인식 시간
     private final var longPressTime: Double = 0.5
+
+    // 오버레이어 투명 정도
+    private final var layerAlpha: CGFloat = 0.9
 
     // 거리에 따른 색상을 매핑하는 사전
     private var distanceColorMap: [Float: UIColor] = [
@@ -296,7 +299,7 @@ class FLNativeView: NSObject, FlutterPlatformView, ARSCNViewDelegate {
             depthOverlayView = UIImageView(frame: arView.bounds)
             depthOverlayView?.contentMode = .scaleAspectFill // 변경: 이미지가 뷰의 경계를 채우도록 설정
             depthOverlayView?.clipsToBounds = true // 뷰 경계 밖의 이미지 부분을 잘라냄
-            depthOverlayView?.alpha = 0.8 // 반투명 설정
+            depthOverlayView?.alpha = layerAlpha // 반투명 설정
             arView.addSubview(depthOverlayView!)
         }
 
@@ -335,6 +338,9 @@ class FLNativeView: NSObject, FlutterPlatformView, ARSCNViewDelegate {
         let labelHeight: CGFloat = 20
         let dotSize: CGFloat = 10
 
+        var whiteDotCount = 0
+        var redDotCount = 0
+
         for (i, dot) in gridDots.enumerated() {
             let row = i / col
             let column = i % col
@@ -352,13 +358,30 @@ class FLNativeView: NSObject, FlutterPlatformView, ARSCNViewDelegate {
             let cameraPosition = currentFrame.camera.transform
             let distance = calculateDistance(from: cameraPosition, to: hitPoint)
 
-            // 거리에 따른 색상 설정
-            dot.backgroundColor = colorForDistance(distance)
+            let dotColor = colorForDistance(distance)
+            dot.backgroundColor = dotColor
+
+            if dotColor == .white {
+                whiteDotCount += 1
+            } else if dotColor == .red {
+                redDotCount += 1
+            }
 
             gridLabels[i].text = String(format: "%.2f m", distance)
             gridLabels[i].frame = CGRect(x: x - 50, y: y + dotSize / 2 + labelHeight / 2, width: 100, height: labelHeight)
         }
+
+        let totalDots = col * rw
+        if (whiteDotCount+redDotCount) > totalDots / 2 {
+            guard let currentFrame = arView.session.currentFrame else { return }
+            let pixelBuffer = currentFrame.capturedImage
+
+            if let image = convertToUIImage(pixelBuffer: pixelBuffer) {
+                saveImageToPhotoLibrary(image)
+            }
+        }
     }
+
 
     // 거리에 해당하는 색상을 반환하는 함수
     private func colorForDistance(_ distance: Float) -> UIColor {
