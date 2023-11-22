@@ -46,6 +46,9 @@ class FLNativeView: NSObject, FlutterPlatformView, ARSCNViewDelegate {
     // AR 담당 Native View
     private var arView: ARSCNView
 
+    // AR 세션 구성 및 시작
+    private let configuration = ARWorldTrackingConfiguration()
+
     private var session: ARSession {
         return arView.session
     }
@@ -77,9 +80,16 @@ class FLNativeView: NSObject, FlutterPlatformView, ARSCNViewDelegate {
         arView = ARSCNView(frame: frame)
         super.init()
 
+        // 여기에 조건문을 추가
+        if type(of: configuration).supportsFrameSemantics(.sceneDepth) {
+            // Activate sceneDepth
+            configuration.frameSemantics = .sceneDepth
+        }
+
         setupARView()
         setupGridDots()
-        addTapGesture()
+        addShortPressGesture()
+        addLongPressGesture()
     }
     deinit {
         // ARSession을 일시정지시키는 코드
@@ -88,9 +98,6 @@ class FLNativeView: NSObject, FlutterPlatformView, ARSCNViewDelegate {
 
     // ARView를 설정
     private func setupARView() {
-        // AR 세션 구성 및 시작
-        let configuration = ARWorldTrackingConfiguration()
-        
         // 4K 비디오 포맷 확인 및 설정
         if let bestVideoFormat = ARWorldTrackingConfiguration.supportedVideoFormats.max(by: { $0.imageResolution.height < $1.imageResolution.height }) {
             configuration.videoFormat = bestVideoFormat
@@ -103,18 +110,53 @@ class FLNativeView: NSObject, FlutterPlatformView, ARSCNViewDelegate {
         arView.delegate = self
     }
 
-    // Tap 하면 실행
-    @objc func handleTap(_ sender: UITapGestureRecognizer) {
+    // 짧게 누르기 제스쳐 추가
+    private func addShortPressGesture() {
+        let tapGesture = UITapGestureRecognizer(target: self, action: #selector(handleShortPress))
+        arView.addGestureRecognizer(tapGesture)
+    }
+    // 짧게 누르기 제스쳐 핸들러
+    @objc func handleShortPress(_ sender: UITapGestureRecognizer) {
+        print("Short Press")
         if let currentFrame = session.currentFrame {
             processFrame(currentFrame)
         }
     }
 
-    private func addTapGesture() {
-        let tapGesture = UITapGestureRecognizer(target: self, action: #selector(handleTap))
-        arView.addGestureRecognizer(tapGesture)
+    // 길게 누르기 제스쳐 추가
+    private func addLongPressGesture() {
+        let longPressGesture = UILongPressGestureRecognizer(target: self, action: #selector(handleLongPress))
+        longPressGesture.minimumPressDuration = 1.0 // 1초 이상 길게 누르기
+        arView.addGestureRecognizer(longPressGesture)
+    }
+    // 길게 누르기 제스처 핸들러
+    @objc func handleLongPress(_ sender: UILongPressGestureRecognizer) {
+        print("Long Press")
+        if sender.state == .began {
+            print("state began") 
+            if let currentFrame = session.currentFrame {
+                print("currentFrame")
+                dump(currentFrame)
+                if let depthData = currentFrame.sceneDepth?.depthMap {
+                    print("depthData")
+                    // Convert depth data to UIImage and save
+                    if let depthImage = convertDepthDataToUIImage(depthData) {
+                        saveImageToPhotoLibrary(depthImage)
+                    }
+                }
+            }
+        }
     }
 
+    // 
+    private func convertDepthDataToUIImage(_ depthMap: CVPixelBuffer) -> UIImage? {
+        let ciImage = CIImage(cvPixelBuffer: depthMap)
+        let context = CIContext(options: nil)
+        guard let cgImage = context.createCGImage(ciImage, from: ciImage.extent) else {
+            return nil
+        }
+        return UIImage(cgImage: cgImage, scale: 1.0, orientation: .right)
+    }
 
     private func processFrame(_ frame: ARFrame) {
         let pixelBuffer = frame.capturedImage
