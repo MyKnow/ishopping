@@ -46,6 +46,9 @@ class FLNativeView: NSObject, FlutterPlatformView, ARSCNViewDelegate {
     // AR 담당 Native View
     private var arView: ARSCNView
 
+    // DepthMap View
+    private var depthOverlayView: UIImageView?
+
     // AR 세션 구성 및 시작
     private let configuration = ARWorldTrackingConfiguration()
 
@@ -73,6 +76,8 @@ class FLNativeView: NSObject, FlutterPlatformView, ARSCNViewDelegate {
         9.0: .black
     ]
 
+    // Depth map 오버레이 상태를 추적하는 변수
+    private var isDepthMapOverlayEnabled = false
 
      // 뷰의 프레임, 뷰 식별자, 선택적 인자, 그리고 바이너리 메신저를 사용하여 네이티브 뷰를 초기화
     init( frame: CGRect, viewIdentifier viewId: Int64, arguments args: Any?, binaryMessenger messenger: FlutterBinaryMessenger?) {
@@ -131,20 +136,22 @@ class FLNativeView: NSObject, FlutterPlatformView, ARSCNViewDelegate {
     }
     // 길게 누르기 제스처 핸들러
     @objc func handleLongPress(_ sender: UILongPressGestureRecognizer) {
-        print("Long Press")
         if sender.state == .began {
-            print("state began") 
-            if let currentFrame = session.currentFrame {
-                print("currentFrame")
-                dump(currentFrame)
-                if let depthData = currentFrame.sceneDepth?.depthMap {
-                    print("depthData")
-                    // Convert depth data to UIImage and save
-                    if let depthImage = convertDepthDataToUIImage(depthData) {
-                        saveImageToPhotoLibrary(depthImage)
-                    }
-                }
+            print(isDepthMapOverlayEnabled)
+            // Depth map 오버레이 상태 토글
+            isDepthMapOverlayEnabled.toggle()
+
+            // AR 세션의 frame semantics 업데이트
+            if isDepthMapOverlayEnabled {
+                configuration.frameSemantics.insert(.sceneDepth)
+            } else {
+                configuration.frameSemantics.remove(.sceneDepth)
+                depthOverlayView?.removeFromSuperview()
+                depthOverlayView = nil
             }
+
+            // AR 세션 다시 시작
+            arView.session.run(configuration)
         }
     }
 
@@ -278,8 +285,29 @@ class FLNativeView: NSObject, FlutterPlatformView, ARSCNViewDelegate {
         DispatchQueue.main.async {
             self.updateGridDotsPosition()
             self.updateDistanceDisplay()
+
+            // Depth map 오버레이가 활성화된 경우에만 처리
+            if self.isDepthMapOverlayEnabled, let currentFrame = self.arView.session.currentFrame, let depthData = currentFrame.sceneDepth {
+                self.overlayDepthMap(depthData.depthMap)
+            }
         }
     }
+
+    // Depth map 오버레이를 추가하는 메서드
+    private func overlayDepthMap(_ depthMap: CVPixelBuffer) {
+        guard let depthImage = convertDepthDataToUIImage(depthMap) else { return }
+
+        if depthOverlayView == nil {
+            depthOverlayView = UIImageView(frame: arView.bounds)
+            depthOverlayView?.contentMode = .scaleAspectFit
+            depthOverlayView?.alpha = 0.5 // 반투명하게 설정
+            arView.addSubview(depthOverlayView!)
+        }
+
+        depthOverlayView?.frame = arView.bounds // ARView 크기에 맞게 조정
+        depthOverlayView?.image = depthImage
+    }
+
 
     private func updateGridDotsPosition() {
         let screenWidth = arView.bounds.width
