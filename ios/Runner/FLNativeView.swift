@@ -61,8 +61,11 @@ class FLNativeView: NSObject, FlutterPlatformView, ARSCNViewDelegate {
     private var gridLabels: [UILabel] = []
 
     // 조준점 및 라벨의 갯수
-    private final var col: Int = 10;
-    private final var rw: Int = 20;
+    private final var col: Int = 10
+    private final var rw: Int = 20
+
+    // 길게 누르기 인식 시간
+    private final var longPressTime: Double = 0.5
 
     // 거리에 따른 색상을 매핑하는 사전
     private var distanceColorMap: [Float: UIColor] = [
@@ -123,6 +126,7 @@ class FLNativeView: NSObject, FlutterPlatformView, ARSCNViewDelegate {
     // 짧게 누르기 제스쳐 핸들러
     @objc func handleShortPress(_ sender: UITapGestureRecognizer) {
         print("Short Press")
+        impactFeedbackExample()  // 예시로 impactFeedbackExample 호출
         if let currentFrame = session.currentFrame {
             processFrame(currentFrame)
         }
@@ -131,13 +135,14 @@ class FLNativeView: NSObject, FlutterPlatformView, ARSCNViewDelegate {
     // 길게 누르기 제스쳐 추가
     private func addLongPressGesture() {
         let longPressGesture = UILongPressGestureRecognizer(target: self, action: #selector(handleLongPress))
-        longPressGesture.minimumPressDuration = 1.0 // 1초 이상 길게 누르기
+        longPressGesture.minimumPressDuration = longPressTime // 1초 이상 길게 누르기
         arView.addGestureRecognizer(longPressGesture)
     }
     // 길게 누르기 제스처 핸들러
     @objc func handleLongPress(_ sender: UILongPressGestureRecognizer) {
         if sender.state == .began {
             print(isDepthMapOverlayEnabled)
+            notificationFeedbackExample() 
             // Depth map 오버레이 상태 토글
             isDepthMapOverlayEnabled.toggle()
 
@@ -370,5 +375,25 @@ class FLNativeView: NSObject, FlutterPlatformView, ARSCNViewDelegate {
     // 기본 UIView 객체를 반환
     func view() -> UIView {
         return arView
+    }
+    
+    func impactFeedbackExample() {
+        let impactFeedbackGenerator = UIImpactFeedbackGenerator(style: .medium)
+        impactFeedbackGenerator.prepare()
+        impactFeedbackGenerator.impactOccurred()
+    }
+
+    // Selection Feedback 예시
+    func selectionFeedbackExample() {
+        let selectionFeedbackGenerator = UISelectionFeedbackGenerator()
+        selectionFeedbackGenerator.prepare()
+        selectionFeedbackGenerator.selectionChanged()
+    }
+
+    // Notification Feedback 예시
+    func notificationFeedbackExample() {
+        let notificationFeedbackGenerator = UINotificationFeedbackGenerator()
+        notificationFeedbackGenerator.prepare()
+        notificationFeedbackGenerator.notificationOccurred(.success)
     }
 }
