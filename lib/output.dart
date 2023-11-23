@@ -12,6 +12,10 @@ void setProductCaptureCount(int newCount) {
 
 String product_name = "인식안됨";
 
+void setProductName(String newName) {
+  product_name = newName;
+}
+
 String session_left = "인식안됨";
 String session_right = "인식안됨";
 String session_front = "인식안됨";

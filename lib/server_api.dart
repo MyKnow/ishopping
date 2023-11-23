@@ -1,8 +1,13 @@
+import 'dart:convert';
 import 'dart:io';
 import 'dart:math';
 
 import 'package:http/http.dart' as http;
 import 'package:http_parser/http_parser.dart';
+
+import 'output.dart';
+
+String productInfo = '-1';
 
 Future<void> sendImageData(File imageFile) async {
   // 현재 시간과 랜덤 값을 이용한 picture_id 생성
@@ -32,9 +37,17 @@ Future<void> sendImageData(File imageFile) async {
   // 요청 보내기
   var response = await request.send();
 
-  // 응답 확인
-  if (response.statusCode == 200) {
+  // 응답 스트림을 String으로 변환
+  String responseData = await response.stream.bytesToString();
+
+  if (response.statusCode == 200 || response.statusCode == 201) {
     print('Data sent successfully!');
+
+    // JSON 파싱
+    var decodedResponse = json.decode(responseData);
+    // 'info' 필드 추출
+    productInfo = decodedResponse['info'];
+    setProductName(productInfo);
   } else {
     print('Failed to send data. Status code: ${response.statusCode}');
   }
