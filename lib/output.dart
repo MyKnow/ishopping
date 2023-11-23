@@ -13,7 +13,10 @@ void setProductCaptureCount(int newCount) {
 String product_name = "인식안됨";
 
 void setProductName(String newName) {
-  product_name = newName;
+  if (newName == '-1')
+    product_name = '인식안됨';
+  else
+    product_name = newName;
 }
 
 String session_left = "인식안됨";
