@@ -14,10 +14,9 @@ dependencies:
   camera: ^0.10.5+5
   vibration: ^1.8.3
   permission_handler: ^11.0.1
-
   path_provider: ^2.0.9
-
   http: ^0.13.3
+  flutter_tts: ^3.8.3
 
 dev_dependencies:
   flutter_test:
