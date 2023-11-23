@@ -29,15 +29,19 @@ class _MainScreenState extends State<MainScreen> {
   late FlutterTts flutterTts;
 
   @override
-  Future<void> initState() async {
+  void initState() {
     super.initState();
-    flutterTts = FlutterTts();
-    flutterTts.setLanguage("ko-KR");
-    flutterTts.setPitch(1.0);
-    flutterTts.setSpeechRate(0.7);
+    initializeTts();
+  }
 
-    // TTS로 텍스트를 읽는 부분
-    await _speakText("메인화면. 상. 세션모드. 하. 제품모드");
+  void initializeTts() async {
+    flutterTts = FlutterTts();
+    await flutterTts.setLanguage("ko-KR");
+    await flutterTts.setPitch(1.0);
+    await flutterTts.setSpeechRate(0.7);
+
+    _speakText("메인 화면");
+    _speakText("상. 세션모드. 하. 제품모드");
   }
 
   Future<void> _speakText(String text) async {
@@ -45,7 +49,7 @@ class _MainScreenState extends State<MainScreen> {
     for (var sentence in sentences) {
       if (sentence.isNotEmpty) {
         await flutterTts.speak(sentence);
-        await Future.delayed(Duration(milliseconds: 500)); // 각 문장 사이에 지연 시간 추가
+        await Future.delayed(Duration(milliseconds: 500));
       }
     }
   }
@@ -61,7 +65,6 @@ class _MainScreenState extends State<MainScreen> {
     return Scaffold(
       backgroundColor: const Color(0xFFFFF9E6),
       body: SafeArea(
-        // Wrap the content in SafeArea
         child: Stack(
           children: <Widget>[
             CustomPaint(
@@ -72,29 +75,21 @@ class _MainScreenState extends State<MainScreen> {
               children: <Widget>[
                 Expanded(
                   child: _buildButton(
-                      context,
-                      "세션 모드",
-                      "assets/images/public/maps.png",
-                      const EdgeInsets.fromLTRB(10, 30, 10, 10), () {
-                    heavyVibration(3);
-                    Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                            builder: (context) => MapAndroidScreen()));
-                  }),
+                    context,
+                    "세션 모드",
+                    "assets/images/public/maps.png",
+                    const EdgeInsets.fromLTRB(10, 30, 10, 10),
+                    () => navigateToSessionMode(context),
+                  ),
                 ),
                 Expanded(
                   child: _buildButton(
-                      context,
-                      "제품 모드",
-                      "assets/images/public/coke.png",
-                      const EdgeInsets.fromLTRB(10, 10, 10, 30), () {
-                    heavyVibration(3);
-                    Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                            builder: (context) => ProductScreen()));
-                  }),
+                    context,
+                    "제품 모드",
+                    "assets/images/public/coke.png",
+                    const EdgeInsets.fromLTRB(10, 10, 10, 30),
+                    () => navigateToProductMode(context),
+                  ),
                 ),
               ],
             ),
@@ -104,16 +99,27 @@ class _MainScreenState extends State<MainScreen> {
     );
   }
 
+  void navigateToSessionMode(BuildContext context) {
+    flutterTts.speak("세션 모드");
+    heavyVibration(3);
+    Navigator.push(
+        context, MaterialPageRoute(builder: (context) => MapAndroidScreen()));
+  }
+
+  void navigateToProductMode(BuildContext context) {
+    flutterTts.speak("제품 모드");
+    heavyVibration(3);
+    Navigator.push(
+        context, MaterialPageRoute(builder: (context) => ProductScreen()));
+  }
+
   Widget _buildButton(BuildContext context, String text, String imagePath,
       EdgeInsets margin, VoidCallback onPressed) {
     return Container(
       margin: margin,
       width: double.infinity,
       child: ElevatedButton(
-        onPressed: () {
-          flutterTts.speak(text);
-          onPressed();
-        },
+        onPressed: onPressed,
         style: ElevatedButton.styleFrom(
           primary: Colors.white,
           onPrimary: Colors.black,

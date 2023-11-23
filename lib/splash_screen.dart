@@ -21,17 +21,17 @@ class _SplashScreenState extends State<SplashScreen>
   @override
   void initState() {
     super.initState();
-    flutterTts = FlutterTts();
+    initializeTtsAndAnimations();
+    scheduleSplashScreenTransition();
+  }
 
-    // TTS 설정
+  void initializeTtsAndAnimations() {
+    flutterTts = FlutterTts();
     flutterTts.setLanguage("ko-KR");
     flutterTts.setPitch(1.0);
     flutterTts.setSpeechRate(0.6);
-
-    // TTS 시작
     flutterTts.speak("시각보조쇼핑서비스 아이쇼핑 로딩중");
 
-    // 이미지 애니메이션 컨트롤러
     _imageAnimationController = AnimationController(
         vsync: this, duration: Duration(milliseconds: 2500));
     _imageAnimation = Tween<double>(begin: 0, end: 40)
@@ -39,20 +39,19 @@ class _SplashScreenState extends State<SplashScreen>
       ..addListener(() => setState(() {}));
     _imageAnimationController.forward();
 
-    // 텍스트 애니메이션 컨트롤러
     _textAnimationController =
         AnimationController(vsync: this, duration: Duration(seconds: 1));
     _textOpacity =
         Tween<double>(begin: 0.0, end: 1.0).animate(_textAnimationController);
 
-    // 이미지 애니메이션이 완료된 후 텍스트 애니메이션 시작
     _imageAnimationController.addStatusListener((status) {
       if (status == AnimationStatus.completed) {
         _textAnimationController.forward();
       }
     });
+  }
 
-    // 스플래시 스크린 지속 시간 후 메인 스크린으로 전환
+  void scheduleSplashScreenTransition() {
     Timer(Duration(seconds: 5), () {
       Navigator.pushReplacement(
           context, MaterialPageRoute(builder: (context) => MainScreen()));
@@ -69,39 +68,32 @@ class _SplashScreenState extends State<SplashScreen>
 
   @override
   Widget build(BuildContext context) {
-    double logoTop = MediaQuery.of(context).size.height * 0.43;
-    double logoHeight = MediaQuery.of(context).size.width * 0.51;
-    double textsTop = logoTop + logoHeight - 30;
-
     return Scaffold(
       backgroundColor: Colors.white,
       body: Center(
         child: Stack(
           alignment: Alignment.center,
           children: <Widget>[
-            _buildImages(context),
-            Positioned(
-              top: textsTop,
-              child: _buildTexts(context),
-            ),
+            buildImages(context),
+            buildTexts(context),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildImages(BuildContext context) {
+  Widget buildImages(BuildContext context) {
     return Stack(
       alignment: Alignment.center,
       children: <Widget>[
-        _buildImage('assets/images/public/logo3.png', 0.4, 0.5),
-        _buildAnimatedImage('assets/images/public/logo2.png', 0.3, 0.5),
-        _buildImage('assets/images/public/logo1.png', 0.43, 0.51),
+        buildImage('assets/images/public/logo3.png', 0.4, 0.5),
+        buildAnimatedImage('assets/images/public/logo2.png', 0.3, 0.5),
+        buildImage('assets/images/public/logo1.png', 0.43, 0.51),
       ],
     );
   }
 
-  Positioned _buildImage(String assetPath, double top, double widthFactor) {
+  Positioned buildImage(String assetPath, double top, double widthFactor) {
     return Positioned(
       top: MediaQuery.of(context).size.height * top,
       width: MediaQuery.of(context).size.width * widthFactor,
@@ -109,7 +101,7 @@ class _SplashScreenState extends State<SplashScreen>
     );
   }
 
-  Positioned _buildAnimatedImage(
+  Positioned buildAnimatedImage(
       String assetPath, double top, double widthFactor) {
     return Positioned(
       top: MediaQuery.of(context).size.height * top + _imageAnimation.value,
@@ -118,20 +110,23 @@ class _SplashScreenState extends State<SplashScreen>
     );
   }
 
-  Widget _buildTexts(BuildContext context) {
-    return FadeTransition(
-      opacity: _textOpacity,
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: <Widget>[
-          _buildSpacedText('시각보조쇼핑서비스', 26, Colors.red, 0.8, FontWeight.bold),
-          _buildSpacedText('아이쇼핑', 50, Colors.red, 0.9, FontWeight.bold),
-        ],
+  Widget buildTexts(BuildContext context) {
+    return Positioned(
+      top: MediaQuery.of(context).size.height * 0.73,
+      child: FadeTransition(
+        opacity: _textOpacity,
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: <Widget>[
+            buildSpacedText('시각보조쇼핑서비스', 26, Colors.red, 0.8, FontWeight.bold),
+            buildSpacedText('아이쇼핑', 50, Colors.red, 0.9, FontWeight.bold),
+          ],
+        ),
       ),
     );
   }
 
-  Container _buildSpacedText(String text, double fontSize, Color color,
+  Container buildSpacedText(String text, double fontSize, Color color,
       double widthFactor, FontWeight fontWeight) {
     return Container(
       width: MediaQuery.of(context).size.width * widthFactor,
@@ -140,16 +135,12 @@ class _SplashScreenState extends State<SplashScreen>
         children: text
             .split('')
             .map((char) => Expanded(
-                  child: Text(
-                    char,
-                    style: TextStyle(
-                        fontSize: fontSize,
-                        color: color,
-                        fontFamily: 'CustomFont',
-                        fontWeight: fontWeight),
-                    textAlign: TextAlign.center,
-                  ),
-                ))
+                    child: Text(
+                  char,
+                  style: TextStyle(
+                      fontSize: fontSize, color: color, fontWeight: fontWeight),
+                  textAlign: TextAlign.center,
+                )))
             .toList(),
       ),
     );
