@@ -24,49 +24,42 @@ class MapAndroidScreen extends StatefulWidget {
 class _CameraScreenState extends State<MapAndroidScreen> {
   CameraController? controller;
   late FlutterTts flutterTts;
-
-  String _message = "모바일 기기를 턱에 가까이 대고 사용해 주세요."; // 초기 메시지
-
-  int _captureCount = 0; // 촬영 횟수
+  String _message = "모바일 기기를 턱에 가까이 대고 사용해 주세요.";
+  int _captureCount = 0;
 
   @override
   void initState() {
     super.initState();
-    flutterTts = FlutterTts();
-    flutterTts.setLanguage("ko-KR");
-    flutterTts.setPitch(1.0);
-    flutterTts.setSpeechRate(0.7);
-
-    flutterTts.speak("세션모드 ${_message}");
-
-    _initializeCamera();
-    _changeMessage(); // 메시지 변경
+    checkCameraPermission();
   }
 
-  Future<void> _initializeCamera() async {
-    final cameras = await availableCameras();
+  Future<void> checkCameraPermission() async {
     final status = await Permission.camera.request();
-
-    if (status != PermissionStatus.granted) {
+    if (status == PermissionStatus.granted) {
+      initializeCameraAndTts();
+    } else {
       _showPermissionDeniedDialog();
-      return;
     }
+  }
 
+  void initializeCameraAndTts() async {
+    flutterTts = FlutterTts();
+    await flutterTts.setLanguage("ko-KR");
+    await flutterTts.setPitch(1.0);
+    await flutterTts.setSpeechRate(0.7);
+    flutterTts.speak("세션모드 시작. $_message");
+
+    final cameras = await availableCameras();
     controller = CameraController(cameras.first, ResolutionPreset.max);
-    controller?.initialize().then((_) {
-      if (!mounted) {
-        return;
-      }
-      setState(() {});
-    });
+    await controller?.initialize();
+    if (mounted) setState(() {});
+    _changeMessage();
   }
 
   void _showPermissionDeniedDialog() {
     showDialog(
       context: context,
       builder: (BuildContext context) {
-        flutterTts.speak("카메라 권한이 거부되었습니다. 앱 설정에서 권한을 허용해주세요."); // TTS로 읽기
-
         return AlertDialog(
           title: Text("권한 거부됨"),
           content: Text("카메라 권한이 거부되었습니다. 앱 설정에서 권한을 허용해주세요."),
@@ -74,7 +67,9 @@ class _CameraScreenState extends State<MapAndroidScreen> {
             TextButton(
               child: Text("확인"),
               onPressed: () {
-                Navigator.of(context).pop();
+                Navigator.of(context).pushReplacement(
+                  MaterialPageRoute(builder: (context) => MainScreen()),
+                );
               },
             ),
           ],
