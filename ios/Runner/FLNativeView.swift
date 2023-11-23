@@ -6,6 +6,7 @@ import Metal
 import AVFoundation
 import Foundation
 import Alamofire
+import Vision
 
 // Fluter에서 사용자 정의 플랫폼 뷰를 생성하는 데 필요함
 @available(iOS 16.0, *)
@@ -85,6 +86,11 @@ class FLNativeView: NSObject, FlutterPlatformView, ARSCNViewDelegate {
     // Depth map 오버레이 상태를 추적하는 변수
     private var isDepthMapOverlayEnabled = false
 
+    // Vision 요청을 저장할 배열
+    var requests = [VNRequest]() 
+
+    private var humanBoundingBoxViews: [UIView] = []
+
      // 뷰의 프레임, 뷰 식별자, 선택적 인자, 그리고 바이너리 메신저를 사용하여 네이티브 뷰를 초기화
     init( frame: CGRect, viewIdentifier viewId: Int64, arguments args: Any?, binaryMessenger messenger: FlutterBinaryMessenger?) {
         // ARSCNView 인스턴스 생성 및 초기화
@@ -98,6 +104,7 @@ class FLNativeView: NSObject, FlutterPlatformView, ARSCNViewDelegate {
         }
 
         setupARView()
+        setupVision()
         setupGridDots()
         addShortPressGesture()
         addLongPressGesture()
@@ -163,12 +170,89 @@ class FLNativeView: NSObject, FlutterPlatformView, ARSCNViewDelegate {
         }
     }
 
+    private func setupVision() {
+        // 사람 감지를 위한 Vision 요청 설정
+        let request = VNDetectHumanRectanglesRequest(completionHandler: detectHumanHandler)
+        self.requests = [request]
+    }
+
+    private func detectHumanHandler(request: VNRequest, error: Error?) {
+        DispatchQueue.main.async {
+            // 기존 경계 상자 제거
+            self.humanBoundingBoxViews.forEach { $0.removeFromSuperview() }
+            self.humanBoundingBoxViews.removeAll()
+
+            guard let observations = request.results as? [VNHumanObservation] else {
+                print("No results")
+                return
+            }
+
+            for observation in observations {
+                let boundingBoxView = self.createBoundingBoxView(for: observation.boundingBox)
+                self.arView.addSubview(boundingBoxView)
+                self.humanBoundingBoxViews.append(boundingBoxView)
+            }
+        }
+    }
+
+    private func createBoundingBoxView(for rect: CGRect) -> UIView {
+        let screenSize = arView.bounds.size
+        // 정규화된 Vision 좌표를 UIKit 좌표로 변환
+        let x = rect.origin.x * screenSize.width
+        let y = (1 - rect.origin.y - rect.height) * screenSize.height
+        let width = rect.width * screenSize.width
+        let height = rect.height * screenSize.height
+
+        let boundingBoxView = UIView(frame: CGRect(x: x, y: y, width: width, height: height))
+        boundingBoxView.layer.borderColor = UIColor.green.cgColor
+        boundingBoxView.layer.borderWidth = 2
+        boundingBoxView.backgroundColor = .clear
+
+        return boundingBoxView
+    }
+
+
+    func processBoundingBox(_ boundingBox: CGRect) {
+        DispatchQueue.main.async {
+            // 화면 크기를 가져옵니다.
+            let screenSize = self.arView.bounds.size
+
+            // Vision의 정규화된 좌표를 UIKit의 좌표계로 변환합니다.
+            let x = boundingBox.minX * screenSize.width
+            let y = (1 - boundingBox.maxY) * screenSize.height
+
+            let width = boundingBox.width * screenSize.width
+            let height = boundingBox.height * screenSize.height
+
+            // UIKit의 좌표계에 맞는 위치로 UIView를 생성합니다.
+            let boundingBoxView = UIView(frame: CGRect(x: x, y: y, width: width, height: height))
+            boundingBoxView.layer.borderColor = UIColor.green.cgColor
+            boundingBoxView.layer.borderWidth = 2
+            boundingBoxView.backgroundColor = .clear
+
+            // 기존에 추가된 모든 bounding box를 제거하고 새로운 box를 추가합니다.
+            self.arView.subviews.forEach({ $0.removeFromSuperview() })
+            self.arView.addSubview(boundingBoxView)
+        }
+    }
+
+
+    func performHitTesting(_ screenPoint: CGPoint) {
+        if let hitTestResult = arView.hitTest(screenPoint, types: .featurePoint).first {
+            if let currentFrame = arView.session.currentFrame {
+                let cameraPosition = currentFrame.camera.transform
+                let distance = calculateDistance(from: cameraPosition, to: hitTestResult.worldTransform)
+                print("Detected human at distance: \(distance) meters")
+            }
+        }
+    }
+
     private func processFrame(_ frame: ARFrame) {
         let pixelBuffer = frame.capturedImage
         // pixelBuffer에서 고해상도 이미지를 생성 및 처리
 
         if let image = convertToUIImage(pixelBuffer: pixelBuffer) {
-            saveImageToPhotoLibrary(image)
+            //saveImageToPhotoLibrary(image)
         }
     }
 
@@ -287,6 +371,16 @@ class FLNativeView: NSObject, FlutterPlatformView, ARSCNViewDelegate {
             if self.isDepthMapOverlayEnabled, let currentFrame = self.arView.session.currentFrame, let depthData = currentFrame.sceneDepth {
                 self.overlayDepthMap(depthData.depthMap)
             }
+            if let currentFrame = self.arView.session.currentFrame {
+                // Vision 요청 실행
+                let pixelBuffer = currentFrame.capturedImage
+                let imageRequestHandler = VNImageRequestHandler(cvPixelBuffer: pixelBuffer, options: [:])
+                do {
+                    try imageRequestHandler.perform(self.requests)
+                } catch {
+                    print("Failed to perform Vision request: \(error)")
+                }
+            }
         }
     }
 
@@ -377,7 +471,7 @@ class FLNativeView: NSObject, FlutterPlatformView, ARSCNViewDelegate {
             let pixelBuffer = currentFrame.capturedImage
 
             if let image = convertToUIImage(pixelBuffer: pixelBuffer) {
-                saveImageToPhotoLibrary(image)
+                //saveImageToPhotoLibrary(image)
             }
         }
     }
