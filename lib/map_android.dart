@@ -3,6 +3,7 @@ import 'dart:io';
 
 import 'package:camera/camera.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_tts/flutter_tts.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:vibration/vibration.dart';
 
@@ -22,6 +23,8 @@ class MapAndroidScreen extends StatefulWidget {
 
 class _CameraScreenState extends State<MapAndroidScreen> {
   CameraController? controller;
+  late FlutterTts flutterTts;
+
   String _message = "모바일 기기를 턱에 가까이 대고 사용해 주세요."; // 초기 메시지
 
   int _captureCount = 0; // 촬영 횟수
@@ -29,6 +32,13 @@ class _CameraScreenState extends State<MapAndroidScreen> {
   @override
   void initState() {
     super.initState();
+    flutterTts = FlutterTts();
+    flutterTts.setLanguage("ko-KR");
+    flutterTts.setPitch(1.0);
+    flutterTts.setSpeechRate(0.7);
+
+    flutterTts.speak("세션모드 ${_message}");
+
     _initializeCamera();
     _changeMessage(); // 메시지 변경
   }
@@ -55,6 +65,8 @@ class _CameraScreenState extends State<MapAndroidScreen> {
     showDialog(
       context: context,
       builder: (BuildContext context) {
+        flutterTts.speak("카메라 권한이 거부되었습니다. 앱 설정에서 권한을 허용해주세요."); // TTS로 읽기
+
         return AlertDialog(
           title: Text("권한 거부됨"),
           content: Text("카메라 권한이 거부되었습니다. 앱 설정에서 권한을 허용해주세요."),
@@ -113,6 +125,7 @@ class _CameraScreenState extends State<MapAndroidScreen> {
 
   @override
   void dispose() {
+    flutterTts.stop();
     controller?.dispose();
     super.dispose();
   }
@@ -133,6 +146,8 @@ class _CameraScreenState extends State<MapAndroidScreen> {
 
         _message =
             "좌측에 ${session_left}, 우측에 ${session_right}, 정면에 ${session_front}";
+
+        flutterTts.speak(_message);
       });
 
       final message =
@@ -169,6 +184,7 @@ class _CameraScreenState extends State<MapAndroidScreen> {
     Timer(Duration(seconds: 3), () {
       setState(() {
         _message = "화면을 길게 누르면 촬영이 됩니다.";
+        flutterTts.speak(_message); // TTS로 메시지 읽기
       });
     });
   }

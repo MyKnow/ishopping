@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_tts/flutter_tts.dart';
 import 'package:haptic_feedback/haptic_feedback.dart';
 
 import 'map_android.dart';
@@ -19,7 +20,42 @@ class MyApp extends StatelessWidget {
   }
 }
 
-class MainScreen extends StatelessWidget {
+class MainScreen extends StatefulWidget {
+  @override
+  _MainScreenState createState() => _MainScreenState();
+}
+
+class _MainScreenState extends State<MainScreen> {
+  late FlutterTts flutterTts;
+
+  @override
+  Future<void> initState() async {
+    super.initState();
+    flutterTts = FlutterTts();
+    flutterTts.setLanguage("ko-KR");
+    flutterTts.setPitch(1.0);
+    flutterTts.setSpeechRate(0.7);
+
+    // TTS로 텍스트를 읽는 부분
+    await _speakText("메인화면. 상. 세션모드. 하. 제품모드");
+  }
+
+  Future<void> _speakText(String text) async {
+    var sentences = text.split(". ");
+    for (var sentence in sentences) {
+      if (sentence.isNotEmpty) {
+        await flutterTts.speak(sentence);
+        await Future.delayed(Duration(milliseconds: 500)); // 각 문장 사이에 지연 시간 추가
+      }
+    }
+  }
+
+  @override
+  void dispose() {
+    flutterTts.stop();
+    super.dispose();
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -74,7 +110,10 @@ class MainScreen extends StatelessWidget {
       margin: margin,
       width: double.infinity,
       child: ElevatedButton(
-        onPressed: onPressed,
+        onPressed: () {
+          flutterTts.speak(text);
+          onPressed();
+        },
         style: ElevatedButton.styleFrom(
           primary: Colors.white,
           onPrimary: Colors.black,

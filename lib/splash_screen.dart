@@ -1,5 +1,8 @@
 import 'dart:async';
+
 import 'package:flutter/material.dart';
+import 'package:flutter_tts/flutter_tts.dart';
+
 import 'main.dart'; // 메인 스크린에 대한 참조
 
 class SplashScreen extends StatefulWidget {
@@ -13,10 +16,20 @@ class _SplashScreenState extends State<SplashScreen>
   late Animation<double> _imageAnimation;
   late AnimationController _textAnimationController;
   late Animation<double> _textOpacity;
+  late FlutterTts flutterTts;
 
   @override
   void initState() {
     super.initState();
+    flutterTts = FlutterTts();
+
+    // TTS 설정
+    flutterTts.setLanguage("ko-KR");
+    flutterTts.setPitch(1.0);
+    flutterTts.setSpeechRate(0.6);
+
+    // TTS 시작
+    flutterTts.speak("시각보조쇼핑서비스 아이쇼핑 로딩중");
 
     // 이미지 애니메이션 컨트롤러
     _imageAnimationController = AnimationController(
@@ -48,6 +61,7 @@ class _SplashScreenState extends State<SplashScreen>
 
   @override
   void dispose() {
+    flutterTts.stop();
     _imageAnimationController.dispose();
     _textAnimationController.dispose();
     super.dispose();
