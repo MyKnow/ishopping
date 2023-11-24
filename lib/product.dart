@@ -46,8 +46,8 @@ class _CameraScreenState extends State<ProductScreen> {
     flutterTts = FlutterTts();
     await flutterTts.setLanguage("ko-KR");
     await flutterTts.setPitch(1.0);
-    await flutterTts.setSpeechRate(0.7);
-    flutterTts.speak("제품모드 시작. $_message");
+    await flutterTts.setSpeechRate(0.75);
+    await flutterTts.speak("제품모드 시작. $_message");
 
     final cameras = await availableCameras();
     controller = CameraController(cameras.first, ResolutionPreset.max);
@@ -95,9 +95,7 @@ class _CameraScreenState extends State<ProductScreen> {
         child: Stack(
           children: <Widget>[
             Transform.scale(
-              scale: 1 /
-                  (controller!.value.aspectRatio *
-                      MediaQuery.of(context).size.aspectRatio),
+              scale: _calculateCameraScale(),
               alignment: Alignment.topCenter,
               child: CameraPreview(controller!),
             ),
@@ -111,6 +109,20 @@ class _CameraScreenState extends State<ProductScreen> {
       );
     } else {
       return Center(child: CircularProgressIndicator());
+    }
+  }
+
+  double _calculateCameraScale() {
+    double screenAspectRatio = MediaQuery.of(context).size.aspectRatio;
+    double cameraAspectRatio = controller!.value.aspectRatio;
+
+    // 화면이 세로 방향일 때 (화면 가로세로 비율이 1보다 작은 경우)
+    if (screenAspectRatio < 1) {
+      // 카메라 미리보기의 높이가 화면 높이에 맞도록 스케일링
+      return 1 / (cameraAspectRatio * screenAspectRatio);
+    } else {
+      // 화면이 가로 방향일 때, 기존 로직 유지
+      return screenAspectRatio / cameraAspectRatio;
     }
   }
 

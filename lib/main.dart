@@ -1,3 +1,5 @@
+import 'dart:math';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_tts/flutter_tts.dart';
 import 'package:haptic_feedback/haptic_feedback.dart';
@@ -15,7 +17,6 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       home: SplashScreen(),
-      //home: MainScreen(),
     );
   }
 }
@@ -40,7 +41,7 @@ class _MainScreenState extends State<MainScreen> {
     await flutterTts.setPitch(1.0);
     await flutterTts.setSpeechRate(0.7);
 
-    _speakText("메인 화면");
+    await _speakText("메인화면. ");
     _speakText("상. 세션모드. 하. 제품모드");
   }
 
@@ -49,7 +50,7 @@ class _MainScreenState extends State<MainScreen> {
     for (var sentence in sentences) {
       if (sentence.isNotEmpty) {
         await flutterTts.speak(sentence);
-        await Future.delayed(Duration(milliseconds: 500));
+        await Future.delayed(Duration(milliseconds: 700));
       }
     }
   }
@@ -65,59 +66,97 @@ class _MainScreenState extends State<MainScreen> {
     return Scaffold(
       backgroundColor: const Color(0xFFFFF9E6),
       body: SafeArea(
-        child: Stack(
-          children: <Widget>[
-            CustomPaint(
-              painter: BackgroundPainter(),
-              size: const Size(double.infinity, double.infinity),
-            ),
-            Column(
+        child: OrientationBuilder(
+          builder: (context, orientation) {
+            return Stack(
               children: <Widget>[
-                Expanded(
-                  child: _buildButton(
-                    context,
-                    "세션 모드",
-                    "assets/images/public/maps.png",
-                    const EdgeInsets.fromLTRB(10, 30, 10, 10),
-                    () => navigateToSessionMode(context),
-                  ),
+                CustomPaint(
+                  painter: BackgroundPainter(),
+                  size: const Size(double.infinity, double.infinity),
                 ),
-                Expanded(
-                  child: _buildButton(
-                    context,
-                    "제품 모드",
-                    "assets/images/public/coke.png",
-                    const EdgeInsets.fromLTRB(10, 10, 10, 30),
-                    () => navigateToProductMode(context),
-                  ),
-                ),
+                orientation == Orientation.portrait
+                    ? buildVerticalLayout()
+                    : buildHorizontalLayout(),
               ],
-            ),
-          ],
+            );
+          },
         ),
       ),
     );
   }
 
-  void navigateToSessionMode(BuildContext context) {
-    flutterTts.speak("세션 모드");
-    heavyVibration(3);
-    Navigator.push(
-        context, MaterialPageRoute(builder: (context) => MapAndroidScreen()));
+  Widget buildVerticalLayout() {
+    return Column(
+      children: <Widget>[
+        Expanded(
+          child: buildButton(
+            context,
+            "세션 모드",
+            "assets/images/public/maps.png",
+            EdgeInsets.fromLTRB(10, 30, 10, 5),
+            () => navigateToSessionMode(context),
+          ),
+        ),
+        Expanded(
+          child: buildButton(
+            context,
+            "제품 모드",
+            "assets/images/public/coke.png",
+            EdgeInsets.fromLTRB(10, 5, 10, 30),
+            () => navigateToProductMode(context),
+          ),
+        ),
+      ],
+    );
   }
 
-  void navigateToProductMode(BuildContext context) {
-    flutterTts.speak("제품 모드");
-    heavyVibration(3);
-    Navigator.push(
-        context, MaterialPageRoute(builder: (context) => ProductScreen()));
+  Widget buildHorizontalLayout() {
+    double screenHeight = MediaQuery.of(context).size.height;
+
+    return Row(
+      children: <Widget>[
+        Expanded(
+          child: Container(
+            height: screenHeight,
+            child: buildButton(
+              context,
+              "세션 모드",
+              "assets/images/public/maps.png",
+              EdgeInsets.fromLTRB(10, 10, 5, 10),
+              () => navigateToSessionMode(context),
+            ),
+          ),
+        ),
+        Expanded(
+          child: Container(
+            height: screenHeight,
+            child: buildButton(
+              context,
+              "제품 모드",
+              "assets/images/public/coke.png",
+              EdgeInsets.fromLTRB(5, 10, 10, 10),
+              () => navigateToProductMode(context),
+            ),
+          ),
+        ),
+      ],
+    );
   }
 
-  Widget _buildButton(BuildContext context, String text, String imagePath,
+  Widget buildButton(BuildContext context, String text, String imagePath,
       EdgeInsets margin, VoidCallback onPressed) {
+    // 화면의 너비와 높이를 가져옵니다.
+    double screenWidth = MediaQuery.of(context).size.width;
+    double screenHeight = MediaQuery.of(context).size.height;
+
+    // 화면 크기에 따라 동적으로 크기를 조정합니다.
+    double imageSize =
+        min(screenWidth, screenHeight) * 0.2; // 이미지 크기를 화면의 10%로 설정
+    double fontSize =
+        min(screenWidth, screenHeight) * 0.15; // 텍스트 크기를 화면의 5%로 설정
+
     return Container(
       margin: margin,
-      width: double.infinity,
       child: ElevatedButton(
         onPressed: onPressed,
         style: ElevatedButton.styleFrom(
@@ -128,30 +167,39 @@ class _MainScreenState extends State<MainScreen> {
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(15),
           ),
+          padding: EdgeInsets.symmetric(vertical: 20),
+          minimumSize: Size(double.infinity, 100),
         ),
-        child: LayoutBuilder(
-          builder: (context, constraints) {
-            double imageSize = constraints.maxWidth * 0.25;
-            return Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: <Widget>[
-                Image.asset(imagePath, width: imageSize),
-                const SizedBox(width: 15),
-                Text(
-                  text,
-                  style: const TextStyle(
-                    color: Colors.red,
-                    fontWeight: FontWeight.bold,
-                    fontFamily: 'CustomFont',
-                    fontSize: 52,
-                  ),
-                ),
-              ],
-            );
-          },
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: <Widget>[
+            Image.asset(imagePath, width: imageSize),
+            const SizedBox(width: 15),
+            Text(
+              text,
+              style: TextStyle(
+                color: Colors.red,
+                fontWeight: FontWeight.bold,
+                fontFamily: 'CustomFont',
+                fontSize: fontSize,
+              ),
+            ),
+          ],
         ),
       ),
     );
+  }
+
+  void navigateToSessionMode(BuildContext context) async {
+    heavyVibration(3);
+    Navigator.push(
+        context, MaterialPageRoute(builder: (context) => MapAndroidScreen()));
+  }
+
+  void navigateToProductMode(BuildContext context) async {
+    heavyVibration(3);
+    Navigator.push(
+        context, MaterialPageRoute(builder: (context) => ProductScreen()));
   }
 
   Future<void> heavyVibration(int rep) async {
