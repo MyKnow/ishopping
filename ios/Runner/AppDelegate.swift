@@ -1,7 +1,7 @@
 import Flutter
 import UIKit
 
-@available(iOS 16.0, *)
+@available(iOS 17.0, *)
 @UIApplicationMain // 어노테이션으로 이 클래스가 iOS 애플리케이션의 진입점임을 나타냄.
 @objc class AppDelegate: FlutterAppDelegate {
     // 애플리케이션이 시작된 후 추가 설정을 수행하기 위해 이 메소드를 오버라이드
