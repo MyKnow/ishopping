@@ -84,6 +84,9 @@
             9.0: .black
         ]
 
+        // 딕셔너리의 키들을 배열로 변환
+        private var indexDistance: [Float] = []
+
         // Depth map 오버레이 상태를 추적하는 변수
         private var isDepthMapOverlayEnabled = false
 
@@ -96,6 +99,15 @@
         // 사람용 바운딩 박스와의 거리를 저장하는 배열
         private var distanceMeasurements: [Float] = []
 
+        private var hapticFeedbackGenerator = UINotificationFeedbackGenerator()
+
+        // 
+        private var isVibrating: Bool = false
+
+        // 
+        private var alertTimer: Timer?
+
+
         // 뷰의 프레임, 뷰 식별자, 선택적 인자, 그리고 바이너리 메신저를 사용하여 네이티브 뷰를 초기화
         init( frame: CGRect, viewIdentifier viewId: Int64, arguments args: Any?, binaryMessenger messenger: FlutterBinaryMessenger?) {
             // ARSCNView 인스턴스 생성 및 초기화
@@ -107,6 +119,8 @@
                 // Activate sceneDepth
                 configuration.frameSemantics = .sceneDepth
             }
+
+            indexDistance = Array(distanceColorMap.keys).sorted()
 
             setupARView()
             setupVision()
@@ -263,8 +277,38 @@
             // 가장 짧은 거리 출력
             if let shortestDistance = distanceMeasurements.min() {
                 print("Shortest detected human distance: \(shortestDistance) meters")
+                // 햅틱 피드백 발생 조건 추가 (예: 거리가 1미터 미만일 때만)
+                if shortestDistance < 5.0 && !isVibrating {
+                    isVibrating = true
+                    if let distance = self.indexDistance.first(where: { $0 > shortestDistance }) {
+                        let timeInterval: TimeInterval = TimeInterval(distance)
+                        triggerHapticFeedback(interval: timeInterval)
+                    }
+                }
             }
         }
+
+
+        func triggerHapticFeedback(interval: TimeInterval) {
+            hapticFeedbackGenerator.notificationOccurred(.warning)
+            let systemSoundID: SystemSoundID
+            var delay: TimeInterval = interval
+            if delay < 0.7 {
+                delay = 0.4
+                systemSoundID = 1111
+            } else {
+                systemSoundID = 1111
+            }
+            AudioServicesPlaySystemSound(systemSoundID)
+
+            // 햅틱 피드백 재발 방지를 위해 일정 시간 대기 후 isVibrating 재설정
+            DispatchQueue.global(qos: .userInteractive).asyncAfter(deadline: .now() + (delay*0.5)) {
+                DispatchQueue.main.async {
+                    self.isVibrating = false
+                }
+            }
+        }
+
 
         func performHitTesting(_ screenPoint: CGPoint) -> Float? {
             if let hitTestResult = arView.hitTest(screenPoint, types: .featurePoint).first {
@@ -527,7 +571,7 @@
             return arView
         }
         
-        func impactFeedbackExample() {
+        @objc func impactFeedbackExample() {
             let impactFeedbackGenerator = UIImpactFeedbackGenerator(style: .medium)
             impactFeedbackGenerator.prepare()
             impactFeedbackGenerator.impactOccurred()
@@ -545,6 +589,13 @@
             let notificationFeedbackGenerator = UINotificationFeedbackGenerator()
             notificationFeedbackGenerator.prepare()
             notificationFeedbackGenerator.notificationOccurred(.success)
+        }
+
+        // Notification Feedback - Warning
+        func notificationFeedbackWarning() {
+            let notificationFeedbackGenerator = UINotificationFeedbackGenerator()
+            notificationFeedbackGenerator.prepare()
+            notificationFeedbackGenerator.notificationOccurred(.warning)
         }
 
         func detect(image: CIImage) {
