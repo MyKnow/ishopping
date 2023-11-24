@@ -90,7 +90,11 @@
         // Vision 요청을 저장할 배열
         var requests = [VNRequest]() 
 
+        // 사람용 바운딩 박스 저장하는 배열
         private var humanBoundingBoxViews: [UIView] = []
+
+        // 사람용 바운딩 박스와의 거리를 저장하는 배열
+        private var distanceMeasurements: [Float] = []
 
         // 뷰의 프레임, 뷰 식별자, 선택적 인자, 그리고 바이너리 메신저를 사용하여 네이티브 뷰를 초기화
         init( frame: CGRect, viewIdentifier viewId: Int64, arguments args: Any?, binaryMessenger messenger: FlutterBinaryMessenger?) {
@@ -243,25 +247,34 @@
                 return
             }
 
+            distanceMeasurements.removeAll()
+
             for boundingBoxView in humanBoundingBoxViews {
                 let boxCenter = CGPoint(
                     x: boundingBoxView.frame.midX,
                     y: boundingBoxView.frame.midY
                 )
 
-                print("!")
-                performHitTesting(boxCenter)
+                if let distance = performHitTesting(boxCenter) {
+                    distanceMeasurements.append(distance) // 거리 측정값 저장
+                }
+            }
+
+            // 가장 짧은 거리 출력
+            if let shortestDistance = distanceMeasurements.min() {
+                print("Shortest detected human distance: \(shortestDistance) meters")
             }
         }
 
-        func performHitTesting(_ screenPoint: CGPoint) {
+        func performHitTesting(_ screenPoint: CGPoint) -> Float? {
             if let hitTestResult = arView.hitTest(screenPoint, types: .featurePoint).first {
                 if let currentFrame = arView.session.currentFrame {
                     let cameraPosition = currentFrame.camera.transform
                     let distance = calculateDistance(from: cameraPosition, to: hitTestResult.worldTransform)
-                    print("Detected human at distance: \(distance) meters")
+                    return distance
                 }
             }
+            return nil
         }
 
         private func processFrame(_ frame: ARFrame) {
@@ -386,7 +399,7 @@
 
                 // 사람 거리 측정
                 self.performHitTestAndMeasureDistance()
-                
+
                 // Depth map 오버레이가 활성화된 경우에만 처리
                 if self.isDepthMapOverlayEnabled, let currentFrame = self.arView.session.currentFrame, let depthData = currentFrame.sceneDepth {
                     self.overlayDepthMap(depthData.depthMap)
