@@ -26,6 +26,7 @@ class _CameraScreenState extends State<MapAndroidScreen> {
   late FlutterTts flutterTts;
   String _message = "모바일 기기를 턱에 가까이 대고 사용해 주세요.";
   int _captureCount = 0;
+  Timer? _messageTimer;
 
   @override
   void initState() {
@@ -81,34 +82,43 @@ class _CameraScreenState extends State<MapAndroidScreen> {
   @override
   Widget build(BuildContext context) {
     if (controller?.value.isInitialized == true) {
-      return GestureDetector(
-        onHorizontalDragEnd: (details) {
-          if (details.primaryVelocity! < 0) {
-            Navigator.push(context,
-                MaterialPageRoute(builder: (context) => ProductScreen()));
-          }
-          if (details.primaryVelocity! > 0) {
-            Navigator.push(
-                context, MaterialPageRoute(builder: (context) => MainScreen()));
-          }
+      return WillPopScope(
+        onWillPop: () async {
+          flutterTts.stop(); // TTS 중지
+          Navigator.of(context).pop(); // 현재 화면 닫기
+          return false; // 이벤트 처리 완료
         },
-        onLongPress: () async {
-          await Vibration.vibrate();
-          await _captureAndSaveImage();
-        },
-        child: Stack(
-          children: <Widget>[
-            Transform.scale(
-              scale: _calculateCameraScale(),
-              alignment: Alignment.topCenter,
-              child: CameraPreview(controller!),
-            ),
-            CustomPaint(
-              size: Size.infinite,
-              painter: GridPainter(),
-            ),
-            _buildInstructionBox(), // 안내 메시지 박스
-          ],
+        child: GestureDetector(
+          onHorizontalDragEnd: (details) {
+            if (details.primaryVelocity! < 0) {
+              Navigator.push(context,
+                  MaterialPageRoute(builder: (context) => ProductScreen()));
+              flutterTts.stop(); // TTS 중지
+            }
+            if (details.primaryVelocity! > 0) {
+              Navigator.push(context,
+                  MaterialPageRoute(builder: (context) => MainScreen()));
+              flutterTts.stop(); // TTS 중지
+            }
+          },
+          onLongPress: () async {
+            await Vibration.vibrate();
+            await _captureAndSaveImage();
+          },
+          child: Stack(
+            children: <Widget>[
+              Transform.scale(
+                scale: _calculateCameraScale(),
+                alignment: Alignment.topCenter,
+                child: CameraPreview(controller!),
+              ),
+              CustomPaint(
+                size: Size.infinite,
+                painter: GridPainter(),
+              ),
+              _buildInstructionBox(), // 안내 메시지 박스
+            ],
+          ),
         ),
       );
     } else {
@@ -132,6 +142,7 @@ class _CameraScreenState extends State<MapAndroidScreen> {
 
   @override
   void dispose() {
+    _messageTimer?.cancel(); // 타이머 취소
     flutterTts.stop();
     controller?.dispose();
     super.dispose();
@@ -190,11 +201,13 @@ class _CameraScreenState extends State<MapAndroidScreen> {
   }
 
   void _changeMessage() {
-    Timer(Duration(seconds: 3), () {
-      setState(() {
-        _message = "화면을 길게 누르면 촬영이 됩니다.";
-        flutterTts.speak(_message); // TTS로 메시지 읽기
-      });
+    _messageTimer = Timer(Duration(seconds: 3), () {
+      if (mounted) {
+        setState(() {
+          _message = "화면을 길게 누르면 촬영이 됩니다.";
+          flutterTts.speak(_message);
+        });
+      }
     });
   }
 }
