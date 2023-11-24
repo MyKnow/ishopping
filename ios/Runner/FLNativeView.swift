@@ -43,7 +43,7 @@
     }
 
     // FlutterPlatformView 프로토콜을 구현하여 Flutter 뷰로 사용될 수 있음
-    @available(iOS 16.0, *)
+    @available(iOS 17.0, *)
     class FLNativeView: NSObject, FlutterPlatformView, ARSCNViewDelegate {
         // AR 담당 Native View
         private var arView: ARSCNView
@@ -207,8 +207,6 @@
             var x: CGFloat = 0
             var y: CGFloat = 0
 
-
-            dump(orientation)
             switch orientation {
                 case .portrait:
                     // `portrait` 모드에서는 x와 y 좌표를 서로 바꿔줍니다.
@@ -239,6 +237,22 @@
             return boundingBoxView
         }
 
+        func performHitTestAndMeasureDistance() {
+            guard let currentFrame = arView.session.currentFrame else {
+                print("Current ARFrame is unavailable.")
+                return
+            }
+
+            for boundingBoxView in humanBoundingBoxViews {
+                let boxCenter = CGPoint(
+                    x: boundingBoxView.frame.midX,
+                    y: boundingBoxView.frame.midY
+                )
+
+                print("!")
+                performHitTesting(boxCenter)
+            }
+        }
 
         func performHitTesting(_ screenPoint: CGPoint) {
             if let hitTestResult = arView.hitTest(screenPoint, types: .featurePoint).first {
@@ -370,6 +384,9 @@
                 self.updateGridDotsPosition()
                 self.updateDistanceDisplay()
 
+                // 사람 거리 측정
+                self.performHitTestAndMeasureDistance()
+                
                 // Depth map 오버레이가 활성화된 경우에만 처리
                 if self.isDepthMapOverlayEnabled, let currentFrame = self.arView.session.currentFrame, let depthData = currentFrame.sceneDepth {
                     self.overlayDepthMap(depthData.depthMap)
@@ -517,7 +534,6 @@
             notificationFeedbackGenerator.notificationOccurred(.success)
         }
 
-        @available(iOS 17.0, *)
         func detect(image: CIImage) {
             guard let coreMLModel = try? RamenClassifier(configuration: MLModelConfiguration()),
                 let visionModel = try? VNCoreMLModel(for: coreMLModel.model) else {
@@ -532,7 +548,7 @@
                 }
                 
                 /*
-                //  ㅇ타이틀을 가장 정확도 높은 이름으로 설정
+                //  타이틀을 가장 정확도 높은 이름으로 설정
                 if let fitstItem = classification.first {
                     self.navigationItem.title = fitstItem.identifier.capitalized
                 }
