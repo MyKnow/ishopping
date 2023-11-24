@@ -226,8 +226,9 @@
                     // ...  
             }
 
-            let width = boundingBox.width * screenSize.width
-            let height = boundingBox.height * screenSize.height
+            // 화면을 벗어나더라도 bounding box를 잘라내어 계속 표시하도록 수정
+            let width = min(boundingBox.width * screenSize.width, screenSize.width - x)
+            let height = min(boundingBox.height * screenSize.height, screenSize.height - y)
 
             // UIKit의 좌표계에 맞는 위치로 UIView를 생성합니다.
             let boundingBoxView = UIView(frame: CGRect(x: x, y: y, width: width, height: height))
