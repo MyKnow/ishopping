@@ -59,3 +59,34 @@ String generatePictureId() {
   int randomValue = Random().nextInt(1000);
   return "$currentTimeInSeconds.$randomValue";
 }
+
+// 텐서플로우 라이트
+class ServerAPI {
+  static const String _serverEndpoint =
+      'http://ec2-3-36-61-193.ap-northeast-2.compute.amazonaws.com:8080/api-corner/corner_detect/';
+
+  static Future<void> sendResultToServer(String result) async {
+    try {
+      Uri uri = Uri.parse(_serverEndpoint);
+      var response = await http.post(uri,
+          headers: {'Content-Type': 'application/json'},
+          body: jsonEncode({'result': result}));
+
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        print("Data sent successfully");
+
+        // 서버로부터의 응답을 JSON 형태로 파싱
+        var decodedResponse = json.decode(response.body);
+
+        // 'info' 필드 추출 및 반환
+        productInfo = decodedResponse['info'];
+
+        setProductName(productInfo);
+      } else {
+        print("Failed to send data. Status code: ${response.statusCode}");
+      }
+    } catch (e) {
+      print("Error sending data to server: $e");
+    }
+  }
+}

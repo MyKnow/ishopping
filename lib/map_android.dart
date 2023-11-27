@@ -155,6 +155,9 @@ class _CameraScreenState extends State<MapAndroidScreen> {
 
       final File newImage = File(image.path);
 
+      // 텐서플로우 라이트
+      // await TFLiteAPI.processImage(imageFile);
+
       // 서버에 이미지 전송
       await sendImageData(newImage); // server_api.dart 파일의 함수 호출
 
