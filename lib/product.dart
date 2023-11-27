@@ -161,7 +161,7 @@ class _CameraScreenState extends State<ProductScreen> {
         _captureCount++; // 촬영 횟수 업데이트
         setProductCaptureCount(_captureCount);
 
-        _message = "해당 제품은 ${product_name}";
+        _message = "${product_name}";
 
         flutterTts.speak(_message);
       });
