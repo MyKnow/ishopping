@@ -100,7 +100,10 @@
         private var distanceMeasurements: [Float] = []
         
         // HapticFeedbackManager 인스턴스 생성
-        let haptic = HapticFeedbackManager()
+        let hapticC = HapticFeedbackManager()
+
+        // ImageProcessor 인스턴스 생성
+        let imageP = ImageProcessor()
 
         // 
         private var isVibrating: Bool = false
@@ -156,7 +159,7 @@
         // 짧게 누르기 제스쳐 핸들러
         @objc func handleShortPress(_ sender: UITapGestureRecognizer) {
             print("Short Press")
-            haptic.impactFeedback(style: "heavy")
+            hapticC.impactFeedback(style: "heavy")
             if let currentFrame = session.currentFrame {
                 processFrame(currentFrame)
             }
@@ -172,7 +175,7 @@
         @objc func handleLongPress(_ sender: UILongPressGestureRecognizer) {
             if sender.state == .began {
                 print(isDepthMapOverlayEnabled)
-                haptic.notificationFeedback(style: "success")
+                hapticC.notificationFeedback(style: "success")
                 // Depth map 오버레이 상태 토글
                 isDepthMapOverlayEnabled.toggle()
 
@@ -258,7 +261,7 @@
 
         func performHitTestAndMeasureDistance() {
             guard let currentFrame = arView.session.currentFrame else {
-                print("Current ARFrame is unavailable.")
+                //print("Current ARFrame is unavailable.")
                 return
             }
 
@@ -277,7 +280,7 @@
 
             // 가장 짧은 거리 출력
             if let shortestDistance = distanceMeasurements.min() {
-                print("Shortest detected human distance: \(shortestDistance) meters")
+                //print("Shortest detected human distance: \(shortestDistance) meters")
                 // 햅틱 피드백 발생 조건 추가 (예: 거리가 1미터 미만일 때만)
                 if shortestDistance < 5.0 && !isVibrating {
                     isVibrating = true
@@ -289,9 +292,8 @@
             }
         }
 
-
         func triggerHapticFeedback(interval: TimeInterval) {
-            haptic.notificationFeedback(style: "warning")
+            hapticC.notificationFeedback(style: "warning")
             let systemSoundID: SystemSoundID
             var delay: TimeInterval = interval
             if delay < 0.7 {
@@ -310,7 +312,6 @@
             }
         }
 
-
         func performHitTesting(_ screenPoint: CGPoint) -> Float? {
             if let hitTestResult = arView.hitTest(screenPoint, types: .featurePoint).first {
                 if let currentFrame = arView.session.currentFrame {
@@ -326,73 +327,9 @@
             let pixelBuffer = frame.capturedImage
             // pixelBuffer에서 고해상도 이미지를 생성 및 처리
 
-            if let image = convertToUIImage(pixelBuffer: pixelBuffer) {
-                //saveImageToPhotoLibrary(image)
-            }
-        }
-
-        private func convertToUIImage(pixelBuffer: CVPixelBuffer) -> UIImage? {
-            let ciImage = CIImage(cvPixelBuffer: pixelBuffer)
-            let context = CIContext(options: nil)
-            guard let cgImage = context.createCGImage(ciImage, from: ciImage.extent) else {
-                return nil
-            }
-            // 이미지 방향 설정 (반시계로 돌아가는 문제)
-            return UIImage(cgImage: cgImage, scale: 1.0, orientation: .right)
-        }
-
-        private func saveImageToPhotoLibrary(_ image: UIImage) {
-            ////// 서버로 전송 시도 /////
-            // 서버 url
-            let url: String = "http://ec2-43-201-111-213.ap-northeast-2.compute.amazonaws.com:8080/api-corner/corner_detect/"
-        
-            let image = image
-
-            guard let imageData = image.jpegData(compressionQuality: 1.0) else {
-                print("Failed to conver image to data")
-                return
-            }
-
-            let Current_time = Date().timeIntervalSince1970
-            let rounded_time = round(Current_time)
-            let rounded_time_str = String(rounded_time)
-
-            let random_value = Int.random(in: 11..<100) // 0부터 99 사이의 랜덤한 값
-            let random_str = String(random_value)
-
-            let picture_id = rounded_time_str + random_str
-            print(picture_id)
-
-            // Alamofire를 사용하여 이미지를 서버로 POST (Alamofire 다운 및 info.plist 수정 필요)
-            AF.upload(multipartFormData: { multipartFormData in
-                multipartFormData.append(imageData, withName: "picture", fileName: "image.jpg", mimeType: "image/jpeg")
-                multipartFormData.append(picture_id.data(using: .utf8)!, withName: "picture_id")
-            }, to: url)
-            .responseJSON { response in
-                switch response.result {
-                case .success(let value):
-                    print("Success: \(value)")
-                    if let jsonDictionary = value as? [String: Any] {
-                        print(jsonDictionary["info"]!)      // jsonDictionary["info"] 안에 코너 or 제품 설명 정보 들어감
-                    }
-
-                case .failure(let error):
-                    print("Error: \(error)")
-                }
-            }
-
-            PHPhotoLibrary.requestAuthorization { status in
-                if status == .authorized {
-                    PHPhotoLibrary.shared().performChanges({
-                        PHAssetChangeRequest.creationRequestForAsset(from: image)
-                    }, completionHandler: { success, error in
-                        if success {
-                            print("Image saved successfully.")
-                        } else {
-                            print("Error saving image: \(String(describing: error))")
-                        }
-                    })
-                }
+            if let image = imageP.CVPB2UIImage(pixelBuffer: pixelBuffer) {
+                imageP.UIImage2PhotoLibrary(image)
+                imageP.UIImage2Server(image)
             }
         }
 
@@ -548,8 +485,8 @@
                 guard let currentFrame = arView.session.currentFrame else { return }
                 let pixelBuffer = currentFrame.capturedImage
 
-                if let image = convertToUIImage(pixelBuffer: pixelBuffer) {
-                    //saveImageToPhotoLibrary(image)
+                if let image = imageP.CVPB2UIImage(pixelBuffer: pixelBuffer) {
+                    //imageP.UIImage2PhotoLibrary(image)
                 }
             }
         }
