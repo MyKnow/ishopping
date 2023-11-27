@@ -98,8 +98,9 @@
 
         // 사람용 바운딩 박스와의 거리를 저장하는 배열
         private var distanceMeasurements: [Float] = []
-
-        private var hapticFeedbackGenerator = UINotificationFeedbackGenerator()
+        
+        // HapticFeedbackManager 인스턴스 생성
+        let haptic = HapticFeedbackManager()
 
         // 
         private var isVibrating: Bool = false
@@ -155,7 +156,7 @@
         // 짧게 누르기 제스쳐 핸들러
         @objc func handleShortPress(_ sender: UITapGestureRecognizer) {
             print("Short Press")
-            impactFeedbackExample()  // 예시로 impactFeedbackExample 호출
+            haptic.impactFeedback(style: "heavy")
             if let currentFrame = session.currentFrame {
                 processFrame(currentFrame)
             }
@@ -171,7 +172,7 @@
         @objc func handleLongPress(_ sender: UILongPressGestureRecognizer) {
             if sender.state == .began {
                 print(isDepthMapOverlayEnabled)
-                notificationFeedbackExample() 
+                haptic.notificationFeedback(style: "success")
                 // Depth map 오버레이 상태 토글
                 isDepthMapOverlayEnabled.toggle()
 
@@ -290,7 +291,7 @@
 
 
         func triggerHapticFeedback(interval: TimeInterval) {
-            hapticFeedbackGenerator.notificationOccurred(.warning)
+            haptic.notificationFeedback(style: "warning")
             let systemSoundID: SystemSoundID
             var delay: TimeInterval = interval
             if delay < 0.7 {
@@ -571,33 +572,6 @@
             return arView
         }
         
-        @objc func impactFeedbackExample() {
-            let impactFeedbackGenerator = UIImpactFeedbackGenerator(style: .medium)
-            impactFeedbackGenerator.prepare()
-            impactFeedbackGenerator.impactOccurred()
-        }
-
-        // Selection Feedback 예시
-        func selectionFeedbackExample() {
-            let selectionFeedbackGenerator = UISelectionFeedbackGenerator()
-            selectionFeedbackGenerator.prepare()
-            selectionFeedbackGenerator.selectionChanged()
-        }
-
-        // Notification Feedback 예시
-        func notificationFeedbackExample() {
-            let notificationFeedbackGenerator = UINotificationFeedbackGenerator()
-            notificationFeedbackGenerator.prepare()
-            notificationFeedbackGenerator.notificationOccurred(.success)
-        }
-
-        // Notification Feedback - Warning
-        func notificationFeedbackWarning() {
-            let notificationFeedbackGenerator = UINotificationFeedbackGenerator()
-            notificationFeedbackGenerator.prepare()
-            notificationFeedbackGenerator.notificationOccurred(.warning)
-        }
-
         func detect(image: CIImage) {
             guard let coreMLModel = try? RamenClassifier(configuration: MLModelConfiguration()),
                 let visionModel = try? VNCoreMLModel(for: coreMLModel.model) else {
