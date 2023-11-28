@@ -1,4 +1,0 @@
-enum ARKitFillMode {
-  fill,
-  lines,
-}
