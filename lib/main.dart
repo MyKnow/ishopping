@@ -1,80 +1,162 @@
+import 'dart:math';
+
 import 'package:flutter/material.dart';
+import 'package:flutter_tts/flutter_tts.dart';
 import 'package:haptic_feedback/haptic_feedback.dart';
 
-import 'splash_screen.dart'; // Assuming SplashScreen, MapScreen, and ProductScreen are defined elsewhere
-import 'map.dart';
+import 'map_platform.dart';
 import 'product.dart';
+import 'splash_screen.dart';
 
 void main() {
   runApp(MyApp());
 }
 
 class MyApp extends StatelessWidget {
-  const MyApp({super.key});
-
   @override
   Widget build(BuildContext context) {
-    return const MaterialApp(
-      //home: SplashScreen(),
-      home: MainScreen(),
+    return MaterialApp(
+      home: SplashScreen(),
     );
   }
 }
 
-class MainScreen extends StatelessWidget {
-  const MainScreen({super.key});
+class MainScreen extends StatefulWidget {
+  @override
+  _MainScreenState createState() => _MainScreenState();
+}
+
+class _MainScreenState extends State<MainScreen> {
+  late FlutterTts flutterTts;
+
+  @override
+  void initState() {
+    super.initState();
+    initializeTts();
+  }
+
+  void initializeTts() async {
+    flutterTts = FlutterTts();
+    await flutterTts.setLanguage("ko-KR");
+    await flutterTts.setPitch(1.0);
+    await flutterTts.setSpeechRate(0.7);
+
+    await _speakText("메인화면. ");
+    _speakText("상. 세션모드. 하. 제품모드");
+  }
+
+  Future<void> _speakText(String text) async {
+    var sentences = text.split(". ");
+    for (var sentence in sentences) {
+      if (sentence.isNotEmpty) {
+        await flutterTts.speak(sentence);
+        await Future.delayed(Duration(milliseconds: 700));
+      }
+    }
+  }
+
+  @override
+  void dispose() {
+    flutterTts.stop();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFFFFF9E6),
       body: SafeArea(
-        // Wrap the content in SafeArea
-        child: Stack(
-          children: <Widget>[
-            CustomPaint(
-              painter: BackgroundPainter(),
-              size: const Size(double.infinity, double.infinity),
-            ),
-            Column(
+        child: OrientationBuilder(
+          builder: (context, orientation) {
+            return Stack(
               children: <Widget>[
-                Expanded(
-                  child: _buildButton(
-                      context,
-                      "현재 위치",
-                      "assets/images/public/maps.png",
-                      const EdgeInsets.fromLTRB(10, 30, 10, 10), () {
-                    heavyVibration(3);
-                    Navigator.push(context,
-                        MaterialPageRoute(builder: (context) => MapScreen()));
-                  }),
+                CustomPaint(
+                  painter: BackgroundPainter(),
+                  size: const Size(double.infinity, double.infinity),
                 ),
-                Expanded(
-                  child: _buildButton(
-                      context,
-                      "제품 확인",
-                      "assets/images/public/coke.png",
-                      const EdgeInsets.fromLTRB(10, 10, 10, 30), () {
-                    heavyVibration(3);
-                    Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                            builder: (context) => ProductScreen()));
-                  }),
-                ),
+                orientation == Orientation.portrait
+                    ? buildVerticalLayout()
+                    : buildHorizontalLayout(),
               ],
-            ),
-          ],
+            );
+          },
         ),
       ),
     );
   }
 
-  Widget _buildButton(BuildContext context, String text, String imagePath,
+  Widget buildVerticalLayout() {
+    return Column(
+      children: <Widget>[
+        Expanded(
+          child: buildButton(
+            context,
+            "세션 모드",
+            "assets/images/public/maps.png",
+            EdgeInsets.fromLTRB(10, 30, 10, 5),
+            () => navigateToSessionMode(context),
+          ),
+        ),
+        Expanded(
+          child: buildButton(
+            context,
+            "제품 모드",
+            "assets/images/public/coke.png",
+            EdgeInsets.fromLTRB(10, 5, 10, 30),
+            () => navigateToProductMode(context),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget buildHorizontalLayout() {
+    double screenHeight = MediaQuery.of(context).size.height;
+
+    return Row(
+      children: <Widget>[
+        Expanded(
+          child: Container(
+            height: screenHeight,
+            child: buildButton(
+              context,
+              "세션 모드",
+              "assets/images/public/maps.png",
+              EdgeInsets.fromLTRB(10, 10, 5, 10),
+              () => navigateToSessionMode(context),
+            ),
+          ),
+        ),
+        Expanded(
+          child: Container(
+            height: screenHeight,
+            child: buildButton(
+              context,
+              "제품 모드",
+              "assets/images/public/coke.png",
+              EdgeInsets.fromLTRB(5, 10, 10, 10),
+              () => navigateToProductMode(context),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget buildButton(BuildContext context, String text, String imagePath,
       EdgeInsets margin, VoidCallback onPressed) {
+    // 화면의 너비와 높이를 가져옵니다.
+    double screenWidth = MediaQuery.of(context).size.width;
+    double screenHeight = MediaQuery.of(context).size.height;
+
+    // 화면 크기에 따라 동적으로 크기를 조정합니다.
+    double imageSize =
+        min(screenWidth, screenHeight) * 0.2; // 이미지 크기를 화면의 10%로 설정
+    double fontSize =
+        min(screenWidth, screenHeight) * 0.15; // 텍스트 크기를 화면의 5%로 설정
+
     return Container(
       margin: margin,
-      width: double.infinity,
       child: ElevatedButton(
         onPressed: onPressed,
         style: ElevatedButton.styleFrom(
@@ -85,30 +167,39 @@ class MainScreen extends StatelessWidget {
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(15),
           ),
+          padding: EdgeInsets.symmetric(vertical: 20),
+          minimumSize: Size(double.infinity, 100),
         ),
-        child: LayoutBuilder(
-          builder: (context, constraints) {
-            double imageSize = constraints.maxWidth * 0.25;
-            return Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: <Widget>[
-                Image.asset(imagePath, width: imageSize),
-                const SizedBox(width: 15),
-                Text(
-                  text,
-                  style: const TextStyle(
-                    color: Colors.red,
-                    fontWeight: FontWeight.bold,
-                    fontFamily: 'CustomFont',
-                    fontSize: 52,
-                  ),
-                ),
-              ],
-            );
-          },
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: <Widget>[
+            Image.asset(imagePath, width: imageSize),
+            const SizedBox(width: 15),
+            Text(
+              text,
+              style: TextStyle(
+                color: Colors.red,
+                fontWeight: FontWeight.bold,
+                fontFamily: 'CustomFont',
+                fontSize: fontSize,
+              ),
+            ),
+          ],
         ),
       ),
     );
+  }
+
+  void navigateToSessionMode(BuildContext context) async {
+    heavyVibration(3);
+    Navigator.push(context,
+        MaterialPageRoute(builder: (context) => PlatformSpecificMapScreen()));
+  }
+
+  void navigateToProductMode(BuildContext context) async {
+    heavyVibration(3);
+    Navigator.push(
+        context, MaterialPageRoute(builder: (context) => ProductScreen()));
   }
 
   Future<void> heavyVibration(int rep) async {

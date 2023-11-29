@@ -11,6 +11,15 @@ dependencies:
     sdk: flutter
   haptic_feedback: ^0.4.2
   cupertino_icons: ^1.0.2
+  camera: ^0.10.5+5
+  vibration: ^1.8.3
+  permission_handler: ^11.0.1
+  path_provider: ^2.0.9
+  http: ^0.13.3
+  flutter_tts: ^3.8.3
+  dio : ^5.3.4
+  tflite_flutter : ^0.10.3
+  # tflite_v2 : ^ 1.0.0
 
 dev_dependencies:
   flutter_test:

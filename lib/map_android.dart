@@ -8,23 +8,23 @@ import 'package:permission_handler/permission_handler.dart';
 import 'package:vibration/vibration.dart';
 
 import 'main.dart';
-import 'map_android.dart';
 import 'output.dart';
+import 'product.dart';
 import 'server_api.dart';
 
 void main() {
   runApp(MyApp());
 }
 
-class ProductScreen extends StatefulWidget {
+class MapAndroidScreen extends StatefulWidget {
   @override
   _CameraScreenState createState() => _CameraScreenState();
 }
 
-class _CameraScreenState extends State<ProductScreen> {
+class _CameraScreenState extends State<MapAndroidScreen> {
   CameraController? controller;
   late FlutterTts flutterTts;
-  String _message = "제품과 기기를 최대한 나란히 하고 촬영하세요.";
+  String _message = "모바일 기기를 턱에 가까이 대고 사용해 주세요.";
   int _captureCount = 0;
   Timer? _messageTimer;
 
@@ -48,7 +48,7 @@ class _CameraScreenState extends State<ProductScreen> {
     await flutterTts.setLanguage("ko-KR");
     await flutterTts.setPitch(1.0);
     await flutterTts.setSpeechRate(0.75);
-    await flutterTts.speak("제품모드 시작. $_message");
+    await flutterTts.speak("세션모드 시작. $_message");
 
     final cameras = await availableCameras();
     controller = CameraController(cameras.first, ResolutionPreset.max);
@@ -81,45 +81,49 @@ class _CameraScreenState extends State<ProductScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return WillPopScope(
-      onWillPop: () async {
-        flutterTts.stop(); // 뒤로 가기 시 TTS 중지
-        Navigator.of(context).pop(); // 현재 화면을 닫음
-        return false; // 뒤로 가기 동작을 수동으로 처리하기 때문에 false 반환
-      },
-      child: Scaffold(
-        body: controller?.value.isInitialized == true
-            ? GestureDetector(
-                onHorizontalDragEnd: (details) {
-                  if (details.primaryVelocity! > 0) {
-                    Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                            builder: (context) => MapAndroidScreen()));
-                  }
-                },
-                onLongPress: () async {
-                  await Vibration.vibrate();
-                  await _captureAndSaveImage();
-                },
-                child: Stack(
-                  children: <Widget>[
-                    Transform.scale(
-                      scale: _calculateCameraScale(),
-                      alignment: Alignment.topCenter,
-                      child: CameraPreview(controller!),
-                    ),
-                    CustomPaint(
-                      size: Size.infinite,
-                      painter: GridPainter(),
-                    ),
-                    _buildInstructionBox(), // 안내 메시지 박스
-                  ],
-                ),
-              )
-            : Center(child: CircularProgressIndicator()),
-      ),
-    );
+    if (controller?.value.isInitialized == true) {
+      return WillPopScope(
+        onWillPop: () async {
+          flutterTts.stop(); // TTS 중지
+          Navigator.of(context).pop(); // 현재 화면 닫기
+          return false; // 이벤트 처리 완료
+        },
+        child: GestureDetector(
+          onHorizontalDragEnd: (details) {
+            if (details.primaryVelocity! < 0) {
+              Navigator.push(context,
+                  MaterialPageRoute(builder: (context) => ProductScreen()));
+              flutterTts.stop(); // TTS 중지
+            }
+            if (details.primaryVelocity! > 0) {
+              Navigator.push(context,
+                  MaterialPageRoute(builder: (context) => MainScreen()));
+              flutterTts.stop(); // TTS 중지
+            }
+          },
+          onLongPress: () async {
+            await Vibration.vibrate();
+            await _captureAndSaveImage();
+          },
+          child: Stack(
+            children: <Widget>[
+              Transform.scale(
+                scale: _calculateCameraScale(),
+                alignment: Alignment.topCenter,
+                child: CameraPreview(controller!),
+              ),
+              CustomPaint(
+                size: Size.infinite,
+                painter: GridPainter(),
+              ),
+              _buildInstructionBox(), // 안내 메시지 박스
+            ],
+          ),
+        ),
+      );
+    } else {
+      return Center(child: CircularProgressIndicator());
+    }
   }
 
   double _calculateCameraScale() {
@@ -158,15 +162,19 @@ class _CameraScreenState extends State<ProductScreen> {
       await sendImageData(newImage); // server_api.dart 파일의 함수 호출
 
       setState(() {
-        _captureCount++; // 촬영 횟수 업데이트
-        setProductCaptureCount(_captureCount);
+        _captureCount++; // 촬영횟수 업데이트
+        setMapCaptureCount(_captureCount);
 
-        _message = "${product_name}";
+        // 현재 제품 이름 업데이트
+        _message =
+            "좌측 ${session_left}, 우측 ${session_right}, 정면 ${session_front}";
 
         flutterTts.speak(_message);
       });
 
-      final message = "해당 제품은 ${product_name}, 촬영 횟수 : ${product_captureCount}";
+      // 콘솔에 메시지 출력
+      final message =
+          "좌측 ${session_left}, 우측 ${session_right}, 정면 ${session_front}, 촬영 횟수: ${map_captureCount}";
       print(message);
     } catch (e) {
       print('Error capturing image: $e');
