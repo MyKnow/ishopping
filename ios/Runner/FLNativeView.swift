@@ -9,6 +9,7 @@ import Alamofire
 import Vision
 import CoreML
 import NotificationCenter
+import CoreImage
 
 
 // Fluter에서 사용자 정의 플랫폼 뷰를 생성하는 데 필요함
@@ -113,6 +114,9 @@ class FLNativeView: NSObject, FlutterPlatformView, ARSCNViewDelegate {
     // ViewController 인스턴스 추가 (필요에 따라)
     var viewController: ViewController?
 
+    private var model: VNCoreMLModel!
+
+
     // 
     private var isVibrating: Bool = false
 
@@ -133,6 +137,8 @@ class FLNativeView: NSObject, FlutterPlatformView, ARSCNViewDelegate {
             // Activate sceneDepth
             configuration.frameSemantics = .sceneDepth
         }
+
+        //loadModel()
 
         arView.session = arSessionM.session
         arView.delegate = self
@@ -395,6 +401,8 @@ class FLNativeView: NSObject, FlutterPlatformView, ARSCNViewDelegate {
             if let currentFrame = self.arView.session.currentFrame {
                 // Vision 요청 실행
                 let pixelBuffer = currentFrame.capturedImage
+                //self.performModelInference(pixelBuffer: pixelBuffer)
+                self.detect(image: CIImage(cvPixelBuffer: pixelBuffer))
                 let imageRequestHandler = VNImageRequestHandler(cvPixelBuffer: pixelBuffer, options: [:])
                 do {
                     try imageRequestHandler.perform(self.requests)
@@ -512,5 +520,91 @@ class FLNativeView: NSObject, FlutterPlatformView, ARSCNViewDelegate {
     // 기본 UIView 객체를 반환
     func view() -> UIView {
         return arView
+    }
+
+    /*
+    func detectObjects(in pixelBuffer: CVPixelBuffer) -> [Detection]? {
+        do {
+            // 모델 파일 경로 확인
+            guard let modelPath = Bundle.main.path(forResource: "model_unquant", ofType: "tflite") else { return nil }
+
+            // 객체 감지 옵션 설정
+            let options = ObjectDetectorOptions(modelPath: modelPath)
+
+            // 객체 감지기 생성
+            let detector = try ObjectDetector.detector(options: options)
+
+            // CVPixelBuffer를 MLImage로 변환
+            guard let mlImage = MLImage(pixelBuffer: pixelBuffer) else { return nil }
+
+            // 객체 감지 수행
+            let detectionResult = try detector.detect(mlImage: mlImage)
+
+            // `DetectionResult`에서 필요한 `[Detection]` 정보 추출
+            return detectionResult.detections
+        } catch {
+            print("Object detection failed with error: \(error)")
+            return nil
+        }
+    }
+    */
+
+    private func loadModel() {
+        do {
+            let config = MLModelConfiguration()
+            let modelURL = Bundle.main.url(forResource: "RamenClassifier", withExtension: "mlmodel")!
+            let compiledModelURL = try MLModel.compileModel(at: modelURL)
+            let mlModel = try MLModel(contentsOf: compiledModelURL, configuration: config)
+            model = try VNCoreMLModel(for: mlModel)
+        } catch {
+            print("모델 로딩 실패: \(error)")
+        }
+    }
+    private func performModelInference(pixelBuffer: CVPixelBuffer) {
+        guard let model = self.model else { return }
+        let request = VNCoreMLRequest(model: model) { (request, error) in
+            if let results = request.results as? [VNClassificationObservation] {
+                for result in results {
+                    print("Object: \(result.identifier), Confidence: \(result.confidence)")
+                }
+            }
+        }
+        let handler = VNImageRequestHandler(cvPixelBuffer: pixelBuffer, options: [:])
+        try? handler.perform([request])
+    }
+
+    // CoreML의 CIImage를 처리하고 해석하기 위한 메서드 생성, 이것은 모델의 이미지를 분류하기 위해 사용 됩니다.
+    func detect(image: CIImage) {
+        // CoreML의 모델인 FlowerClassifier를 객체를 생성 후,
+        // Vision 프레임워크인 VNCoreMLModel 컨터이너를 사용하여 CoreML의 model에 접근한다.
+        guard let coreMLModel = try? RamenClassifier(configuration: MLModelConfiguration()),
+              let visionModel = try? VNCoreMLModel(for: coreMLModel.model) else {
+            fatalError("Loading CoreML Model Failed")
+        }
+        // Vision을 이용해 이미치 처리를 요청
+        let request = VNCoreMLRequest(model: visionModel) { request, error in
+            guard error == nil else {
+                fatalError("Failed Request")
+            }
+            // 식별자의 이름을 확인하기 위해 VNClassificationObservation로 변환해준다.
+            guard let classification = request.results as? [VNClassificationObservation] else {
+                fatalError("Faild convert VNClassificationObservation")
+            }
+            // 머신러닝을 통한 결과값 프린트
+            //print(classification)
+
+            // 👉 타이틀을 가장 정확도 높은 이름으로 설정
+            if let fitstItem = classification.first {
+                print(fitstItem.identifier.capitalized)
+            }
+        }
+
+        // 이미지를 받아와서 perform을 요청하여 분석한다. (Vision 프레임워크)
+        let handler = VNImageRequestHandler(ciImage: image)
+        do {
+            try handler.perform([request])
+        } catch {
+            print(error)
+        }
     }
 }

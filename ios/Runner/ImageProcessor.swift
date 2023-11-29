@@ -7,6 +7,7 @@
 
 import UIKit
 import Photos
+import CoreImage
 import Alamofire
 
 class ImageProcessor {
