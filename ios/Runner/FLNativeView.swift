@@ -129,7 +129,7 @@ class FLNativeView: NSObject, FlutterPlatformView, ARSCNViewDelegate {
         
         // ViewController 초기화
         viewController = ViewController()
-        viewController?.session = arView.session
+        viewController?.session = arSessionM.session
         
         //NotificationCenter.default.addObserver(self, selector: #selector(appWillResignActive), name: UIApplication.willResignActiveNotification, object: nil)
         //NotificationCenter.default.addObserver(self, selector: #selector(appDidBecomeActive), name: UIApplication.didBecomeActiveNotification, object: nil)
@@ -243,7 +243,7 @@ class FLNativeView: NSObject, FlutterPlatformView, ARSCNViewDelegate {
     }
 
     func performHitTestAndMeasureDistance() {
-        guard let currentFrame = arView.session.currentFrame else {
+        guard let currentFrame = arSessionM.session.currentFrame else {
             //print("Current ARFrame is unavailable.")
             return
         }
@@ -297,7 +297,7 @@ class FLNativeView: NSObject, FlutterPlatformView, ARSCNViewDelegate {
 
     func performHitTesting(_ screenPoint: CGPoint) -> Float? {
         if let hitTestResult = arView.hitTest(screenPoint, types: .featurePoint).first {
-            if let currentFrame = arView.session.currentFrame {
+            if let currentFrame = arSessionM.session.currentFrame {
                 let cameraPosition = currentFrame.camera.transform
                 let distance = calculateDistance(from: cameraPosition, to: hitTestResult.worldTransform)
                 return distance
@@ -366,10 +366,10 @@ class FLNativeView: NSObject, FlutterPlatformView, ARSCNViewDelegate {
             self.performHitTestAndMeasureDistance()
 
             // Depth map 오버레이가 활성화된 경우에만 처리
-            if self.arSessionM.isDepthMapOverlayEnabled, let currentFrame = self.arView.session.currentFrame, let depthData = currentFrame.sceneDepth {
+            if self.arSessionM.isDepthMapOverlayEnabled, let currentFrame = self.arSessionM.session.currentFrame, let depthData = currentFrame.sceneDepth {
                 self.arSessionM.overlayDepthMap(self.arView)
             }
-            if let currentFrame = self.arView.session.currentFrame {
+            if let currentFrame = self.arSessionM.session.currentFrame {
                 // Vision 요청 실행
                 let pixelBuffer = currentFrame.capturedImage
                 //self.performModelInference(pixelBuffer: pixelBuffer)
@@ -420,7 +420,7 @@ class FLNativeView: NSObject, FlutterPlatformView, ARSCNViewDelegate {
                 continue
             }
             let hitPoint = hitTestResults.worldTransform
-            guard let currentFrame = arView.session.currentFrame else { return }
+            guard let currentFrame = arSessionM.session.currentFrame else { return }
             let cameraPosition = currentFrame.camera.transform
             let distance = calculateDistance(from: cameraPosition, to: hitPoint)
 
@@ -439,7 +439,7 @@ class FLNativeView: NSObject, FlutterPlatformView, ARSCNViewDelegate {
 
         let totalDots = col * rw
         if (whiteDotCount+redDotCount) > totalDots / 2 {
-            guard let currentFrame = arView.session.currentFrame else { return }
+            guard let currentFrame = arSessionM.session.currentFrame else { return }
             let pixelBuffer = currentFrame.capturedImage
 
             if let image = imageP.CVPB2UIImage(pixelBuffer: pixelBuffer) {
