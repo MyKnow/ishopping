@@ -176,31 +176,6 @@ class FLNativeView: NSObject, FlutterPlatformView, ARSCNViewDelegate {
         }
     }
 
-    private func setupVision() {
-        // 사람 감지를 위한 Vision 요청 설정
-        let request = VNDetectHumanRectanglesRequest(completionHandler: detectHumanHandler)
-        self.requests = [request]
-    }
-
-    private func detectHumanHandler(request: VNRequest, error: Error?) {
-        DispatchQueue.main.async {
-            // 기존 경계 상자 제거
-            self.humanBoundingBoxViews.forEach { $0.removeFromSuperview() }
-            self.humanBoundingBoxViews.removeAll()
-
-            guard let observations = request.results as? [VNHumanObservation] else {
-                print("No results")
-                return
-            }
-
-            for observation in observations {
-                let boundingBoxView = self.processBoundingBox(for: observation.boundingBox)
-                self.arView.addSubview(boundingBoxView)
-                self.humanBoundingBoxViews.append(boundingBoxView)
-            }
-        }
-    }
-
     func processBoundingBox(for boundingBox: CGRect) -> UIView  {
         // 화면 크기
         let screenSize = self.arView.bounds.size
@@ -465,41 +440,73 @@ class FLNativeView: NSObject, FlutterPlatformView, ARSCNViewDelegate {
         return arView
     }
 
-    // CoreML의 CIImage를 처리하고 해석하기 위한 메서드 생성, 이것은 모델의 이미지를 분류하기 위해 사용 됩니다.
+    private func setupVision() {
+        // 사람 감지를 위한 Vision 요청 설정
+        let request = VNDetectHumanRectanglesRequest(completionHandler: detectHumanHandler)
+        self.requests = [request]
+    }
+
+    private func detectHumanHandler(request: VNRequest, error: Error?) {
+        guard let observations = request.results as? [VNHumanObservation] else {
+            print("No results")
+            return
+        }
+
+        DispatchQueue.main.async {
+            // 기존 경계 상자 제거
+            self.humanBoundingBoxViews.forEach { $0.removeFromSuperview() }
+            self.humanBoundingBoxViews.removeAll()
+
+            observations.forEach { observation in
+                let boundingBoxView = self.processBoundingBox(for: observation.boundingBox)
+                self.arView.addSubview(boundingBoxView)
+                self.humanBoundingBoxViews.append(boundingBoxView)
+            }
+        }
+    }
+
     func detect(image: CIImage) {
+        // CoreML 모델 로딩
+        guard let coreMLModel = try? RamenClassification_NEW(configuration: MLModelConfiguration()),
+            let visionModel = try? VNCoreMLModel(for: coreMLModel.model) else {
+            print("CoreML 모델 로딩 실패")
+            return
+        }
+
+        let request = VNCoreMLRequest(model: visionModel, completionHandler: { [weak self] request, error in
+            self?.handleClassification(request: request, error: error)
+        })
+        
+        let handler = VNImageRequestHandler(ciImage: image)
         DispatchQueue.global(qos: .userInitiated).async {
-            guard let coreMLModel = try? RamenClassification_NEW(configuration: MLModelConfiguration()),
-                let visionModel = try? VNCoreMLModel(for: coreMLModel.model) else {
-                fatalError("CoreML 모델 로딩 실패")
-            }
-            let request = VNCoreMLRequest(model: visionModel) { [weak self] request, error in
-                DispatchQueue.main.async {
-                    if let error = error {
-                        print("에러: \(error.localizedDescription)")
-                        return
-                    }
-                    guard let results = request.results as? [VNClassificationObservation] else {
-                        print("결과 없음")
-                        return
-                    }
-                    if let firstItem = results.first {
-                        let formattedConfidence = String(format: "%.2f", firstItem.confidence)
-
-                        if firstItem.confidence < 0.9 {
-                            TTSManager.shared.play("인식되지 않음")
-                        } else {
-                            print("\(firstItem.identifier.capitalized) : \(formattedConfidence)")
-                            TTSManager.shared.play(firstItem.identifier.capitalized)
-
-                        }
-                    }
-                }
-            }
-            let handler = VNImageRequestHandler(ciImage: image)
             do {
                 try handler.perform([request])
             } catch {
                 print("에러: \(error.localizedDescription)")
+            }
+        }
+    }
+
+    private func handleClassification(request: VNRequest, error: Error?) {
+        DispatchQueue.main.async {
+            if let error = error {
+                print("에러: \(error.localizedDescription)")
+                return
+            }
+            guard let results = request.results as? [VNClassificationObservation],
+                let firstItem = results.first else {
+                print("결과 없음")
+                return
+            }
+            
+            let formattedConfidence = String(format: "%.2f", firstItem.confidence)
+            TTSManager.shared.stop()
+            if firstItem.confidence < 0.9 {
+                TTSManager.shared.play("인식되지 않음")
+            } else {
+                print("\(firstItem.identifier.capitalized) : \(formattedConfidence)")
+                TTSManager.shared.play(firstItem.identifier.capitalized)
+
             }
         }
     }

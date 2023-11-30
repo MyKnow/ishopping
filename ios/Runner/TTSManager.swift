@@ -14,10 +14,7 @@ class TTSManager {
         utterance.voice = AVSpeechSynthesisVoice(language: "ko-KR")
 
         // 속도 (1.0에 가까워질 수록 빨라짐)
-        utterance.rate = 0.7
-
-        // 이전에 말하던 게 있으면 즉시 종료
-        synthesizer.stopSpeaking(at: .immediate)
+        utterance.rate = 0.6
 
         // 종료 후에 지금 단어 출력
         synthesizer.speak(utterance)
