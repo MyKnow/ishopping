@@ -95,9 +95,6 @@ class FLNativeView: NSObject, FlutterPlatformView, ARSCNViewDelegate {
     // ImageProcessor 인스턴스 생성
     let imageP = ImageProcessor()
 
-    // ARSessionManager 선언
-    let arSessionM: ARSessionManager
-    
     // ViewController 인스턴스 추가 (필요에 따라)
     var viewController: ViewController?
 
@@ -169,7 +166,13 @@ class FLNativeView: NSObject, FlutterPlatformView, ARSCNViewDelegate {
         if sender.state == .began {
             TTSManager.shared.play("길게 누름")
             hapticC.notificationFeedback(style: "success")
-            ARSessionManager.shared.toggleDepthMap()
+            //ARSessionManager.shared.toggleDepthMap()
+            if let currentFrame = ARSessionManager.shared.session.currentFrame {
+                // Vision 요청 실행
+                let pixelBuffer = currentFrame.capturedImage
+                //self.performModelInference(pixelBuffer: pixelBuffer)
+                self.detect(image: CIImage(cvPixelBuffer: pixelBuffer))
+            }
         }
     }
 
@@ -370,7 +373,7 @@ class FLNativeView: NSObject, FlutterPlatformView, ARSCNViewDelegate {
                 // Vision 요청 실행
                 let pixelBuffer = currentFrame.capturedImage
                 //self.performModelInference(pixelBuffer: pixelBuffer)
-                self.detect(image: CIImage(cvPixelBuffer: pixelBuffer))
+                //self.detect(image: CIImage(cvPixelBuffer: pixelBuffer))
                 let imageRequestHandler = VNImageRequestHandler(cvPixelBuffer: pixelBuffer, options: [:])
                 do {
                     try imageRequestHandler.perform(self.requests)
@@ -481,7 +484,14 @@ class FLNativeView: NSObject, FlutterPlatformView, ARSCNViewDelegate {
                     }
                     if let firstItem = results.first {
                         let formattedConfidence = String(format: "%.2f", firstItem.confidence)
-                        print("\(firstItem.identifier.capitalized) : \(formattedConfidence)")
+
+                        if firstItem.confidence < 0.9 {
+                            TTSManager.shared.play("인식되지 않음")
+                        } else {
+                            print("\(firstItem.identifier.capitalized) : \(formattedConfidence)")
+                            TTSManager.shared.play(firstItem.identifier.capitalized)
+
+                        }
                     }
                 }
             }
