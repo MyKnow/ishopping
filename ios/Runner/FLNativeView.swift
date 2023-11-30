@@ -105,15 +105,12 @@ class FLNativeView: NSObject, FlutterPlatformView, ARSCNViewDelegate {
 
     private var isVibrating: Bool = false
 
-    // 
     private var alertTimer: Timer?
 
     // 뷰의 프레임, 뷰 식별자, 선택적 인자, 그리고 바이너리 메신저를 사용하여 네이티브 뷰를 초기화
     init( frame: CGRect, viewIdentifier viewId: Int64, arguments args: Any?, binaryMessenger messenger: FlutterBinaryMessenger?) {
         // ARSCNView 인스턴스 생성 및 초기화
         arView = ARSCNView(frame: frame)
-
-        arSessionM = ARSessionManager()
         super.init()
 
         // 여기에 조건문을 추가
@@ -124,12 +121,12 @@ class FLNativeView: NSObject, FlutterPlatformView, ARSCNViewDelegate {
 
         //loadModel()
 
-        arView.session = arSessionM.session
+        arView.session = ARSessionManager.shared.session
         arView.delegate = self
         
         // ViewController 초기화
         viewController = ViewController()
-        viewController?.session = arSessionM.session
+        viewController?.session = ARSessionManager.shared.session
         
         //NotificationCenter.default.addObserver(self, selector: #selector(appWillResignActive), name: UIApplication.willResignActiveNotification, object: nil)
         //NotificationCenter.default.addObserver(self, selector: #selector(appDidBecomeActive), name: UIApplication.didBecomeActiveNotification, object: nil)
@@ -137,14 +134,14 @@ class FLNativeView: NSObject, FlutterPlatformView, ARSCNViewDelegate {
         indexDistance = Array(distanceColorMap.keys).sorted()
 
         //setupARView()
-        arSessionM.runSession()
+        ARSessionManager.shared.runSession()
         setupVision()
         //setupGridDots()
         addShortPressGesture()
         addLongPressGesture()
     }
     deinit {
-        arSessionM.pauseSession()
+        ARSessionManager.shared.pauseSession()
     }
 
     // 짧게 누르기 제스쳐 추가
@@ -156,7 +153,7 @@ class FLNativeView: NSObject, FlutterPlatformView, ARSCNViewDelegate {
     @objc func handleShortPress(_ sender: UITapGestureRecognizer) {
         TTSManager.shared.play("짧게 누름")
         hapticC.impactFeedback(style: "heavy")
-        if let currentFrame = arSessionM.session.currentFrame {
+        if let currentFrame = ARSessionManager.shared.session.currentFrame {
             processFrame(currentFrame)
         }
     }
@@ -172,7 +169,7 @@ class FLNativeView: NSObject, FlutterPlatformView, ARSCNViewDelegate {
         if sender.state == .began {
             TTSManager.shared.play("길게 누름")
             hapticC.notificationFeedback(style: "success")
-            arSessionM.toggleDepthMap()
+            ARSessionManager.shared.toggleDepthMap()
         }
     }
 
@@ -243,7 +240,7 @@ class FLNativeView: NSObject, FlutterPlatformView, ARSCNViewDelegate {
     }
 
     func performHitTestAndMeasureDistance() {
-        guard let currentFrame = arSessionM.session.currentFrame else {
+        guard let currentFrame = ARSessionManager.shared.session.currentFrame else {
             //print("Current ARFrame is unavailable.")
             return
         }
@@ -297,7 +294,7 @@ class FLNativeView: NSObject, FlutterPlatformView, ARSCNViewDelegate {
 
     func performHitTesting(_ screenPoint: CGPoint) -> Float? {
         if let hitTestResult = arView.hitTest(screenPoint, types: .featurePoint).first {
-            if let currentFrame = arSessionM.session.currentFrame {
+            if let currentFrame = ARSessionManager.shared.session.currentFrame {
                 let cameraPosition = currentFrame.camera.transform
                 let distance = calculateDistance(from: cameraPosition, to: hitTestResult.worldTransform)
                 return distance
@@ -366,10 +363,10 @@ class FLNativeView: NSObject, FlutterPlatformView, ARSCNViewDelegate {
             self.performHitTestAndMeasureDistance()
 
             // Depth map 오버레이가 활성화된 경우에만 처리
-            if self.arSessionM.isDepthMapOverlayEnabled, let currentFrame = self.arSessionM.session.currentFrame, let depthData = currentFrame.sceneDepth {
-                self.arSessionM.overlayDepthMap(self.arView)
+            if ARSessionManager.shared.isDepthMapOverlayEnabled, let currentFrame = ARSessionManager.shared.session.currentFrame, let depthData = currentFrame.sceneDepth {
+                ARSessionManager.shared.overlayDepthMap(self.arView)
             }
-            if let currentFrame = self.arSessionM.session.currentFrame {
+            if let currentFrame = ARSessionManager.shared.session.currentFrame {
                 // Vision 요청 실행
                 let pixelBuffer = currentFrame.capturedImage
                 //self.performModelInference(pixelBuffer: pixelBuffer)
@@ -420,7 +417,7 @@ class FLNativeView: NSObject, FlutterPlatformView, ARSCNViewDelegate {
                 continue
             }
             let hitPoint = hitTestResults.worldTransform
-            guard let currentFrame = arSessionM.session.currentFrame else { return }
+            guard let currentFrame = ARSessionManager.shared.session.currentFrame else { return }
             let cameraPosition = currentFrame.camera.transform
             let distance = calculateDistance(from: cameraPosition, to: hitPoint)
 
@@ -439,7 +436,7 @@ class FLNativeView: NSObject, FlutterPlatformView, ARSCNViewDelegate {
 
         let totalDots = col * rw
         if (whiteDotCount+redDotCount) > totalDots / 2 {
-            guard let currentFrame = arSessionM.session.currentFrame else { return }
+            guard let currentFrame = ARSessionManager.shared.session.currentFrame else { return }
             let pixelBuffer = currentFrame.capturedImage
 
             if let image = imageP.CVPB2UIImage(pixelBuffer: pixelBuffer) {
