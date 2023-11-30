@@ -54,10 +54,6 @@ class FLNativeView: NSObject, FlutterPlatformView, ARSCNViewDelegate {
     // AR 세션 구성 및 시작
     private let configuration = ARWorldTrackingConfiguration()
 
-    private var session: ARSession {
-        return arView.session
-    }
-
     // 가이드 dot 및 거리 label들
     private var gridDots: [UIView] = []
     private var gridLabels: [UILabel] = []
@@ -112,7 +108,6 @@ class FLNativeView: NSObject, FlutterPlatformView, ARSCNViewDelegate {
     // 
     private var alertTimer: Timer?
 
-
     // 뷰의 프레임, 뷰 식별자, 선택적 인자, 그리고 바이너리 메신저를 사용하여 네이티브 뷰를 초기화
     init( frame: CGRect, viewIdentifier viewId: Int64, arguments args: Any?, binaryMessenger messenger: FlutterBinaryMessenger?) {
         // ARSCNView 인스턴스 생성 및 초기화
@@ -161,7 +156,7 @@ class FLNativeView: NSObject, FlutterPlatformView, ARSCNViewDelegate {
     @objc func handleShortPress(_ sender: UITapGestureRecognizer) {
         print("Short Press")
         hapticC.impactFeedback(style: "heavy")
-        if let currentFrame = session.currentFrame {
+        if let currentFrame = arSessionM.session.currentFrame {
             processFrame(currentFrame)
         }
     }
@@ -473,7 +468,7 @@ class FLNativeView: NSObject, FlutterPlatformView, ARSCNViewDelegate {
     // CoreML의 CIImage를 처리하고 해석하기 위한 메서드 생성, 이것은 모델의 이미지를 분류하기 위해 사용 됩니다.
     func detect(image: CIImage) {
         DispatchQueue.global(qos: .userInitiated).async {
-            guard let coreMLModel = try? RamenClassifier(configuration: MLModelConfiguration()),
+            guard let coreMLModel = try? RamenClassification_NEW(configuration: MLModelConfiguration()),
                 let visionModel = try? VNCoreMLModel(for: coreMLModel.model) else {
                 fatalError("CoreML 모델 로딩 실패")
             }
@@ -488,7 +483,8 @@ class FLNativeView: NSObject, FlutterPlatformView, ARSCNViewDelegate {
                         return
                     }
                     if let firstItem = results.first {
-                        print(firstItem.identifier.capitalized)
+                        let formattedConfidence = String(format: "%.2f", firstItem.confidence)
+                        print("\(firstItem.identifier.capitalized) : \(formattedConfidence)")
                     }
                 }
             }

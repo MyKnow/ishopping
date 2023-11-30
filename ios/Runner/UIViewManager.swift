@@ -23,7 +23,7 @@ class ViewController: UIViewController, ARSessionDelegate {
             print("!")
             session?.run(configuration)
         }
-    }
+    } 
     
     override func viewWillDisappear(_ animated: Bool) {
         super.viewWillDisappear(animated)
