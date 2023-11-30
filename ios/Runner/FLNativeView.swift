@@ -77,6 +77,14 @@ class FLNativeView: NSObject, FlutterPlatformView, ARSCNViewDelegate {
         9.0: .black
     ]
 
+    public var shoppingBasketMap: [String: Int] = [:]
+
+    public var isBasketMode: Bool = false
+
+    public var nowProduct: String = ""
+
+    public var willBuy: Bool = false
+
     // 딕셔너리의 키들을 배열로 변환
     private var indexDistance: [Float] = []
 
@@ -108,6 +116,7 @@ class FLNativeView: NSObject, FlutterPlatformView, ARSCNViewDelegate {
     init( frame: CGRect, viewIdentifier viewId: Int64, arguments args: Any?, binaryMessenger messenger: FlutterBinaryMessenger?) {
         // ARSCNView 인스턴스 생성 및 초기화
         arView = ARSCNView(frame: frame)
+
         super.init()
 
         // 여기에 조건문을 추가
@@ -128,7 +137,7 @@ class FLNativeView: NSObject, FlutterPlatformView, ARSCNViewDelegate {
         //NotificationCenter.default.addObserver(self, selector: #selector(appWillResignActive), name: UIApplication.willResignActiveNotification, object: nil)
         //NotificationCenter.default.addObserver(self, selector: #selector(appDidBecomeActive), name: UIApplication.didBecomeActiveNotification, object: nil)
 
-        indexDistance = Array(distanceColorMap.keys).sorted()
+        indexDistance = Array(distanceColorMap.keys).sorted() 
 
         //setupARView()
         ARSessionManager.shared.runSession()
@@ -136,6 +145,7 @@ class FLNativeView: NSObject, FlutterPlatformView, ARSCNViewDelegate {
         //setupGridDots()
         addShortPressGesture()
         addLongPressGesture()
+        addSwipeGesture()
     }
     deinit {
         ARSessionManager.shared.pauseSession()
@@ -166,14 +176,56 @@ class FLNativeView: NSObject, FlutterPlatformView, ARSCNViewDelegate {
         if sender.state == .began {
             TTSManager.shared.play("길게 누름")
             hapticC.notificationFeedback(style: "success")
-            //ARSessionManager.shared.toggleDepthMap()
-            if let currentFrame = ARSessionManager.shared.session.currentFrame {
-                // Vision 요청 실행
-                let pixelBuffer = currentFrame.capturedImage
-                //self.performModelInference(pixelBuffer: pixelBuffer)
-                self.detect(image: CIImage(cvPixelBuffer: pixelBuffer))
+            if self.willBuy {
+                // TODO:결제 처리
+            } else {
+                //ARSessionManager.shared.toggleDepthMap()
+                if let currentFrame = ARSessionManager.shared.session.currentFrame {
+                    // Vision 요청 실행
+                    let pixelBuffer = currentFrame.capturedImage
+                    //self.performModelInference(pixelBuffer: pixelBuffer)
+                    self.detect(image: CIImage(cvPixelBuffer: pixelBuffer))
+                }
             }
         }
+    }
+
+    // 스와이프 제스쳐 추가
+    private func addSwipeGesture() {
+        let directions: [UISwipeGestureRecognizer.Direction] = [.left, .right, .up, .down]
+
+        for direction in directions {
+            let swipe = UISwipeGestureRecognizer(target: self, action: #selector(handleSwipe(_:)))
+            swipe.direction = direction
+            arView.addGestureRecognizer(swipe)
+        }
+    }
+    // 스와이프 제스쳐 핸들러
+    @objc private func handleSwipe(_ gesture: UISwipeGestureRecognizer) {
+        hapticC.impactFeedback(style: "Heavy")
+        switch gesture.direction {
+        case .left:
+            TTSManager.shared.play("왼쪽")
+            self.totalProduct()
+        case .right:
+            TTSManager.shared.play("오른쪽")
+        case .up: // 무언갈 빼는 것
+            TTSManager.shared.play("위")
+            if self.isBasketMode {
+                self.isBasketMode.toggle()
+                TTSManager.shared.play("취소")
+                self.nowProduct = ""
+            }
+        case .down: // 무언갈 넣는 것
+            TTSManager.shared.play("아래")
+            if self.isBasketMode {
+                self.isBasketMode.toggle()
+                self.shoppingBasket(self.nowProduct)
+            }
+        default:
+            break
+        }
+        // 여기에 각 방향에 따른 추가적인 작업 수행
     }
 
     func processBoundingBox(for boundingBox: CGRect) -> UIView  {
@@ -504,10 +556,41 @@ class FLNativeView: NSObject, FlutterPlatformView, ARSCNViewDelegate {
             if firstItem.confidence < 0.9 {
                 TTSManager.shared.play("인식되지 않음")
             } else {
-                print("\(firstItem.identifier.capitalized) : \(formattedConfidence)")
-                TTSManager.shared.play(firstItem.identifier.capitalized)
-
+                self.nowProduct = firstItem.identifier.capitalized
+                self.isBasketMode = true
+                print("\(self.nowProduct) : \(formattedConfidence)")
+                TTSManager.shared.play(self.nowProduct)
+                TTSManager.shared.play("인식된 상품을 장바구니에 추가하려면 아래로 스와이프")
+                TTSManager.shared.play("취소하려면 위로 스와이프")
             }
+        }
+    }
+
+    public func shoppingBasket(_ item: String) {
+        shoppingBasketMap.updateValue(productCount(item)+1, forKey: item)
+        TTSManager.shared.play("\(item)을 장바구니에 넣었습니다. 현재  \(productCount(item))개 넣음")
+        TTSManager.shared.play("결제하려면 왼쪽으로 스와이프")
+    }
+    public func productCount(_ item: String) -> Int {
+        // Non optional Type
+        var count: Int = shoppingBasketMap[item, default:0]
+        return count
+    }
+    public func removeProduct () {
+        
+    }
+    public func totalProduct() {
+        if shoppingBasketMap.isEmpty {
+            TTSManager.shared.play("현재 장바구니가 비어 있습니다.")
+        } else {
+            TTSManager.shared.play("현재 장바구니에 있는 상품은, ")
+            for (key, value) in shoppingBasketMap {
+                print("상품: \(key), 갯수: \(value)")
+                TTSManager.shared.play("\(key), \(value)개, ")
+            }
+            TTSManager.shared.play("수정하려면 화면을 위로 스와이프, ")
+            TTSManager.shared.play("결제하려면 화면을 1초 이상 길게 누르세요")
+            self.willBuy = true
         }
     }
 }
