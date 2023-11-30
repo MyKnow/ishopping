@@ -154,7 +154,7 @@ class FLNativeView: NSObject, FlutterPlatformView, ARSCNViewDelegate {
     }
     // 짧게 누르기 제스쳐 핸들러
     @objc func handleShortPress(_ sender: UITapGestureRecognizer) {
-        print("Short Press")
+        TTSManager.shared.play("짧게 누름")
         hapticC.impactFeedback(style: "heavy")
         if let currentFrame = arSessionM.session.currentFrame {
             processFrame(currentFrame)
@@ -170,8 +170,8 @@ class FLNativeView: NSObject, FlutterPlatformView, ARSCNViewDelegate {
     // 길게 누르기 제스처 핸들러
     @objc func handleLongPress(_ sender: UILongPressGestureRecognizer) {
         if sender.state == .began {
+            TTSManager.shared.play("길게 누름")
             hapticC.notificationFeedback(style: "success")
-
             arSessionM.toggleDepthMap()
         }
     }

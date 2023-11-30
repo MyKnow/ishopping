@@ -9,6 +9,9 @@ import ARKit
 
 @available(iOS 17.0, *)
 class ARSessionManager {
+    // 싱글톤 패턴
+    static let shared = ARSessionManager()
+    
     var session: ARSession
     var configuration: ARWorldTrackingConfiguration
 
