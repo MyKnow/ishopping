@@ -16,12 +16,12 @@ void main() {
   runApp(MyApp());
 }
 
-class ProductScreen extends StatefulWidget {
+class ProductAndroidScreen extends StatefulWidget {
   @override
   _CameraScreenState createState() => _CameraScreenState();
 }
 
-class _CameraScreenState extends State<ProductScreen> {
+class _CameraScreenState extends State<ProductAndroidScreen> {
   CameraController? controller;
   late FlutterTts flutterTts;
   String _message = "제품과 기기를 최대한 나란히 하고 촬영하세요.";
