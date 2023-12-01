@@ -12,6 +12,7 @@
 		3B3967161E833CAA004F5970 /* AppFrameworkInfo.plist in Resources */ = {isa = PBXBuildFile; fileRef = 3B3967151E833CAA004F5970 /* AppFrameworkInfo.plist */; };
 		6D4FA7762B181EF400B174B6 /* RamenClassification_NEW.mlmodel in Sources */ = {isa = PBXBuildFile; fileRef = 6D4FA7752B181EF400B174B6 /* RamenClassification_NEW.mlmodel */; };
 		6D4FA77C2B18513200B174B6 /* TTSManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6D4FA77B2B18513200B174B6 /* TTSManager.swift */; };
+		6D4FA77E2B1981FC00B174B6 /* BarcodeProcessor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6D4FA77D2B1981FC00B174B6 /* BarcodeProcessor.swift */; };
 		6D7934282B0F4EF70077C7DB /* RamenClassifier.mlmodel in Sources */ = {isa = PBXBuildFile; fileRef = 6D7934272B0F4EF70077C7DB /* RamenClassifier.mlmodel */; };
 		6D7E66D32B05E9C4003179C3 /* FLNativeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6D7E66D22B05E9C4003179C3 /* FLNativeView.swift */; };
 		6D7E66D52B05E9F0003179C3 /* FLPlugin.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6D7E66D42B05E9F0003179C3 /* FLPlugin.swift */; };
@@ -65,6 +66,7 @@
 		66FFE16DC7DB6AAA80D50A6D /* Pods-RunnerTests.profile.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-RunnerTests.profile.xcconfig"; path = "Target Support Files/Pods-RunnerTests/Pods-RunnerTests.profile.xcconfig"; sourceTree = "<group>"; };
 		6D4FA7752B181EF400B174B6 /* RamenClassification_NEW.mlmodel */ = {isa = PBXFileReference; lastKnownFileType = file.mlmodel; name = RamenClassification_NEW.mlmodel; path = ../../../../Desktop/TABA/ML/RamenClassification_NEW.mlmodel; sourceTree = "<group>"; };
 		6D4FA77B2B18513200B174B6 /* TTSManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TTSManager.swift; sourceTree = "<group>"; };
+		6D4FA77D2B1981FC00B174B6 /* BarcodeProcessor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BarcodeProcessor.swift; sourceTree = "<group>"; };
 		6D7934272B0F4EF70077C7DB /* RamenClassifier.mlmodel */ = {isa = PBXFileReference; lastKnownFileType = file.mlmodel; name = RamenClassifier.mlmodel; path = ../../../../Desktop/RamenClassifier.mlmodel; sourceTree = "<group>"; };
 		6D7E66D22B05E9C4003179C3 /* FLNativeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FLNativeView.swift; sourceTree = "<group>"; };
 		6D7E66D42B05E9F0003179C3 /* FLPlugin.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FLPlugin.swift; sourceTree = "<group>"; };
@@ -182,6 +184,7 @@
 				6D7934272B0F4EF70077C7DB /* RamenClassifier.mlmodel */,
 				1498D2331E8E89220040F4C2 /* GeneratedPluginRegistrant.m */,
 				74858FAE1ED2DC5600515810 /* AppDelegate.swift */,
+				6D4FA77D2B1981FC00B174B6 /* BarcodeProcessor.swift */,
 				74858FAD1ED2DC5600515810 /* Runner-Bridging-Header.h */,
 				6DC114F12B10FE3500013D36 /* DeepLabV3.mlmodel */,
 				6D4FA7752B181EF400B174B6 /* RamenClassification_NEW.mlmodel */,
@@ -409,6 +412,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				6D4FA77E2B1981FC00B174B6 /* BarcodeProcessor.swift in Sources */,
 				6D4FA77C2B18513200B174B6 /* TTSManager.swift in Sources */,
 				74858FAF1ED2DC5600515810 /* AppDelegate.swift in Sources */,
 				6DC114EE2B10EF7900013D36 /* ImageProcessor.swift in Sources */,

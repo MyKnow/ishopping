@@ -16,7 +16,10 @@ class TTSManager {
         // 속도 (1.0에 가까워질 수록 빨라짐)
         utterance.rate = 0.6
 
-        // 종료 후에 지금 단어 출력
+        // 실행 중인 말 즉시 종료
+        //synthesizer.stopSpeaking(at: .immediate)
+
+        // 단어 출력
         synthesizer.speak(utterance)
     }
     

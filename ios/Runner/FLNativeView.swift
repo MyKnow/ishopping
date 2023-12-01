@@ -81,6 +81,9 @@ class FLNativeView: NSObject, FlutterPlatformView, ARSCNViewDelegate {
 
     public var isBasketMode: Bool = false
 
+    public var isEditMode: Bool = false
+    public var editCount: Int = 1
+
     public var nowProduct: String = ""
 
     public var willBuy: Bool = false
@@ -182,9 +185,9 @@ class FLNativeView: NSObject, FlutterPlatformView, ARSCNViewDelegate {
                 //ARSessionManager.shared.toggleDepthMap()
                 if let currentFrame = ARSessionManager.shared.session.currentFrame {
                     // Vision 요청 실행
-                    let pixelBuffer = currentFrame.capturedImage
+                    let nowImage = currentFrame.capturedImage
                     //self.performModelInference(pixelBuffer: pixelBuffer)
-                    self.detect(image: CIImage(cvPixelBuffer: pixelBuffer))
+                    self.detect(image: CIImage(cvPixelBuffer: nowImage))
                 }
             }
         }
@@ -204,23 +207,52 @@ class FLNativeView: NSObject, FlutterPlatformView, ARSCNViewDelegate {
     @objc private func handleSwipe(_ gesture: UISwipeGestureRecognizer) {
         hapticC.impactFeedback(style: "Heavy")
         switch gesture.direction {
-        case .left:
+        case .left: // 무언갈 진행하는 것
             TTSManager.shared.play("왼쪽")
-            self.totalProduct()
-        case .right:
+            if self.isEditMode{
+                self.isBasketMode = false
+                self.shoppingBasket(self.nowProduct)
+            }
+            else if self.willBuy {
+
+            } else {
+                self.totalProduct()
+            }
+        case .right: // 무언갈 취소하는 것
             TTSManager.shared.play("오른쪽")
-        case .up: // 무언갈 빼는 것
-            TTSManager.shared.play("위")
-            if self.isBasketMode {
-                self.isBasketMode.toggle()
+            if self.isEditMode {
+                self.isEditMode = false
+                self.isBasketMode = false
+                TTSManager.shared.play("수정 취소")
+            }
+            else if self.isBasketMode {
+                self.isBasketMode = false
                 TTSManager.shared.play("취소")
                 self.nowProduct = ""
+            } else if self.willBuy {
+                self.isBasketMode = false
+                TTSManager.shared.play("결제 취소")
             }
-        case .down: // 무언갈 넣는 것
+        case .up: // 무언갈 더하는 것
+            TTSManager.shared.play("위")
+            if self.isEditMode{
+                self.editCount += 1
+                self.editProduct(self.nowProduct)
+            } else if self.isBasketMode {
+                self.isBasketMode = false
+                self.isEditMode = true
+                self.editCount += 1
+                self.editProduct(self.nowProduct)
+            }
+        case .down: // 무언갈 빼는 것
             TTSManager.shared.play("아래")
-            if self.isBasketMode {
-                self.isBasketMode.toggle()
-                self.shoppingBasket(self.nowProduct)
+            if self.isEditMode{
+                self.editCount -= 1
+                self.editProduct(self.nowProduct)
+            } else if self.isBasketMode {
+                self.isBasketMode = false
+                self.isEditMode = true
+                self.editProduct(self.nowProduct)
             }
         default:
             break
@@ -540,7 +572,7 @@ class FLNativeView: NSObject, FlutterPlatformView, ARSCNViewDelegate {
     }
 
     private func handleClassification(request: VNRequest, error: Error?) {
-        DispatchQueue.main.async {
+        DispatchQueue.global().async { [self] in
             if let error = error {
                 print("에러: \(error.localizedDescription)")
                 return
@@ -550,34 +582,57 @@ class FLNativeView: NSObject, FlutterPlatformView, ARSCNViewDelegate {
                 print("결과 없음")
                 return
             }
-            
-            let formattedConfidence = String(format: "%.2f", firstItem.confidence)
-            TTSManager.shared.stop()
-            if firstItem.confidence < 0.9 {
-                TTSManager.shared.play("인식되지 않음")
-            } else {
-                self.nowProduct = firstItem.identifier.capitalized
-                self.isBasketMode = true
-                print("\(self.nowProduct) : \(formattedConfidence)")
-                TTSManager.shared.play(self.nowProduct)
-                TTSManager.shared.play("인식된 상품을 장바구니에 추가하려면 아래로 스와이프")
-                TTSManager.shared.play("취소하려면 위로 스와이프")
+
+            guard let currentFrame = ARSessionManager.shared.session.currentFrame else { return }
+            let pixelBuffer = currentFrame.capturedImage
+
+            BarcodeProcessor.shared.processBarcode(from: imageP.CVPB2UIImage(pixelBuffer: pixelBuffer)!) { barcodeString in
+                if let barcode = barcodeString {
+                    // Handle barcode detected
+                    TTSManager.shared.play(barcode)
+                } else {
+                    // Handle no barcode found
+                    if firstItem.confidence < 0.95 {
+                        // Convert CIImage to UIImage;
+                        TTSManager.shared.play("인식되지 않음")
+                    } else {
+                        let formattedConfidence = String(format: "%.2f", firstItem.confidence)
+                        TTSManager.shared.stop()
+                        self.nowProduct = firstItem.identifier.capitalized
+                        self.isBasketMode = true
+                        print("\(self.nowProduct) : \(formattedConfidence)")
+                        self.editCount = self.productCount(self.nowProduct)
+                        TTSManager.shared.play(self.nowProduct)
+                        TTSManager.shared.play("현재 장바구니에 \(self.editCount)개 있음")
+                        TTSManager.shared.play("갯수를 수정하려면 위, 아래로 스와이프")
+                        TTSManager.shared.play("취소하려면 오른쪽으로 스와이프")
+                    }
+                }
             }
         }
     }
 
     public func shoppingBasket(_ item: String) {
-        shoppingBasketMap.updateValue(productCount(item)+1, forKey: item)
-        TTSManager.shared.play("\(item)을 장바구니에 넣었습니다. 현재  \(productCount(item))개 넣음")
-        TTSManager.shared.play("결제하려면 왼쪽으로 스와이프")
+        shoppingBasketMap.updateValue(editCount, forKey: item)
+        self.editCount = 1
+        self.isEditMode = false
+        self.isBasketMode = false
+        if self.productCount(item) == 0 {
+            shoppingBasketMap[item] = nil
+            TTSManager.shared.play("\(item) 장바구니에서 제거")
+        } else {
+            TTSManager.shared.play("\(item)이 장바구니에 \(self.productCount(item))개 있음")
+            TTSManager.shared.play("결제하려면 왼쪽으로 스와이프")
+        }
     }
     public func productCount(_ item: String) -> Int {
         // Non optional Type
         var count: Int = shoppingBasketMap[item, default:0]
         return count
     }
-    public func removeProduct () {
-        
+    public func editProduct (_ item: String) {
+        if self.editCount < 0 {self.editCount = 0}
+        TTSManager.shared.play("현재 \(self.editCount)개")
     }
     public func totalProduct() {
         if shoppingBasketMap.isEmpty {
@@ -589,6 +644,7 @@ class FLNativeView: NSObject, FlutterPlatformView, ARSCNViewDelegate {
                 TTSManager.shared.play("\(key), \(value)개, ")
             }
             TTSManager.shared.play("수정하려면 화면을 위로 스와이프, ")
+            TTSManager.shared.play("취소하려면 화면을 오른쪽으로 스와이프, ")
             TTSManager.shared.play("결제하려면 화면을 1초 이상 길게 누르세요")
             self.willBuy = true
         }
