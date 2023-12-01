@@ -45,17 +45,6 @@ class SectionFLNativeView: NSObject, FlutterPlatformView, ARSCNViewDelegate {
         9.0: .black
     ]
 
-    public var shoppingBasketMap: [String: Int] = [:]
-
-    public var isBasketMode: Bool = false
-
-    public var isEditMode: Bool = false
-    public var editCount: Int = 1
-
-    public var nowProduct: String = ""
-
-    public var willBuy: Bool = false
-
     // 딕셔너리의 키들을 배열로 변환
     private var indexDistance: [Float] = []
 
@@ -96,8 +85,6 @@ class SectionFLNativeView: NSObject, FlutterPlatformView, ARSCNViewDelegate {
             configuration.frameSemantics = .sceneDepth
         }
 
-        //loadModel()
-
         arView.session = ARSessionManager.shared.session
         arView.delegate = self
         
@@ -105,15 +92,10 @@ class SectionFLNativeView: NSObject, FlutterPlatformView, ARSCNViewDelegate {
         viewController = ViewController()
         viewController?.session = ARSessionManager.shared.session
         
-        //NotificationCenter.default.addObserver(self, selector: #selector(appWillResignActive), name: UIApplication.willResignActiveNotification, object: nil)
-        //NotificationCenter.default.addObserver(self, selector: #selector(appDidBecomeActive), name: UIApplication.didBecomeActiveNotification, object: nil)
-
         indexDistance = Array(distanceColorMap.keys).sorted() 
 
-        //setupARView()
         ARSessionManager.shared.runSession()
         setupVision()
-        //setupGridDots()
         addShortPressGesture()
         addLongPressGesture()
         addSwipeGesture()
@@ -147,17 +129,6 @@ class SectionFLNativeView: NSObject, FlutterPlatformView, ARSCNViewDelegate {
         if sender.state == .began {
             TTSManager.shared.play("길게 누름")
             hapticC.notificationFeedback(style: "success")
-            if self.willBuy {
-                // TODO:결제 처리
-            } else {
-                //ARSessionManager.shared.toggleDepthMap()
-                if let currentFrame = ARSessionManager.shared.session.currentFrame {
-                    // Vision 요청 실행
-                    let nowImage = currentFrame.capturedImage
-                    //self.performModelInference(pixelBuffer: pixelBuffer)
-                    self.detect(image: CIImage(cvPixelBuffer: nowImage))
-                }
-            }
         }
     }
 
@@ -176,52 +147,13 @@ class SectionFLNativeView: NSObject, FlutterPlatformView, ARSCNViewDelegate {
         hapticC.impactFeedback(style: "Heavy")
         switch gesture.direction {
         case .left: // 무언갈 진행하는 것
-            TTSManager.shared.play("왼쪽")
-            if self.isEditMode{
-                self.isBasketMode = false
-                self.shoppingBasket(self.nowProduct)
-            }
-            else if self.willBuy {
-
-            } else {
-                self.totalProduct()
-            }
+            break
         case .right: // 무언갈 취소하는 것
-            TTSManager.shared.play("오른쪽")
-            if self.isEditMode {
-                self.isEditMode = false
-                self.isBasketMode = false
-                TTSManager.shared.play("수정 취소")
-            }
-            else if self.isBasketMode {
-                self.isBasketMode = false
-                TTSManager.shared.play("취소")
-                self.nowProduct = ""
-            } else if self.willBuy {
-                self.isBasketMode = false
-                TTSManager.shared.play("결제 취소")
-            }
+            break
         case .up: // 무언갈 더하는 것
-            TTSManager.shared.play("위")
-            if self.isEditMode{
-                self.editCount += 1
-                self.editProduct(self.nowProduct)
-            } else if self.isBasketMode {
-                self.isBasketMode = false
-                self.isEditMode = true
-                self.editCount += 1
-                self.editProduct(self.nowProduct)
-            }
+            break
         case .down: // 무언갈 빼는 것
-            TTSManager.shared.play("아래")
-            if self.isEditMode{
-                self.editCount -= 1
-                self.editProduct(self.nowProduct)
-            } else if self.isBasketMode {
-                self.isBasketMode = false
-                self.isEditMode = true
-                self.editProduct(self.nowProduct)
-            }
+            break
         default:
             break
         }
@@ -322,6 +254,16 @@ class SectionFLNativeView: NSObject, FlutterPlatformView, ARSCNViewDelegate {
         }
     }
 
+    private func processFrame(_ frame: ARFrame) {
+        let pixelBuffer = frame.capturedImage
+        // pixelBuffer에서 고해상도 이미지를 생성 및 처리
+
+        if let image = imageP.CVPB2UIImage(pixelBuffer: pixelBuffer) {
+            imageP.UIImage2PhotoLibrary(image)
+            //imageP.UIImage2Server(image)
+        }
+    }
+
     func performHitTesting(_ screenPoint: CGPoint) -> Float? {
         if let hitTestResult = arView.hitTest(screenPoint, types: .featurePoint).first {
             if let currentFrame = ARSessionManager.shared.session.currentFrame {
@@ -331,16 +273,6 @@ class SectionFLNativeView: NSObject, FlutterPlatformView, ARSCNViewDelegate {
             }
         }
         return nil
-    }
-
-    private func processFrame(_ frame: ARFrame) {
-        let pixelBuffer = frame.capturedImage
-        // pixelBuffer에서 고해상도 이미지를 생성 및 처리
-
-        if let image = imageP.CVPB2UIImage(pixelBuffer: pixelBuffer) {
-            imageP.UIImage2PhotoLibrary(image)
-            //imageP.UIImage2Server(image)
-        }
     }
 
     // 거리 계산 함수
@@ -392,10 +324,6 @@ class SectionFLNativeView: NSObject, FlutterPlatformView, ARSCNViewDelegate {
             // 사람 거리 측정
             self.performHitTestAndMeasureDistance()
 
-            // Depth map 오버레이가 활성화된 경우에만 처리
-            if ARSessionManager.shared.isDepthMapOverlayEnabled, let currentFrame = ARSessionManager.shared.session.currentFrame, let depthData = currentFrame.sceneDepth {
-                ARSessionManager.shared.overlayDepthMap(self.arView)
-            }
             if let currentFrame = ARSessionManager.shared.session.currentFrame {
                 // Vision 요청 실행
                 let pixelBuffer = currentFrame.capturedImage
@@ -514,107 +442,6 @@ class SectionFLNativeView: NSObject, FlutterPlatformView, ARSCNViewDelegate {
                 self.arView.addSubview(boundingBoxView)
                 self.humanBoundingBoxViews.append(boundingBoxView)
             }
-        }
-    }
-
-    func detect(image: CIImage) {
-        // CoreML 모델 로딩
-        guard let coreMLModel = try? RamenClassification_NEW(configuration: MLModelConfiguration()),
-            let visionModel = try? VNCoreMLModel(for: coreMLModel.model) else {
-            print("CoreML 모델 로딩 실패")
-            return
-        }
-
-        let request = VNCoreMLRequest(model: visionModel, completionHandler: { [weak self] request, error in
-            self?.handleClassification(request: request, error: error)
-        })
-        
-        let handler = VNImageRequestHandler(ciImage: image)
-        DispatchQueue.global(qos: .userInitiated).async {
-            do {
-                try handler.perform([request])
-            } catch {
-                print("에러: \(error.localizedDescription)")
-            }
-        }
-    }
-
-    private func handleClassification(request: VNRequest, error: Error?) {
-        DispatchQueue.global().async { [self] in
-            if let error = error {
-                print("에러: \(error.localizedDescription)")
-                return
-            }
-            guard let results = request.results as? [VNClassificationObservation],
-                let firstItem = results.first else {
-                print("결과 없음")
-                return
-            }
-
-            guard let currentFrame = ARSessionManager.shared.session.currentFrame else { return }
-            let pixelBuffer = currentFrame.capturedImage
-
-            BarcodeProcessor.shared.processBarcode(from: imageP.CVPB2UIImage(pixelBuffer: pixelBuffer)!) { barcodeString in
-                if let barcode = barcodeString {
-                    // Handle barcode detected
-                    TTSManager.shared.play(barcode)
-                } else {
-                    // Handle no barcode found
-                    if firstItem.confidence < 0.95 {
-                        // Convert CIImage to UIImage;
-                        TTSManager.shared.play("인식되지 않음")
-                    } else {
-                        let formattedConfidence = String(format: "%.2f", firstItem.confidence)
-                        TTSManager.shared.stop()
-                        self.nowProduct = firstItem.identifier.capitalized
-                        self.isBasketMode = true
-                        print("\(self.nowProduct) : \(formattedConfidence)")
-                        self.editCount = self.productCount(self.nowProduct)
-                        TTSManager.shared.play(self.nowProduct)
-                        TTSManager.shared.play("현재 장바구니에 \(self.editCount)개 있음")
-                        TTSManager.shared.play("갯수를 수정하려면 위, 아래로 스와이프")
-                        TTSManager.shared.play("취소하려면 오른쪽으로 스와이프")
-                    }
-                }
-            }
-        }
-    }
-
-    public func shoppingBasket(_ item: String) {
-        shoppingBasketMap.updateValue(editCount, forKey: item)
-        self.editCount = 1
-        self.isEditMode = false
-        self.isBasketMode = false
-        if self.productCount(item) == 0 {
-            shoppingBasketMap[item] = nil
-            TTSManager.shared.play("\(item) 장바구니에서 제거")
-        } else {
-            TTSManager.shared.play("\(item)이 장바구니에 \(self.productCount(item))개 있음")
-            TTSManager.shared.play("결제하려면 왼쪽으로 스와이프")
-        }
-    }
-    public func productCount(_ item: String) -> Int {
-        // Non optional Type
-        var count: Int = shoppingBasketMap[item, default:0]
-        return count
-    }
-    public func editProduct (_ item: String) {
-        if self.editCount < 0 {self.editCount = 0}
-        TTSManager.shared.play("현재 \(self.editCount)개")
-    }
-    public func totalProduct() {
-        if shoppingBasketMap.isEmpty {
-            TTSManager.shared.play("현재 장바구니가 비어 있습니다.")
-        } else {
-            TTSManager.shared.play("현재 장바구니에 있는 상품은, ")
-            for (key, value) in shoppingBasketMap {
-                print("상품: \(key), 갯수: \(value)")
-                TTSManager.shared.play("\(key), \(value)개, ")
-            }
-            TTSManager.shared.play("수정하려면 화면을 위로 스와이프, ")
-            TTSManager.shared.play("취소하려면 화면을 오른쪽으로 스와이프, ")
-            TTSManager.shared.play("결제하려면 화면을 1초 이상 길게 누르세요")
-            self.willBuy = true
         }
     }
 }
