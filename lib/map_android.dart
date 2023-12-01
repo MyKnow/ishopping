@@ -4,12 +4,12 @@ import 'dart:io';
 import 'package:camera/camera.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_tts/flutter_tts.dart';
+import 'package:ishopping/product_android.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:vibration/vibration.dart';
 
 import 'main.dart';
 import 'output.dart';
-import 'product.dart';
 import 'server_api.dart';
 
 void main() {
@@ -90,8 +90,10 @@ class _CameraScreenState extends State<MapAndroidScreen> {
         child: GestureDetector(
           onHorizontalDragEnd: (details) {
             if (details.primaryVelocity! < 0) {
-              Navigator.push(context,
-                  MaterialPageRoute(builder: (context) => ProductScreen()));
+              Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                      builder: (context) => ProductAndroidScreen()));
               flutterTts.stop(); // TTS 중지
             }
             if (details.primaryVelocity! > 0) {
