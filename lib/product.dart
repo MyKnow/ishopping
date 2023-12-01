@@ -25,7 +25,6 @@ class _CameraScreenState extends State<ProductScreen> {
   CameraController? controller;
   late FlutterTts flutterTts;
   String _message = "제품과 기기를 최대한 나란히 하고 촬영하세요.";
-  int _captureCount = 0;
   Timer? _messageTimer;
 
   @override
@@ -151,25 +150,19 @@ class _CameraScreenState extends State<ProductScreen> {
 
       final File newImage = File(image.path);
 
-      // 텐서플로우 라이트
-      // await TFLiteAPI.processImage(imageFile);
-
       // 서버에 이미지 전송
       await sendImageData(newImage); // server_api.dart 파일의 함수 호출
 
       setState(() {
-        _captureCount++; // 촬영 횟수 업데이트
-        setProductCaptureCount(_captureCount);
-
         _message = "${product_name}";
 
         flutterTts.speak(_message);
       });
 
-      final message = "해당 제품은 ${product_name}, 촬영 횟수 : ${product_captureCount}";
+      final message = "2002 해당 제품은 ${product_name}";
       print(message);
     } catch (e) {
-      print('Error capturing image: $e');
+      print('2002 Error capturing image: $e');
     }
   }
 
