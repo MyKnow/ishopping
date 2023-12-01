@@ -25,7 +25,6 @@ class _CameraScreenState extends State<MapAndroidScreen> {
   CameraController? controller;
   late FlutterTts flutterTts;
   String _message = "모바일 기기를 턱에 가까이 대고 사용해 주세요.";
-  int _captureCount = 0;
   Timer? _messageTimer;
 
   @override
@@ -155,16 +154,10 @@ class _CameraScreenState extends State<MapAndroidScreen> {
 
       final File newImage = File(image.path);
 
-      // 텐서플로우 라이트
-      // await TFLiteAPI.processImage(imageFile);
-
       // 서버에 이미지 전송
       await sendImageData(newImage); // server_api.dart 파일의 함수 호출
 
       setState(() {
-        _captureCount++; // 촬영횟수 업데이트
-        setMapCaptureCount(_captureCount);
-
         // 현재 제품 이름 업데이트
         _message =
             "좌측 ${session_left}, 우측 ${session_right}, 정면 ${session_front}";
@@ -174,7 +167,7 @@ class _CameraScreenState extends State<MapAndroidScreen> {
 
       // 콘솔에 메시지 출력
       final message =
-          "좌측 ${session_left}, 우측 ${session_right}, 정면 ${session_front}, 촬영 횟수: ${map_captureCount}";
+          "좌측 ${session_left}, 우측 ${session_right}, 정면 ${session_front}";
       print(message);
     } catch (e) {
       print('Error capturing image: $e');

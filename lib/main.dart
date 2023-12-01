@@ -6,7 +6,7 @@ import 'package:haptic_feedback/haptic_feedback.dart';
 
 import 'map_android.dart';
 import 'product.dart';
-import 'splash_screen.dart';
+import 'shopping_bag.dart';
 
 void main() {
   runApp(MyApp());
@@ -16,7 +16,7 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      home: SplashScreen(),
+      home: ShoppingBagScreen(),
     );
   }
 }
@@ -41,8 +41,7 @@ class _MainScreenState extends State<MainScreen> {
     await flutterTts.setPitch(1.0);
     await flutterTts.setSpeechRate(0.7);
 
-    await _speakText("메인화면. ");
-    _speakText("상. 세션모드. 하. 제품모드");
+    await _speakText("세션모드. 제품모드. 결제모드. ");
   }
 
   Future<void> _speakText(String text) async {
@@ -102,8 +101,17 @@ class _MainScreenState extends State<MainScreen> {
             context,
             "제품 모드",
             "assets/images/public/coke.png",
-            EdgeInsets.fromLTRB(10, 5, 10, 30),
+            EdgeInsets.fromLTRB(10, 5, 10, 5),
             () => navigateToProductMode(context),
+          ),
+        ),
+        Expanded(
+          child: buildButton(
+            context,
+            "결제 모드",
+            "assets/images/public/coins.png",
+            EdgeInsets.fromLTRB(10, 5, 10, 30),
+            () => navigateToShoppingBagMode(context),
           ),
         ),
       ],
@@ -134,8 +142,20 @@ class _MainScreenState extends State<MainScreen> {
               context,
               "제품 모드",
               "assets/images/public/coke.png",
-              EdgeInsets.fromLTRB(5, 10, 10, 10),
+              EdgeInsets.fromLTRB(5, 10, 5, 10),
               () => navigateToProductMode(context),
+            ),
+          ),
+        ),
+        Expanded(
+          child: Container(
+            height: screenHeight,
+            child: buildButton(
+              context,
+              "결제 모드",
+              "assets/images/public/coins.png",
+              EdgeInsets.fromLTRB(5, 10, 10, 10),
+              () => navigateToShoppingBagMode(context),
             ),
           ),
         ),
@@ -151,9 +171,9 @@ class _MainScreenState extends State<MainScreen> {
 
     // 화면 크기에 따라 동적으로 크기를 조정합니다.
     double imageSize =
-        min(screenWidth, screenHeight) * 0.2; // 이미지 크기를 화면의 10%로 설정
+        min(screenWidth, screenHeight) * 0.15; // 이미지 크기를 화면의 10%로 설정
     double fontSize =
-        min(screenWidth, screenHeight) * 0.15; // 텍스트 크기를 화면의 5%로 설정
+        min(screenWidth, screenHeight) * 0.1; // 텍스트 크기를 화면의 5%로 설정
 
     return Container(
       margin: margin,
@@ -200,6 +220,12 @@ class _MainScreenState extends State<MainScreen> {
     heavyVibration(3);
     Navigator.push(
         context, MaterialPageRoute(builder: (context) => ProductScreen()));
+  }
+
+  void navigateToShoppingBagMode(BuildContext context) async {
+    heavyVibration(3);
+    Navigator.push(
+        context, MaterialPageRoute(builder: (context) => ShoppingBagScreen()));
   }
 
   Future<void> heavyVibration(int rep) async {
