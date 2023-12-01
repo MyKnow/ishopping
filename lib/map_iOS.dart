@@ -14,7 +14,7 @@ class _MapScreenState extends State<MapScreen> {
 
   @override
   Widget build(BuildContext context) {
-    const String viewType = 'product_view';
+    const String viewType = 'section_view';
     final Map<String, dynamic> creationParams = <String, dynamic>{};
 
     return FutureBuilder(

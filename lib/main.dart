@@ -223,7 +223,7 @@ class _MainScreenState extends State<MainScreen> {
     Navigator.push(
         context,
         MaterialPageRoute(
-            builder: (context) => PlatformSpecificProductScreen()));
+            builder: (context) => const PlatformSpecificProductScreen()));
   }
 
   void navigateToShoppingBagMode(BuildContext context) async {

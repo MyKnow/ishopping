@@ -10,26 +10,22 @@
 		1498D2341E8E89220040F4C2 /* GeneratedPluginRegistrant.m in Sources */ = {isa = PBXBuildFile; fileRef = 1498D2331E8E89220040F4C2 /* GeneratedPluginRegistrant.m */; };
 		331C808B294A63AB00263BE5 /* RunnerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 331C807B294A618700263BE5 /* RunnerTests.swift */; };
 		3B3967161E833CAA004F5970 /* AppFrameworkInfo.plist in Resources */ = {isa = PBXBuildFile; fileRef = 3B3967151E833CAA004F5970 /* AppFrameworkInfo.plist */; };
-		6D4FA7762B181EF400B174B6 /* RamenClassification_NEW.mlmodel in Sources */ = {isa = PBXBuildFile; fileRef = 6D4FA7752B181EF400B174B6 /* RamenClassification_NEW.mlmodel */; };
+		6D3DD8902B1A1B6C004D3D4D /* ProductFLNativeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6D3DD88F2B1A1B6C004D3D4D /* ProductFLNativeView.swift */; };
+		6D3DD8922B1A1BDB004D3D4D /* SectionFLNativeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6D3DD8912B1A1BDB004D3D4D /* SectionFLNativeView.swift */; };
+		6D3DD8992B1A2050004D3D4D /* GeneratedPluginRegistrant.h in Sources */ = {isa = PBXBuildFile; fileRef = 1498D2321E8E86230040F4C2 /* GeneratedPluginRegistrant.h */; };
+		6D3DD89A2B1A2050004D3D4D /* Runner-Bridging-Header.h in Sources */ = {isa = PBXBuildFile; fileRef = 74858FAD1ED2DC5600515810 /* Runner-Bridging-Header.h */; };
+		6D3DD89B2B1A2050004D3D4D /* RamenClassifier.mlmodel in Sources */ = {isa = PBXBuildFile; fileRef = 6D3DD8962B1A1F32004D3D4D /* RamenClassifier.mlmodel */; };
+		6D3DD89C2B1A2050004D3D4D /* RamenClassification_NEW.mlmodel in Sources */ = {isa = PBXBuildFile; fileRef = 6D3DD8972B1A1F37004D3D4D /* RamenClassification_NEW.mlmodel */; };
 		6D4FA77C2B18513200B174B6 /* TTSManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6D4FA77B2B18513200B174B6 /* TTSManager.swift */; };
 		6D4FA77E2B1981FC00B174B6 /* BarcodeProcessor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6D4FA77D2B1981FC00B174B6 /* BarcodeProcessor.swift */; };
-		6D7934282B0F4EF70077C7DB /* RamenClassifier.mlmodel in Sources */ = {isa = PBXBuildFile; fileRef = 6D7934272B0F4EF70077C7DB /* RamenClassifier.mlmodel */; };
 		6D7E66D52B05E9F0003179C3 /* FLPlugin.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6D7E66D42B05E9F0003179C3 /* FLPlugin.swift */; };
 		6DC114E82B10EF0400013D36 /* ARSessionManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6DC114E72B10EF0400013D36 /* ARSessionManager.swift */; };
 		6DC114EA2B10EF4800013D36 /* HumanDetectionManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6DC114E92B10EF4800013D36 /* HumanDetectionManager.swift */; };
 		6DC114EC2B10EF6100013D36 /* HapticFeedbackManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6DC114EB2B10EF6100013D36 /* HapticFeedbackManager.swift */; };
 		6DC114EE2B10EF7900013D36 /* ImageProcessor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6DC114ED2B10EF7900013D36 /* ImageProcessor.swift */; };
 		6DC114F02B10EF9600013D36 /* UIViewManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6DC114EF2B10EF9600013D36 /* UIViewManager.swift */; };
-		6DC114F22B10FE3500013D36 /* DeepLabV3.mlmodel in Sources */ = {isa = PBXBuildFile; fileRef = 6DC114F12B10FE3500013D36 /* DeepLabV3.mlmodel */; };
-		6DC702BB2B19D9D800C62562 /* SECTION in Sources */ = {isa = PBXBuildFile; fileRef = 6DC702B82B19D9D800C62562 /* SECTION */; };
-		6DC702BD2B19D9D800C62562 /* PRODUCT in Sources */ = {isa = PBXBuildFile; fileRef = 6DC702BA2B19D9D800C62562 /* PRODUCT */; };
-		6DC702C52B19E1EF00C62562 /* ProductFLNativeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6DC702C42B19E1EF00C62562 /* ProductFLNativeView.swift */; };
-		6DC702CD2B19E39A00C62562 /* SectionFLNativeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6DC702CC2B19E39A00C62562 /* SectionFLNativeView.swift */; };
 		74858FAF1ED2DC5600515810 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 74858FAE1ED2DC5600515810 /* AppDelegate.swift */; };
 		7999EB4BA3EE987F7FF5F32E /* Pods_RunnerTests.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 3999562C9479590F8B5FCC1F /* Pods_RunnerTests.framework */; };
-		97C146FC1CF9000F007C117D /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 97C146FA1CF9000F007C117D /* Main.storyboard */; };
-		97C146FE1CF9000F007C117D /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 97C146FD1CF9000F007C117D /* Assets.xcassets */; };
-		97C147011CF9000F007C117D /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 97C146FF1CF9000F007C117D /* LaunchScreen.storyboard */; };
 		E377B2B5FC389137B8A2B6DA /* Pods_Runner.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 5E852248086AF669B33113B4 /* Pods_Runner.framework */; };
 /* End PBXBuildFile section */
 
@@ -67,21 +63,18 @@
 		3B3967151E833CAA004F5970 /* AppFrameworkInfo.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; name = AppFrameworkInfo.plist; path = Flutter/AppFrameworkInfo.plist; sourceTree = "<group>"; };
 		5E852248086AF669B33113B4 /* Pods_Runner.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_Runner.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		66FFE16DC7DB6AAA80D50A6D /* Pods-RunnerTests.profile.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-RunnerTests.profile.xcconfig"; path = "Target Support Files/Pods-RunnerTests/Pods-RunnerTests.profile.xcconfig"; sourceTree = "<group>"; };
-		6D4FA7752B181EF400B174B6 /* RamenClassification_NEW.mlmodel */ = {isa = PBXFileReference; lastKnownFileType = file.mlmodel; name = RamenClassification_NEW.mlmodel; path = ../../../../Desktop/TABA/ML/RamenClassification_NEW.mlmodel; sourceTree = "<group>"; };
+		6D3DD88F2B1A1B6C004D3D4D /* ProductFLNativeView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ProductFLNativeView.swift; sourceTree = "<group>"; };
+		6D3DD8912B1A1BDB004D3D4D /* SectionFLNativeView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SectionFLNativeView.swift; sourceTree = "<group>"; };
+		6D3DD8962B1A1F32004D3D4D /* RamenClassifier.mlmodel */ = {isa = PBXFileReference; lastKnownFileType = file.mlmodel; path = RamenClassifier.mlmodel; sourceTree = "<group>"; };
+		6D3DD8972B1A1F37004D3D4D /* RamenClassification_NEW.mlmodel */ = {isa = PBXFileReference; lastKnownFileType = file.mlmodel; path = RamenClassification_NEW.mlmodel; sourceTree = "<group>"; };
 		6D4FA77B2B18513200B174B6 /* TTSManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TTSManager.swift; sourceTree = "<group>"; };
 		6D4FA77D2B1981FC00B174B6 /* BarcodeProcessor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BarcodeProcessor.swift; sourceTree = "<group>"; };
-		6D7934272B0F4EF70077C7DB /* RamenClassifier.mlmodel */ = {isa = PBXFileReference; lastKnownFileType = file.mlmodel; name = RamenClassifier.mlmodel; path = ../../../../Desktop/RamenClassifier.mlmodel; sourceTree = "<group>"; };
 		6D7E66D42B05E9F0003179C3 /* FLPlugin.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FLPlugin.swift; sourceTree = "<group>"; };
 		6DC114E72B10EF0400013D36 /* ARSessionManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ARSessionManager.swift; sourceTree = "<group>"; };
 		6DC114E92B10EF4800013D36 /* HumanDetectionManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HumanDetectionManager.swift; sourceTree = "<group>"; };
 		6DC114EB2B10EF6100013D36 /* HapticFeedbackManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HapticFeedbackManager.swift; sourceTree = "<group>"; };
 		6DC114ED2B10EF7900013D36 /* ImageProcessor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImageProcessor.swift; sourceTree = "<group>"; };
 		6DC114EF2B10EF9600013D36 /* UIViewManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UIViewManager.swift; sourceTree = "<group>"; };
-		6DC114F12B10FE3500013D36 /* DeepLabV3.mlmodel */ = {isa = PBXFileReference; lastKnownFileType = file.mlmodel; name = DeepLabV3.mlmodel; path = ../../../../Downloads/DeepLabV3.mlmodel; sourceTree = "<group>"; };
-		6DC702B82B19D9D800C62562 /* SECTION */ = {isa = PBXFileReference; lastKnownFileType = folder; path = SECTION; sourceTree = "<group>"; };
-		6DC702BA2B19D9D800C62562 /* PRODUCT */ = {isa = PBXFileReference; lastKnownFileType = folder; path = PRODUCT; sourceTree = "<group>"; };
-		6DC702C42B19E1EF00C62562 /* ProductFLNativeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = ProductFLNativeView.swift; path = Runner/PRODUCT/ProductFLNativeView.swift; sourceTree = "<group>"; };
-		6DC702CC2B19E39A00C62562 /* SectionFLNativeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = SectionFLNativeView.swift; path = Runner/SECTION/SectionFLNativeView.swift; sourceTree = "<group>"; };
 		74858FAD1ED2DC5600515810 /* Runner-Bridging-Header.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "Runner-Bridging-Header.h"; sourceTree = "<group>"; };
 		74858FAE1ED2DC5600515810 /* AppDelegate.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
 		7AFA3C8E1D35360C0083082E /* Release.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; name = Release.xcconfig; path = Flutter/Release.xcconfig; sourceTree = "<group>"; };
@@ -89,9 +82,6 @@
 		9740EEB21CF90195004384FC /* Debug.xcconfig */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.xcconfig; name = Debug.xcconfig; path = Flutter/Debug.xcconfig; sourceTree = "<group>"; };
 		9740EEB31CF90195004384FC /* Generated.xcconfig */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.xcconfig; name = Generated.xcconfig; path = Flutter/Generated.xcconfig; sourceTree = "<group>"; };
 		97C146EE1CF9000F007C117D /* Runner.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Runner.app; sourceTree = BUILT_PRODUCTS_DIR; };
-		97C146FB1CF9000F007C117D /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/Main.storyboard; sourceTree = "<group>"; };
-		97C146FD1CF9000F007C117D /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
-		97C147001CF9000F007C117D /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/LaunchScreen.storyboard; sourceTree = "<group>"; };
 		97C147021CF9000F007C117D /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		991D4EFEBA4210A579BA9375 /* Pods-Runner.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-Runner.debug.xcconfig"; path = "Target Support Files/Pods-Runner/Pods-Runner.debug.xcconfig"; sourceTree = "<group>"; };
 		ACB13888752E82A0BB86162C /* Pods-Runner.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-Runner.release.xcconfig"; path = "Target Support Files/Pods-Runner/Pods-Runner.release.xcconfig"; sourceTree = "<group>"; };
@@ -147,6 +137,46 @@
 			path = Pods;
 			sourceTree = "<group>";
 		};
+		6D3DD8932B1A1D80004D3D4D /* Product */ = {
+			isa = PBXGroup;
+			children = (
+				6D4FA77D2B1981FC00B174B6 /* BarcodeProcessor.swift */,
+				6D3DD88F2B1A1B6C004D3D4D /* ProductFLNativeView.swift */,
+			);
+			path = Product;
+			sourceTree = "<group>";
+		};
+		6D3DD8942B1A1D8A004D3D4D /* Section */ = {
+			isa = PBXGroup;
+			children = (
+				6D3DD8912B1A1BDB004D3D4D /* SectionFLNativeView.swift */,
+				6DC114E92B10EF4800013D36 /* HumanDetectionManager.swift */,
+			);
+			path = Section;
+			sourceTree = "<group>";
+		};
+		6D3DD8952B1A1EBA004D3D4D /* Shared */ = {
+			isa = PBXGroup;
+			children = (
+				6DC114E72B10EF0400013D36 /* ARSessionManager.swift */,
+				74858FAE1ED2DC5600515810 /* AppDelegate.swift */,
+				6D3DD8962B1A1F32004D3D4D /* RamenClassifier.mlmodel */,
+				6D3DD8972B1A1F37004D3D4D /* RamenClassification_NEW.mlmodel */,
+				6D7E66D42B05E9F0003179C3 /* FLPlugin.swift */,
+				6D4FA77B2B18513200B174B6 /* TTSManager.swift */,
+			);
+			path = Shared;
+			sourceTree = "<group>";
+		};
+		6D3DD8982B1A1F58004D3D4D /* _ETC */ = {
+			isa = PBXGroup;
+			children = (
+				1498D2321E8E86230040F4C2 /* GeneratedPluginRegistrant.h */,
+				1498D2331E8E89220040F4C2 /* GeneratedPluginRegistrant.m */,
+			);
+			path = _ETC;
+			sourceTree = "<group>";
+		};
 		9740EEB11CF90186004384FC /* Flutter */ = {
 			isa = PBXGroup;
 			children = (
@@ -161,14 +191,12 @@
 		97C146E51CF9000F007C117D = {
 			isa = PBXGroup;
 			children = (
-				6DC702CC2B19E39A00C62562 /* SectionFLNativeView.swift */,
-				6DC702C42B19E1EF00C62562 /* ProductFLNativeView.swift */,
 				9740EEB11CF90186004384FC /* Flutter */,
-				97C146F01CF9000F007C117D /* Runner */,
-				97C146EF1CF9000F007C117D /* Products */,
-				331C8082294A63A400263BE5 /* RunnerTests */,
-				43FFEFFD97CD085F98A305E0 /* Pods */,
 				32B91166D54EC2FD3CD74929 /* Frameworks */,
+				43FFEFFD97CD085F98A305E0 /* Pods */,
+				97C146EF1CF9000F007C117D /* Products */,
+				97C146F01CF9000F007C117D /* Runner */,
+				331C8082294A63A400263BE5 /* RunnerTests */,
 			);
 			sourceTree = "<group>";
 		};
@@ -184,25 +212,13 @@
 		97C146F01CF9000F007C117D /* Runner */ = {
 			isa = PBXGroup;
 			children = (
-				6DC702BA2B19D9D800C62562 /* PRODUCT */,
-				6DC702B82B19D9D800C62562 /* SECTION */,
-				97C146FA1CF9000F007C117D /* Main.storyboard */,
-				97C146FD1CF9000F007C117D /* Assets.xcassets */,
-				97C146FF1CF9000F007C117D /* LaunchScreen.storyboard */,
-				97C147021CF9000F007C117D /* Info.plist */,
-				1498D2321E8E86230040F4C2 /* GeneratedPluginRegistrant.h */,
-				6D7934272B0F4EF70077C7DB /* RamenClassifier.mlmodel */,
-				1498D2331E8E89220040F4C2 /* GeneratedPluginRegistrant.m */,
-				74858FAE1ED2DC5600515810 /* AppDelegate.swift */,
-				6D4FA77D2B1981FC00B174B6 /* BarcodeProcessor.swift */,
+				6D3DD8982B1A1F58004D3D4D /* _ETC */,
+				6D3DD8952B1A1EBA004D3D4D /* Shared */,
+				6D3DD8942B1A1D8A004D3D4D /* Section */,
+				6D3DD8932B1A1D80004D3D4D /* Product */,
 				74858FAD1ED2DC5600515810 /* Runner-Bridging-Header.h */,
-				6DC114F12B10FE3500013D36 /* DeepLabV3.mlmodel */,
-				6D4FA7752B181EF400B174B6 /* RamenClassification_NEW.mlmodel */,
-				6D7E66D42B05E9F0003179C3 /* FLPlugin.swift */,
-				6DC114E72B10EF0400013D36 /* ARSessionManager.swift */,
-				6D4FA77B2B18513200B174B6 /* TTSManager.swift */,
 				6DC114EB2B10EF6100013D36 /* HapticFeedbackManager.swift */,
-				6DC114E92B10EF4800013D36 /* HumanDetectionManager.swift */,
+				97C147021CF9000F007C117D /* Info.plist */,
 				6DC114ED2B10EF7900013D36 /* ImageProcessor.swift */,
 				6DC114EF2B10EF9600013D36 /* UIViewManager.swift */,
 			);
@@ -304,10 +320,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				97C147011CF9000F007C117D /* LaunchScreen.storyboard in Resources */,
 				3B3967161E833CAA004F5970 /* AppFrameworkInfo.plist in Resources */,
-				97C146FE1CF9000F007C117D /* Assets.xcassets in Resources */,
-				97C146FC1CF9000F007C117D /* Main.storyboard in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -421,18 +434,17 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				6DC702CD2B19E39A00C62562 /* SectionFLNativeView.swift in Sources */,
-				6DC702C52B19E1EF00C62562 /* ProductFLNativeView.swift in Sources */,
-				6DC702BB2B19D9D800C62562 /* SECTION in Sources */,
-				6DC702BD2B19D9D800C62562 /* PRODUCT in Sources */,
+				6D3DD8992B1A2050004D3D4D /* GeneratedPluginRegistrant.h in Sources */,
+				6D3DD89A2B1A2050004D3D4D /* Runner-Bridging-Header.h in Sources */,
+				6D3DD89B2B1A2050004D3D4D /* RamenClassifier.mlmodel in Sources */,
+				6D3DD89C2B1A2050004D3D4D /* RamenClassification_NEW.mlmodel in Sources */,
 				6D4FA77E2B1981FC00B174B6 /* BarcodeProcessor.swift in Sources */,
 				6D4FA77C2B18513200B174B6 /* TTSManager.swift in Sources */,
 				74858FAF1ED2DC5600515810 /* AppDelegate.swift in Sources */,
 				6DC114EE2B10EF7900013D36 /* ImageProcessor.swift in Sources */,
-				6D7934282B0F4EF70077C7DB /* RamenClassifier.mlmodel in Sources */,
+				6D3DD8902B1A1B6C004D3D4D /* ProductFLNativeView.swift in Sources */,
 				6DC114F02B10EF9600013D36 /* UIViewManager.swift in Sources */,
-				6D4FA7762B181EF400B174B6 /* RamenClassification_NEW.mlmodel in Sources */,
-				6DC114F22B10FE3500013D36 /* DeepLabV3.mlmodel in Sources */,
+				6D3DD8922B1A1BDB004D3D4D /* SectionFLNativeView.swift in Sources */,
 				6D7E66D52B05E9F0003179C3 /* FLPlugin.swift in Sources */,
 				1498D2341E8E89220040F4C2 /* GeneratedPluginRegistrant.m in Sources */,
 				6DC114EA2B10EF4800013D36 /* HumanDetectionManager.swift in Sources */,
@@ -450,25 +462,6 @@
 			targetProxy = 331C8085294A63A400263BE5 /* PBXContainerItemProxy */;
 		};
 /* End PBXTargetDependency section */
-
-/* Begin PBXVariantGroup section */
-		97C146FA1CF9000F007C117D /* Main.storyboard */ = {
-			isa = PBXVariantGroup;
-			children = (
-				97C146FB1CF9000F007C117D /* Base */,
-			);
-			name = Main.storyboard;
-			sourceTree = "<group>";
-		};
-		97C146FF1CF9000F007C117D /* LaunchScreen.storyboard */ = {
-			isa = PBXVariantGroup;
-			children = (
-				97C147001CF9000F007C117D /* Base */,
-			);
-			name = LaunchScreen.storyboard;
-			sourceTree = "<group>";
-		};
-/* End PBXVariantGroup section */
 
 /* Begin XCBuildConfiguration section */
 		249021D3217E4FDB00AE95B9 /* Profile */ = {
