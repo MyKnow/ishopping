@@ -15,7 +15,7 @@ import CoreImage
 
 // FlutterPlatformView 프로토콜을 구현하여 Flutter 뷰로 사용될 수 있음
 @available(iOS 17.0, *)
-class sectionFLNativeView: NSObject, FlutterPlatformView, ARSCNViewDelegate {
+class SectionFLNativeView: NSObject, FlutterPlatformView, ARSCNViewDelegate {
     // AR 담당 Native View
     private var arView: ARSCNView
 

@@ -1,13 +1,23 @@
 import Flutter
 import UIKit
 
+// Fluter에서 사용자 정의 플랫폼 뷰를 생성하는 데 필요함
 @available(iOS 17.0, *)
-class FLPlugin: NSObject, FlutterPlugin {
-    public static func register(with registrar: FlutterPluginRegistrar) {
-        // FLNativeViewFactory 인스턴스를 <platform-view-type>라는 메세지(ID)와 함께 등록함.
-        // Flutter 앱이 Native 앱을 쓸 수 있게 해주는 동작.
-        let factory = FLNativeViewFactory(messenger: registrar.messenger())
-        registrar.register(factory, withId: "<platform-view-type>")
+class FLNativeViewFactory: NSObject, FlutterPlatformViewFactory {
+    private var messenger: FlutterBinaryMessenger
+    private var viewType: String
+
+    init(messenger: FlutterBinaryMessenger, viewType: String) {
+        self.messenger = messenger
+        self.viewType = viewType
+        super.init()
+    }
+
+    func create(withFrame frame: CGRect, viewIdentifier viewId: Int64, arguments args: Any?) -> FlutterPlatformView {
+        return viewType == "product_view" ? ProductFLNativeView(frame: frame, viewIdentifier: viewId, arguments: args, binaryMessenger: messenger) : SectionFLNativeView(frame: frame, viewIdentifier: viewId, arguments: args, binaryMessenger: messenger)
+    }
+
+    public func createArgsCodec() -> FlutterMessageCodec & NSObjectProtocol {
+        return FlutterStandardMessageCodec.sharedInstance()
     }
 }
-

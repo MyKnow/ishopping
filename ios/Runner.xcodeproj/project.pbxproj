@@ -14,7 +14,6 @@
 		6D4FA77C2B18513200B174B6 /* TTSManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6D4FA77B2B18513200B174B6 /* TTSManager.swift */; };
 		6D4FA77E2B1981FC00B174B6 /* BarcodeProcessor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6D4FA77D2B1981FC00B174B6 /* BarcodeProcessor.swift */; };
 		6D7934282B0F4EF70077C7DB /* RamenClassifier.mlmodel in Sources */ = {isa = PBXBuildFile; fileRef = 6D7934272B0F4EF70077C7DB /* RamenClassifier.mlmodel */; };
-		6D7E66D32B05E9C4003179C3 /* FLNativeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6D7E66D22B05E9C4003179C3 /* FLNativeView.swift */; };
 		6D7E66D52B05E9F0003179C3 /* FLPlugin.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6D7E66D42B05E9F0003179C3 /* FLPlugin.swift */; };
 		6DC114E82B10EF0400013D36 /* ARSessionManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6DC114E72B10EF0400013D36 /* ARSessionManager.swift */; };
 		6DC114EA2B10EF4800013D36 /* HumanDetectionManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6DC114E92B10EF4800013D36 /* HumanDetectionManager.swift */; };
@@ -22,6 +21,10 @@
 		6DC114EE2B10EF7900013D36 /* ImageProcessor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6DC114ED2B10EF7900013D36 /* ImageProcessor.swift */; };
 		6DC114F02B10EF9600013D36 /* UIViewManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6DC114EF2B10EF9600013D36 /* UIViewManager.swift */; };
 		6DC114F22B10FE3500013D36 /* DeepLabV3.mlmodel in Sources */ = {isa = PBXBuildFile; fileRef = 6DC114F12B10FE3500013D36 /* DeepLabV3.mlmodel */; };
+		6DC702BB2B19D9D800C62562 /* SECTION in Sources */ = {isa = PBXBuildFile; fileRef = 6DC702B82B19D9D800C62562 /* SECTION */; };
+		6DC702BD2B19D9D800C62562 /* PRODUCT in Sources */ = {isa = PBXBuildFile; fileRef = 6DC702BA2B19D9D800C62562 /* PRODUCT */; };
+		6DC702C52B19E1EF00C62562 /* ProductFLNativeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6DC702C42B19E1EF00C62562 /* ProductFLNativeView.swift */; };
+		6DC702CD2B19E39A00C62562 /* SectionFLNativeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6DC702CC2B19E39A00C62562 /* SectionFLNativeView.swift */; };
 		74858FAF1ED2DC5600515810 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 74858FAE1ED2DC5600515810 /* AppDelegate.swift */; };
 		7999EB4BA3EE987F7FF5F32E /* Pods_RunnerTests.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 3999562C9479590F8B5FCC1F /* Pods_RunnerTests.framework */; };
 		97C146FC1CF9000F007C117D /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 97C146FA1CF9000F007C117D /* Main.storyboard */; };
@@ -68,7 +71,6 @@
 		6D4FA77B2B18513200B174B6 /* TTSManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TTSManager.swift; sourceTree = "<group>"; };
 		6D4FA77D2B1981FC00B174B6 /* BarcodeProcessor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BarcodeProcessor.swift; sourceTree = "<group>"; };
 		6D7934272B0F4EF70077C7DB /* RamenClassifier.mlmodel */ = {isa = PBXFileReference; lastKnownFileType = file.mlmodel; name = RamenClassifier.mlmodel; path = ../../../../Desktop/RamenClassifier.mlmodel; sourceTree = "<group>"; };
-		6D7E66D22B05E9C4003179C3 /* FLNativeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FLNativeView.swift; sourceTree = "<group>"; };
 		6D7E66D42B05E9F0003179C3 /* FLPlugin.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FLPlugin.swift; sourceTree = "<group>"; };
 		6DC114E72B10EF0400013D36 /* ARSessionManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ARSessionManager.swift; sourceTree = "<group>"; };
 		6DC114E92B10EF4800013D36 /* HumanDetectionManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HumanDetectionManager.swift; sourceTree = "<group>"; };
@@ -76,6 +78,10 @@
 		6DC114ED2B10EF7900013D36 /* ImageProcessor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImageProcessor.swift; sourceTree = "<group>"; };
 		6DC114EF2B10EF9600013D36 /* UIViewManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UIViewManager.swift; sourceTree = "<group>"; };
 		6DC114F12B10FE3500013D36 /* DeepLabV3.mlmodel */ = {isa = PBXFileReference; lastKnownFileType = file.mlmodel; name = DeepLabV3.mlmodel; path = ../../../../Downloads/DeepLabV3.mlmodel; sourceTree = "<group>"; };
+		6DC702B82B19D9D800C62562 /* SECTION */ = {isa = PBXFileReference; lastKnownFileType = folder; path = SECTION; sourceTree = "<group>"; };
+		6DC702BA2B19D9D800C62562 /* PRODUCT */ = {isa = PBXFileReference; lastKnownFileType = folder; path = PRODUCT; sourceTree = "<group>"; };
+		6DC702C42B19E1EF00C62562 /* ProductFLNativeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = ProductFLNativeView.swift; path = Runner/PRODUCT/ProductFLNativeView.swift; sourceTree = "<group>"; };
+		6DC702CC2B19E39A00C62562 /* SectionFLNativeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = SectionFLNativeView.swift; path = Runner/SECTION/SectionFLNativeView.swift; sourceTree = "<group>"; };
 		74858FAD1ED2DC5600515810 /* Runner-Bridging-Header.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "Runner-Bridging-Header.h"; sourceTree = "<group>"; };
 		74858FAE1ED2DC5600515810 /* AppDelegate.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
 		7AFA3C8E1D35360C0083082E /* Release.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; name = Release.xcconfig; path = Flutter/Release.xcconfig; sourceTree = "<group>"; };
@@ -155,6 +161,8 @@
 		97C146E51CF9000F007C117D = {
 			isa = PBXGroup;
 			children = (
+				6DC702CC2B19E39A00C62562 /* SectionFLNativeView.swift */,
+				6DC702C42B19E1EF00C62562 /* ProductFLNativeView.swift */,
 				9740EEB11CF90186004384FC /* Flutter */,
 				97C146F01CF9000F007C117D /* Runner */,
 				97C146EF1CF9000F007C117D /* Products */,
@@ -176,6 +184,8 @@
 		97C146F01CF9000F007C117D /* Runner */ = {
 			isa = PBXGroup;
 			children = (
+				6DC702BA2B19D9D800C62562 /* PRODUCT */,
+				6DC702B82B19D9D800C62562 /* SECTION */,
 				97C146FA1CF9000F007C117D /* Main.storyboard */,
 				97C146FD1CF9000F007C117D /* Assets.xcassets */,
 				97C146FF1CF9000F007C117D /* LaunchScreen.storyboard */,
@@ -188,7 +198,6 @@
 				74858FAD1ED2DC5600515810 /* Runner-Bridging-Header.h */,
 				6DC114F12B10FE3500013D36 /* DeepLabV3.mlmodel */,
 				6D4FA7752B181EF400B174B6 /* RamenClassification_NEW.mlmodel */,
-				6D7E66D22B05E9C4003179C3 /* FLNativeView.swift */,
 				6D7E66D42B05E9F0003179C3 /* FLPlugin.swift */,
 				6DC114E72B10EF0400013D36 /* ARSessionManager.swift */,
 				6D4FA77B2B18513200B174B6 /* TTSManager.swift */,
@@ -412,11 +421,14 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				6DC702CD2B19E39A00C62562 /* SectionFLNativeView.swift in Sources */,
+				6DC702C52B19E1EF00C62562 /* ProductFLNativeView.swift in Sources */,
+				6DC702BB2B19D9D800C62562 /* SECTION in Sources */,
+				6DC702BD2B19D9D800C62562 /* PRODUCT in Sources */,
 				6D4FA77E2B1981FC00B174B6 /* BarcodeProcessor.swift in Sources */,
 				6D4FA77C2B18513200B174B6 /* TTSManager.swift in Sources */,
 				74858FAF1ED2DC5600515810 /* AppDelegate.swift in Sources */,
 				6DC114EE2B10EF7900013D36 /* ImageProcessor.swift in Sources */,
-				6D7E66D32B05E9C4003179C3 /* FLNativeView.swift in Sources */,
 				6D7934282B0F4EF70077C7DB /* RamenClassifier.mlmodel in Sources */,
 				6DC114F02B10EF9600013D36 /* UIViewManager.swift in Sources */,
 				6D4FA7762B181EF400B174B6 /* RamenClassification_NEW.mlmodel in Sources */,
