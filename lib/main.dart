@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_tts/flutter_tts.dart';
 import 'package:haptic_feedback/haptic_feedback.dart';
 
-import 'map_android.dart';
+import 'map_platform.dart';
 import 'product.dart';
 import 'shopping_bag.dart';
 
@@ -16,7 +16,7 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      home: ShoppingBagScreen(),
+      home: MainScreen(),
     );
   }
 }
@@ -213,7 +213,9 @@ class _MainScreenState extends State<MainScreen> {
   void navigateToSessionMode(BuildContext context) async {
     heavyVibration(3);
     Navigator.push(
-        context, MaterialPageRoute(builder: (context) => MapAndroidScreen()));
+        context,
+        MaterialPageRoute(
+            builder: (context) => const PlatformSpecificMapScreen()));
   }
 
   void navigateToProductMode(BuildContext context) async {

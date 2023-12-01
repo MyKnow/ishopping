@@ -1,4 +1,4 @@
-package com.example.taba5_i_shopping
+package com.example.ishopping
 
 import io.flutter.embedding.android.FlutterActivity
 
