@@ -12,42 +12,10 @@ import NotificationCenter
 import CoreImage
 
 
-// Fluter에서 사용자 정의 플랫폼 뷰를 생성하는 데 필요함
-@available(iOS 17.0, *)
-class FLNativeViewFactory: NSObject, FlutterPlatformViewFactory {
-    // Flutter와 Native 코드 간의 통신을 위한 Flutter 바이너리 메신저에 대한 참조를 저장함
-    private var messenger: FlutterBinaryMessenger
-
-    // FlutterBinaryMessenger로 팩토리?를 초기화함
-    init(messenger: FlutterBinaryMessenger) {
-        self.messenger = messenger
-        super.init()
-    }
-
-    // FLNativeView를 생성하고 반환함
-    // 뷰의 프레임, 식별자, 선택적 인자
-    func create(
-        withFrame frame: CGRect, 
-        viewIdentifier viewId: Int64,
-        arguments args: Any?
-    ) -> FlutterPlatformView {
-        return FLNativeView(
-            frame: frame,
-            viewIdentifier: viewId,
-            arguments: args,
-            binaryMessenger: messenger)
-    }
-
-    // Flutter와 네이티브 코드 간의 메시지를 인코딩 및 디코딩하기 위한 메시지 코덱을 반환함
-    // create 메소드에서 비-nil 인자를 사용할 경우에만 필요
-    public func createArgsCodec() -> FlutterMessageCodec & NSObjectProtocol {
-        return FlutterStandardMessageCodec.sharedInstance()
-    }
-}
 
 // FlutterPlatformView 프로토콜을 구현하여 Flutter 뷰로 사용될 수 있음
 @available(iOS 17.0, *)
-class FLNativeView: NSObject, FlutterPlatformView, ARSCNViewDelegate {
+class ProductFLNativeView: NSObject, FlutterPlatformView, ARSCNViewDelegate {
     // AR 담당 Native View
     private var arView: ARSCNView
 
@@ -92,7 +60,7 @@ class FLNativeView: NSObject, FlutterPlatformView, ARSCNViewDelegate {
     private var indexDistance: [Float] = []
 
     // Vision 요청을 저장할 배열
-    var requests = [VNRequest]() 
+    var requests = [VNRequest]()
 
     // 사람용 바운딩 박스 저장하는 배열
     private var humanBoundingBoxViews: [UIView] = []
@@ -140,7 +108,7 @@ class FLNativeView: NSObject, FlutterPlatformView, ARSCNViewDelegate {
         //NotificationCenter.default.addObserver(self, selector: #selector(appWillResignActive), name: UIApplication.willResignActiveNotification, object: nil)
         //NotificationCenter.default.addObserver(self, selector: #selector(appDidBecomeActive), name: UIApplication.didBecomeActiveNotification, object: nil)
 
-        indexDistance = Array(distanceColorMap.keys).sorted() 
+        indexDistance = Array(distanceColorMap.keys).sorted()
 
         //setupARView()
         ARSessionManager.shared.runSession()
@@ -285,7 +253,7 @@ class FLNativeView: NSObject, FlutterPlatformView, ARSCNViewDelegate {
             default:
                 print("default")
                 // 기본값 또는 다른 방향일 때의 처리
-                // ...  
+                // ...
         }
 
         // 화면을 벗어나더라도 bounding box를 잘라내어 계속 표시하도록 수정
