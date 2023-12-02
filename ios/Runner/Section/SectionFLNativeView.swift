@@ -18,6 +18,8 @@ import CoreImage
 class SectionFLNativeView: NSObject, FlutterPlatformView, ARSCNViewDelegate {
     // AR 담당 Native View
     private var arView: ARSCNView
+    private var binaryMessenger: FlutterBinaryMessenger
+    private var predictionValue: String = "RAMEN"  // 예측값 초기화
 
     // AR 세션 구성 및 시작
     private let configuration = ARWorldTrackingConfiguration()
@@ -53,7 +55,7 @@ class SectionFLNativeView: NSObject, FlutterPlatformView, ARSCNViewDelegate {
 
     // 사람용 바운딩 박스 저장하는 배열
     private var humanBoundingBoxViews: [UIView] = []
-
+    
     // 사람용 바운딩 박스와의 거리를 저장하는 배열
     private var distanceMeasurements: [Float] = []
     
@@ -76,8 +78,15 @@ class SectionFLNativeView: NSObject, FlutterPlatformView, ARSCNViewDelegate {
     init( frame: CGRect, viewIdentifier viewId: Int64, arguments args: Any?, binaryMessenger messenger: FlutterBinaryMessenger?) {
         // ARSCNView 인스턴스 생성 및 초기화
         arView = ARSCNView(frame: frame)
+        // binaryMessenger 초기화
+        guard let messenger = messenger else {
+            fatalError("Binary messenger is nil in SectionFLNativeView initializer")
+        }
+        self.binaryMessenger = messenger
 
         super.init()
+
+        TTSManager.shared.play("섹션모드")
 
         // 여기에 조건문을 추가
         if type(of: configuration).supportsFrameSemantics(.sceneDepth) {
@@ -149,6 +158,7 @@ class SectionFLNativeView: NSObject, FlutterPlatformView, ARSCNViewDelegate {
         case .left: // 무언갈 진행하는 것
             break
         case .right: // 무언갈 취소하는 것
+            sendPredictionValueToFlutter()
             break
         case .up: // 무언갈 더하는 것
             break
@@ -158,6 +168,11 @@ class SectionFLNativeView: NSObject, FlutterPlatformView, ARSCNViewDelegate {
             break
         }
         // 여기에 각 방향에 따른 추가적인 작업 수행
+    }
+
+    private func sendPredictionValueToFlutter() {
+        let channel = FlutterMethodChannel(name: "flutter/native_views", binaryMessenger: binaryMessenger)
+        channel.invokeMethod("predictionValue", arguments: predictionValue)
     }
 
     func processBoundingBox(for boundingBox: CGRect) -> UIView  {

@@ -2,7 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 class ProductiOSScreen extends StatefulWidget {
-  const ProductiOSScreen({super.key});
+  final String predictionValue;
+  const ProductiOSScreen({super.key, required this.predictionValue});
 
   @override
   _ProductiOSScreenState createState() => _ProductiOSScreenState();
@@ -15,7 +16,9 @@ class _ProductiOSScreenState extends State<ProductiOSScreen> {
   @override
   Widget build(BuildContext context) {
     const String viewType = 'product_view';
-    final Map<String, dynamic> creationParams = <String, dynamic>{};
+    final Map<String, dynamic> creationParams = <String, dynamic>{
+      'predictionValue': widget.predictionValue,
+    };
 
     return FutureBuilder(
       future: Future.delayed(const Duration(milliseconds: 300)),

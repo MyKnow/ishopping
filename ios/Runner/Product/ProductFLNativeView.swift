@@ -18,6 +18,7 @@ import CoreImage
 class ProductFLNativeView: NSObject, FlutterPlatformView, ARSCNViewDelegate {
     // AR 담당 Native View
     private var arView: ARSCNView
+    private var nowSection: String
 
     // AR 세션 구성 및 시작
     private let configuration = ARWorldTrackingConfiguration()
@@ -58,8 +59,14 @@ class ProductFLNativeView: NSObject, FlutterPlatformView, ARSCNViewDelegate {
     init( frame: CGRect, viewIdentifier viewId: Int64, arguments args: Any?, binaryMessenger messenger: FlutterBinaryMessenger?) {
         // ARSCNView 인스턴스 생성 및 초기화
         arView = ARSCNView(frame: frame)
-
+        
+        self.nowSection = "ALL"
+        if let args = args as? [String: Any], let predictionValue = args["predictionValue"] as? String {
+            self.nowSection = predictionValue
+        }
         super.init()
+
+        TTSManager.shared.play("제품모드, \(self.nowSection)")
 
         // 여기에 조건문을 추가
         if type(of: configuration).supportsFrameSemantics(.sceneDepth) {
