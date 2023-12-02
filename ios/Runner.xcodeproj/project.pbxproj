@@ -18,6 +18,9 @@
 		6D3DD89C2B1A2050004D3D4D /* RamenClassification_NEW.mlmodel in Sources */ = {isa = PBXBuildFile; fileRef = 6D3DD8972B1A1F37004D3D4D /* RamenClassification_NEW.mlmodel */; };
 		6D4FA77C2B18513200B174B6 /* TTSManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6D4FA77B2B18513200B174B6 /* TTSManager.swift */; };
 		6D4FA77E2B1981FC00B174B6 /* BarcodeProcessor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6D4FA77D2B1981FC00B174B6 /* BarcodeProcessor.swift */; };
+		6D501FA82B1B6BD500CA7A6B /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 6D501FA52B1B6BD500CA7A6B /* Assets.xcassets */; };
+		6D501FA92B1B6BD500CA7A6B /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 6D501FA62B1B6BD500CA7A6B /* Main.storyboard */; };
+		6D501FAA2B1B6BD500CA7A6B /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 6D501FA72B1B6BD500CA7A6B /* LaunchScreen.storyboard */; };
 		6D7E66D52B05E9F0003179C3 /* FLPlugin.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6D7E66D42B05E9F0003179C3 /* FLPlugin.swift */; };
 		6DC114E82B10EF0400013D36 /* ARSessionManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6DC114E72B10EF0400013D36 /* ARSessionManager.swift */; };
 		6DC114EA2B10EF4800013D36 /* HumanDetectionManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6DC114E92B10EF4800013D36 /* HumanDetectionManager.swift */; };
@@ -69,6 +72,9 @@
 		6D3DD8972B1A1F37004D3D4D /* RamenClassification_NEW.mlmodel */ = {isa = PBXFileReference; lastKnownFileType = file.mlmodel; path = RamenClassification_NEW.mlmodel; sourceTree = "<group>"; };
 		6D4FA77B2B18513200B174B6 /* TTSManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TTSManager.swift; sourceTree = "<group>"; };
 		6D4FA77D2B1981FC00B174B6 /* BarcodeProcessor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BarcodeProcessor.swift; sourceTree = "<group>"; };
+		6D501FA52B1B6BD500CA7A6B /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; name = Assets.xcassets; path = ../../../../flutter_application_1/ios/Runner/Assets.xcassets; sourceTree = "<group>"; };
+		6D501FA62B1B6BD500CA7A6B /* Main.storyboard */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.storyboard; path = Main.storyboard; sourceTree = "<group>"; };
+		6D501FA72B1B6BD500CA7A6B /* LaunchScreen.storyboard */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.storyboard; path = LaunchScreen.storyboard; sourceTree = "<group>"; };
 		6D7E66D42B05E9F0003179C3 /* FLPlugin.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FLPlugin.swift; sourceTree = "<group>"; };
 		6DC114E72B10EF0400013D36 /* ARSessionManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ARSessionManager.swift; sourceTree = "<group>"; };
 		6DC114E92B10EF4800013D36 /* HumanDetectionManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HumanDetectionManager.swift; sourceTree = "<group>"; };
@@ -219,6 +225,9 @@
 				74858FAD1ED2DC5600515810 /* Runner-Bridging-Header.h */,
 				6DC114EB2B10EF6100013D36 /* HapticFeedbackManager.swift */,
 				97C147021CF9000F007C117D /* Info.plist */,
+				6D501FA52B1B6BD500CA7A6B /* Assets.xcassets */,
+				6D501FA72B1B6BD500CA7A6B /* LaunchScreen.storyboard */,
+				6D501FA62B1B6BD500CA7A6B /* Main.storyboard */,
 				6DC114ED2B10EF7900013D36 /* ImageProcessor.swift */,
 				6DC114EF2B10EF9600013D36 /* UIViewManager.swift */,
 			);
@@ -320,6 +329,9 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				6D501FA92B1B6BD500CA7A6B /* Main.storyboard in Resources */,
+				6D501FAA2B1B6BD500CA7A6B /* LaunchScreen.storyboard in Resources */,
+				6D501FA82B1B6BD500CA7A6B /* Assets.xcassets in Resources */,
 				3B3967161E833CAA004F5970 /* AppFrameworkInfo.plist in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
