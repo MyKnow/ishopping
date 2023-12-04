@@ -144,6 +144,7 @@ class SectionFLNativeView: NSObject, FlutterPlatformView, ARSCNViewDelegate {
         if sender.state == .began {
             TTSManager.shared.play("길게 누름")
             hapticC.notificationFeedback(style: "success")
+            sendShoppingbagToFlutter()
         }
     }
 
@@ -186,7 +187,13 @@ class SectionFLNativeView: NSObject, FlutterPlatformView, ARSCNViewDelegate {
         ]
         channel.invokeMethod("sendData", arguments: data)
     }
-
+    private func sendShoppingbagToFlutter() {
+        dump( self.channel)
+        let data: [String: Any] = [
+            "shoppingbag": shoppingBasketMap // 예시 데이터
+        ]
+        self.channel.invokeMethod("sendData2F", arguments: data)
+    }
 
     func processBoundingBox(for boundingBox: CGRect) -> UIView  {
         // 화면 크기

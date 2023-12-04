@@ -3,6 +3,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'product_iOS.dart';
+import 'shopping_bag.dart';
 
 class MapScreen extends StatefulWidget {
   final Map<String, int> shoppingbag;
@@ -35,6 +36,13 @@ class _MapScreenState extends State<MapScreen> {
       });
       print(_shoppingbag);
       _callProductFLNativeView(_predictionValue, _shoppingbag);
+    } else if (call.method == 'sendData2F') {
+      final data = Map<String, dynamic>.from(call.arguments);
+      setState(() {
+        _shoppingbag = Map<String, int>.from(data['shoppingbag']);
+      });
+      print(_shoppingbag);
+      _callSBFLNativeView(_shoppingbag);
     }
   }
 
@@ -46,6 +54,15 @@ class _MapScreenState extends State<MapScreen> {
       MaterialPageRoute(
           builder: (context) => ProductiOSScreen(
               predictionValue: predictionValue, shoppingbag: shoppingbag)),
+    );
+  }
+
+  void _callSBFLNativeView(Map<String, int> shoppingbag) {
+    // ProductiOSScreen으로 전환하고 예측값을 전달
+    Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(
+          builder: (context) => ShoppingBagScreen(shoppingbag: shoppingbag)),
     );
   }
 
