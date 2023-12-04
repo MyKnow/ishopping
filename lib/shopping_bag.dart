@@ -44,12 +44,17 @@ class _ShoppingBagScreenState extends State<ShoppingBagScreen> {
         return AlertDialog(
           backgroundColor: Colors.white,
           title: Text("구매 중", style: TextStyle(color: Colors.red)),
-          content: SizedBox(
-            height: 50.0,
-            width: 50.0,
-            child: CircularProgressIndicator(
-              valueColor: AlwaysStoppedAnimation<Color>(Colors.grey),
-            ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min, // 최소 크기를 갖도록 설정
+            children: <Widget>[
+              SizedBox(
+                height: 50.0, // 높이와 너비를 동일하게 설정
+                width: 50.0, // CircularProgressIndicator의 크기
+                child: CircularProgressIndicator(
+                  valueColor: AlwaysStoppedAnimation<Color>(Colors.grey),
+                ),
+              ),
+            ],
           ),
         );
       },
