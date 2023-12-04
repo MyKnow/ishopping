@@ -18,6 +18,9 @@ import CoreImage
 class SectionFLNativeView: NSObject, FlutterPlatformView, ARSCNViewDelegate {
     // AR 담당 Native View
     private var arView: ARSCNView
+    private var binaryMessenger: FlutterBinaryMessenger
+    private var predictionValue: String = "RAMEN"  // 예측값 초기화
+    public var shoppingBasketMap: [String: Int]
 
     // AR 세션 구성 및 시작
     private let configuration = ARWorldTrackingConfiguration()
@@ -47,13 +50,14 @@ class SectionFLNativeView: NSObject, FlutterPlatformView, ARSCNViewDelegate {
 
     // 딕셔너리의 키들을 배열로 변환
     private var indexDistance: [Float] = []
+    
 
     // Vision 요청을 저장할 배열
     var requests = [VNRequest]() 
 
     // 사람용 바운딩 박스 저장하는 배열
     private var humanBoundingBoxViews: [UIView] = []
-
+    
     // 사람용 바운딩 박스와의 거리를 저장하는 배열
     private var distanceMeasurements: [Float] = []
     
@@ -76,8 +80,19 @@ class SectionFLNativeView: NSObject, FlutterPlatformView, ARSCNViewDelegate {
     init( frame: CGRect, viewIdentifier viewId: Int64, arguments args: Any?, binaryMessenger messenger: FlutterBinaryMessenger?) {
         // ARSCNView 인스턴스 생성 및 초기화
         arView = ARSCNView(frame: frame)
+        // binaryMessenger 초기화
+        guard let messenger = messenger else {
+            fatalError("Binary messenger is nil in SectionFLNativeView initializer")
+        }
+        self.binaryMessenger = messenger
 
+        self.shoppingBasketMap = [:]
+        if let args = args as? [String: Any],let shoppingbag = args["shoppingbag"] as? [String:Int] {
+            self.shoppingBasketMap = shoppingbag
+        }
         super.init()
+
+        TTSManager.shared.play("섹션모드")
 
         // 여기에 조건문을 추가
         if type(of: configuration).supportsFrameSemantics(.sceneDepth) {
@@ -129,6 +144,7 @@ class SectionFLNativeView: NSObject, FlutterPlatformView, ARSCNViewDelegate {
         if sender.state == .began {
             TTSManager.shared.play("길게 누름")
             hapticC.notificationFeedback(style: "success")
+            sendShoppingbagToFlutter()
         }
     }
 
@@ -147,8 +163,11 @@ class SectionFLNativeView: NSObject, FlutterPlatformView, ARSCNViewDelegate {
         hapticC.impactFeedback(style: "Heavy")
         switch gesture.direction {
         case .left: // 무언갈 진행하는 것
+            ARSessionManager.shared.pauseSession()
             break
         case .right: // 무언갈 취소하는 것
+            sendDataToFlutter()
+            ARSessionManager.shared.pauseSession()
             break
         case .up: // 무언갈 더하는 것
             break
@@ -158,6 +177,22 @@ class SectionFLNativeView: NSObject, FlutterPlatformView, ARSCNViewDelegate {
             break
         }
         // 여기에 각 방향에 따른 추가적인 작업 수행
+    }
+
+    private func sendDataToFlutter() {
+        let channel = FlutterMethodChannel(name: "flutter/PV2P", binaryMessenger: binaryMessenger)
+        let data: [String: Any] = [
+            "predictionValue": predictionValue,
+            "shoppingbag": shoppingBasketMap // 예시 데이터
+        ]
+        channel.invokeMethod("sendData", arguments: data)
+    }
+    private func sendShoppingbagToFlutter() {
+        dump( self.channel)
+        let data: [String: Any] = [
+            "shoppingbag": shoppingBasketMap // 예시 데이터
+        ]
+        self.channel.invokeMethod("sendData2F", arguments: data)
     }
 
     func processBoundingBox(for boundingBox: CGRect) -> UIView  {

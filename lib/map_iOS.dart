@@ -1,27 +1,82 @@
+// ignore_for_file: library_private_types_in_public_api
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'product_iOS.dart';
+import 'shopping_bag.dart';
 
 class MapScreen extends StatefulWidget {
-  const MapScreen({super.key});
-
+  final Map<String, int> shoppingbag;
+  const MapScreen({super.key, required this.shoppingbag});
   @override
   _MapScreenState createState() => _MapScreenState();
 }
 
 class _MapScreenState extends State<MapScreen> {
-  // Unique key to control the lifecycle of UiKitView
   UniqueKey viewKey = UniqueKey();
+
+  final _platformChannel = const MethodChannel('flutter/PV2P');
+
+  String _predictionValue = '';
+  late Map<String, int> _shoppingbag;
+
+  @override
+  void initState() {
+    super.initState();
+    _platformChannel.setMethodCallHandler(_handleProductMethodCall);
+  }
+
+  Future<void> _handleProductMethodCall(MethodCall call) async {
+    print("product 호출");
+    if (call.method == 'sendData') {
+      final data = Map<String, dynamic>.from(call.arguments);
+      setState(() {
+        _predictionValue = data['predictionValue'];
+        _shoppingbag = Map<String, int>.from(data['shoppingbag']);
+      });
+      print(_shoppingbag);
+      _callProductFLNativeView(_predictionValue, _shoppingbag);
+    } else if (call.method == 'sendData2F') {
+      final data = Map<String, dynamic>.from(call.arguments);
+      setState(() {
+        _shoppingbag = Map<String, int>.from(data['shoppingbag']);
+      });
+      print(_shoppingbag);
+      _callSBFLNativeView(_shoppingbag);
+    }
+  }
+
+  void _callProductFLNativeView(
+      String predictionValue, Map<String, int> shoppingbag) {
+    // ProductiOSScreen으로 전환하고 예측값을 전달
+    Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(
+          builder: (context) => ProductiOSScreen(
+              predictionValue: predictionValue, shoppingbag: shoppingbag)),
+    );
+  }
+
+  void _callSBFLNativeView(Map<String, int> shoppingbag) {
+    // ProductiOSScreen으로 전환하고 예측값을 전달
+    Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(
+          builder: (context) => ShoppingBagScreen(shoppingbag: shoppingbag)),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
-    const String viewType = 'section_view';
-    final Map<String, dynamic> creationParams = <String, dynamic>{};
+    const String viewType = 'section_view'; // 기본적으로 'section_view' 호출
+    final Map<String, dynamic> creationParams = <String, dynamic>{
+      'shoppingbag': widget.shoppingbag
+    };
 
     return FutureBuilder(
       future: Future.delayed(const Duration(milliseconds: 300)),
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.done) {
-          // Return the UiKitView with a unique key
           return UiKitView(
             key: viewKey,
             viewType: viewType,

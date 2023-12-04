@@ -9,12 +9,14 @@ class PlatformSpecificProductScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    Map<String, int> initMap = {};
+
     if (Platform.isAndroid) {
       // Android용 화면 로딩
       return ProductAndroidScreen();
     } else if (Platform.isIOS) {
       // iOS용 화면 로딩
-      return const ProductiOSScreen();
+      return ProductiOSScreen(predictionValue: "ALL", shoppingbag: initMap);
     } else {
       // 다른 플랫폼을 위한 대체 화면
       return const Center(child: Text('Unsupported platform'));
