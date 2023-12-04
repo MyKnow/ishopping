@@ -20,6 +20,8 @@ dependencies:
   dio : ^5.3.4
   tflite_flutter : ^0.10.3
   local_auth : ^2.1.7
+  geolocator : ^10.1.0
+  geocoding : ^2.1.1
 
 dev_dependencies:
   flutter_test:
