@@ -105,7 +105,6 @@ class ProductFLNativeView: NSObject, FlutterPlatformView, ARSCNViewDelegate {
 
 
     private func sendShoppingbagToSection() {
-        dump( self.channel)
         let data: [String: Any] = [
             "shoppingbag": shoppingBasketMap // 예시 데이터
         ]
@@ -113,7 +112,6 @@ class ProductFLNativeView: NSObject, FlutterPlatformView, ARSCNViewDelegate {
     }
 
     private func sendShoppingbagToFlutter() {
-        dump( self.channel)
         let data: [String: Any] = [
             "shoppingbag": shoppingBasketMap // 예시 데이터
         ]
