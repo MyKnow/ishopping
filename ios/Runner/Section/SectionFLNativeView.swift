@@ -20,6 +20,7 @@ class SectionFLNativeView: NSObject, FlutterPlatformView, ARSCNViewDelegate {
     private var arView: ARSCNView
     private var binaryMessenger: FlutterBinaryMessenger
     private var predictionValue: String = "RAMEN"  // 예측값 초기화
+    public var shoppingBasketMap: [String: Int]
 
     // AR 세션 구성 및 시작
     private let configuration = ARWorldTrackingConfiguration()
@@ -49,6 +50,7 @@ class SectionFLNativeView: NSObject, FlutterPlatformView, ARSCNViewDelegate {
 
     // 딕셔너리의 키들을 배열로 변환
     private var indexDistance: [Float] = []
+    
 
     // Vision 요청을 저장할 배열
     var requests = [VNRequest]() 
@@ -84,6 +86,10 @@ class SectionFLNativeView: NSObject, FlutterPlatformView, ARSCNViewDelegate {
         }
         self.binaryMessenger = messenger
 
+        self.shoppingBasketMap = [:]
+        if let args = args as? [String: Any],let shoppingbag = args["shoppingbag"] as? [String:Int] {
+            self.shoppingBasketMap = shoppingbag
+        }
         super.init()
 
         TTSManager.shared.play("섹션모드")
@@ -156,9 +162,11 @@ class SectionFLNativeView: NSObject, FlutterPlatformView, ARSCNViewDelegate {
         hapticC.impactFeedback(style: "Heavy")
         switch gesture.direction {
         case .left: // 무언갈 진행하는 것
+            ARSessionManager.shared.pauseSession()
             break
         case .right: // 무언갈 취소하는 것
-            sendPredictionValueToFlutter()
+            sendDataToFlutter()
+            ARSessionManager.shared.pauseSession()
             break
         case .up: // 무언갈 더하는 것
             break
@@ -170,10 +178,15 @@ class SectionFLNativeView: NSObject, FlutterPlatformView, ARSCNViewDelegate {
         // 여기에 각 방향에 따른 추가적인 작업 수행
     }
 
-    private func sendPredictionValueToFlutter() {
-        let channel = FlutterMethodChannel(name: "flutter/native_views", binaryMessenger: binaryMessenger)
-        channel.invokeMethod("predictionValue", arguments: predictionValue)
+    private func sendDataToFlutter() {
+        let channel = FlutterMethodChannel(name: "flutter/PV2P", binaryMessenger: binaryMessenger)
+        let data: [String: Any] = [
+            "predictionValue": predictionValue,
+            "shoppingbag": shoppingBasketMap // 예시 데이터
+        ]
+        channel.invokeMethod("sendData", arguments: data)
     }
+
 
     func processBoundingBox(for boundingBox: CGRect) -> UIView  {
         // 화면 크기

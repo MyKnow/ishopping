@@ -1,45 +1,60 @@
+// ignore_for_file: library_private_types_in_public_api
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'product_iOS.dart';
 
 class MapScreen extends StatefulWidget {
-  const MapScreen({super.key});
-
+  final Map<String, int> shoppingbag;
+  const MapScreen({super.key, required this.shoppingbag});
   @override
   _MapScreenState createState() => _MapScreenState();
 }
 
 class _MapScreenState extends State<MapScreen> {
-  static const platformChannel = MethodChannel('flutter/native_views');
   UniqueKey viewKey = UniqueKey();
+
+  final _platformChannel = const MethodChannel('flutter/PV2P');
+
+  String _predictionValue = '';
+  late Map<String, int> _shoppingbag;
 
   @override
   void initState() {
     super.initState();
-    platformChannel.setMethodCallHandler(_handleMethodCall);
+    _platformChannel.setMethodCallHandler(_handleProductMethodCall);
   }
 
-  Future<void> _handleMethodCall(MethodCall call) async {
-    if (call.method == "predictionValue") {
-      String predictionValue = call.arguments;
-      _callProductFLNativeView(predictionValue);
+  Future<void> _handleProductMethodCall(MethodCall call) async {
+    print("product 호출");
+    if (call.method == 'sendData') {
+      final data = Map<String, dynamic>.from(call.arguments);
+      setState(() {
+        _predictionValue = data['predictionValue'];
+        _shoppingbag = Map<String, int>.from(data['shoppingbag']);
+      });
+      print(_shoppingbag);
+      _callProductFLNativeView(_predictionValue, _shoppingbag);
     }
   }
 
-  void _callProductFLNativeView(String predictionValue) {
+  void _callProductFLNativeView(
+      String predictionValue, Map<String, int> shoppingbag) {
     // ProductiOSScreen으로 전환하고 예측값을 전달
-    Navigator.push(
+    Navigator.pushReplacement(
       context,
       MaterialPageRoute(
-          builder: (context) =>
-              ProductiOSScreen(predictionValue: predictionValue)),
+          builder: (context) => ProductiOSScreen(
+              predictionValue: predictionValue, shoppingbag: shoppingbag)),
     );
   }
 
   @override
   Widget build(BuildContext context) {
     const String viewType = 'section_view'; // 기본적으로 'section_view' 호출
-    final Map<String, dynamic> creationParams = <String, dynamic>{};
+    final Map<String, dynamic> creationParams = <String, dynamic>{
+      'shoppingbag': widget.shoppingbag
+    };
 
     return FutureBuilder(
       future: Future.delayed(const Duration(milliseconds: 300)),
@@ -57,5 +72,13 @@ class _MapScreenState extends State<MapScreen> {
         }
       },
     );
+  }
+
+  // Dispose the view when the widget is removed from the widget tree
+  @override
+  void dispose() {
+    // Replace the viewKey with a new key to ensure the old view is disposed
+    viewKey = UniqueKey();
+    super.dispose();
   }
 }

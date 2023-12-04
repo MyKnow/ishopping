@@ -18,7 +18,9 @@ import CoreImage
 class ProductFLNativeView: NSObject, FlutterPlatformView, ARSCNViewDelegate {
     // AR 담당 Native View
     private var arView: ARSCNView
+    private var binaryMessenger: FlutterBinaryMessenger
     private var nowSection: String
+    private var channel: FlutterMethodChannel
 
     // AR 세션 구성 및 시작
     private let configuration = ARWorldTrackingConfiguration()
@@ -26,7 +28,7 @@ class ProductFLNativeView: NSObject, FlutterPlatformView, ARSCNViewDelegate {
     // 길게 누르기 인식 시간
     private final var longPressTime: Double = 0.5
 
-    public var shoppingBasketMap: [String: Int] = [:]
+    public var shoppingBasketMap: [String: Int]
 
     public var isBasketMode: Bool = false
 
@@ -59,11 +61,22 @@ class ProductFLNativeView: NSObject, FlutterPlatformView, ARSCNViewDelegate {
     init( frame: CGRect, viewIdentifier viewId: Int64, arguments args: Any?, binaryMessenger messenger: FlutterBinaryMessenger?) {
         // ARSCNView 인스턴스 생성 및 초기화
         arView = ARSCNView(frame: frame)
-        
-        self.nowSection = "ALL"
-        if let args = args as? [String: Any], let predictionValue = args["predictionValue"] as? String {
-            self.nowSection = predictionValue
+        guard let messenger = messenger else {
+            fatalError("Binary messenger is nil in SectionFLNativeView initializer")
         }
+        self.binaryMessenger = messenger
+
+        self.channel = FlutterMethodChannel(name: "flutter/SB2S", binaryMessenger: self.binaryMessenger)
+        self.nowSection = "ALL"
+        self.shoppingBasketMap = [:]
+        if let args = args as? [String: Any] {
+            if let shoppingbag = args["shoppingbag"] as? [String:Int] {
+                self.shoppingBasketMap = shoppingbag
+            }
+            if let predictionValue = args["predictionValue"] as? String {
+                self.nowSection = predictionValue
+            }
+        } 
         super.init()
 
         TTSManager.shared.play("제품모드, \(self.nowSection)")
@@ -88,6 +101,23 @@ class ProductFLNativeView: NSObject, FlutterPlatformView, ARSCNViewDelegate {
     }
     deinit {
         ARSessionManager.shared.pauseSession()
+    }
+
+
+    private func sendShoppingbagToSection() {
+        dump( self.channel)
+        let data: [String: Any] = [
+            "shoppingbag": shoppingBasketMap // 예시 데이터
+        ]
+        self.channel.invokeMethod("sendData2S", arguments: data)
+    }
+
+    private func sendShoppingbagToFlutter() {
+        dump( self.channel)
+        let data: [String: Any] = [
+            "shoppingbag": shoppingBasketMap // 예시 데이터
+        ]
+        self.channel.invokeMethod("sendData2F", arguments: data)
     }
 
     // 짧게 누르기 제스쳐 추가
@@ -139,20 +169,10 @@ class ProductFLNativeView: NSObject, FlutterPlatformView, ARSCNViewDelegate {
     // 스와이프 제스쳐 핸들러
     @objc private func handleSwipe(_ gesture: UISwipeGestureRecognizer) {
         hapticC.impactFeedback(style: "Heavy")
+        TTSManager.shared.stop()
         switch gesture.direction {
-        case .left: // 무언갈 진행하는 것
+        case .left: // 무언갈 취소하는 것
             TTSManager.shared.play("왼쪽")
-            if self.isEditMode{
-                self.isBasketMode = false
-                self.shoppingBasket(self.nowProduct)
-            }
-            else if self.willBuy {
-
-            } else {
-                self.totalProduct()
-            }
-        case .right: // 무언갈 취소하는 것
-            TTSManager.shared.play("오른쪽")
             if self.isEditMode {
                 self.isEditMode = false
                 self.isBasketMode = false
@@ -164,8 +184,25 @@ class ProductFLNativeView: NSObject, FlutterPlatformView, ARSCNViewDelegate {
                 self.nowProduct = ""
             } else if self.willBuy {
                 self.isBasketMode = false
+                self.willBuy = false
                 TTSManager.shared.play("결제 취소")
+            } else {
+                TTSManager.shared.play("세션 모드로 이동")
+                sendShoppingbagToFlutter()
             }
+            break
+        case .right: // 무언갈 진행하는 것
+            TTSManager.shared.play("오른쪽")
+            if self.isEditMode{
+                self.isBasketMode = false
+                self.shoppingBasket(self.nowProduct)
+            }
+            else if self.willBuy {
+                self.sendShoppingbagToFlutter()
+            } else {
+                self.totalProduct()
+            }
+            break
         case .up: // 무언갈 더하는 것
             TTSManager.shared.play("위")
             if self.isEditMode{
@@ -177,6 +214,7 @@ class ProductFLNativeView: NSObject, FlutterPlatformView, ARSCNViewDelegate {
                 self.editCount += 1
                 self.editProduct(self.nowProduct)
             }
+            break
         case .down: // 무언갈 빼는 것
             TTSManager.shared.play("아래")
             if self.isEditMode{
@@ -187,51 +225,11 @@ class ProductFLNativeView: NSObject, FlutterPlatformView, ARSCNViewDelegate {
                 self.isEditMode = true
                 self.editProduct(self.nowProduct)
             }
+            break
         default:
             break
         }
         // 여기에 각 방향에 따른 추가적인 작업 수행
-    }
-
-    func triggerHapticFeedback(interval: TimeInterval) {
-        hapticC.notificationFeedback(style: "warning")
-        let systemSoundID: SystemSoundID
-        var delay: TimeInterval = interval
-        if delay < 0.7 {
-            delay = 0.4
-            systemSoundID = 1111
-        } else {
-            systemSoundID = 1111
-        }
-        AudioServicesPlaySystemSound(systemSoundID)
-
-        // 햅틱 피드백 재발 방지를 위해 일정 시간 대기 후 isVibrating 재설정
-        DispatchQueue.global(qos: .userInteractive).asyncAfter(deadline: .now() + (delay*0.5)) {
-            DispatchQueue.main.async {
-                self.isVibrating = false
-            }
-        }
-    }
-
-    func performHitTesting(_ screenPoint: CGPoint) -> Float? {
-        if let hitTestResult = arView.hitTest(screenPoint, types: .featurePoint).first {
-            if let currentFrame = ARSessionManager.shared.session.currentFrame {
-                let cameraPosition = currentFrame.camera.transform
-                let distance = calculateDistance(from: cameraPosition, to: hitTestResult.worldTransform)
-                return distance
-            }
-        }
-        return nil
-    }
-    // 거리 계산 함수
-    func calculateDistance(from cameraTransform: simd_float4x4, to hitTransform: matrix_float4x4) -> Float {
-        let cameraPosition = cameraTransform.columns.3
-        let hitPosition = hitTransform.columns.3
-        return sqrt(
-            pow(cameraPosition.x - hitPosition.x, 2) +
-            pow(cameraPosition.y - hitPosition.y, 2) +
-            pow(cameraPosition.z - hitPosition.z, 2)
-        )
     }
 
     // ARSCNViewDelegate 메서드
@@ -315,7 +313,7 @@ class ProductFLNativeView: NSObject, FlutterPlatformView, ARSCNViewDelegate {
                         TTSManager.shared.play(self.nowProduct)
                         TTSManager.shared.play("현재 장바구니에 \(self.editCount)개 있음")
                         TTSManager.shared.play("갯수를 수정하려면 위, 아래로 스와이프")
-                        TTSManager.shared.play("취소하려면 오른쪽으로 스와이프")
+                        TTSManager.shared.play("취소하려면 왼쪽으로 스와이프")
                     }
                 }
             }
@@ -332,7 +330,7 @@ class ProductFLNativeView: NSObject, FlutterPlatformView, ARSCNViewDelegate {
             TTSManager.shared.play("\(item) 장바구니에서 제거")
         } else {
             TTSManager.shared.play("\(item)이 장바구니에 \(self.productCount(item))개 있음")
-            TTSManager.shared.play("결제하려면 왼쪽으로 스와이프")
+            TTSManager.shared.play("결제하려면 오른쪽으로 스와이프")
         }
     }
     public func productCount(_ item: String) -> Int {
@@ -354,7 +352,7 @@ class ProductFLNativeView: NSObject, FlutterPlatformView, ARSCNViewDelegate {
                 TTSManager.shared.play("\(key), \(value)개, ")
             }
             TTSManager.shared.play("수정하려면 화면을 위로 스와이프, ")
-            TTSManager.shared.play("취소하려면 화면을 오른쪽으로 스와이프, ")
+            TTSManager.shared.play("취소하려면 화면을 왼쪽으로 스와이프, ")
             TTSManager.shared.play("결제하려면 화면을 1초 이상 길게 누르세요")
             self.willBuy = true
         }
