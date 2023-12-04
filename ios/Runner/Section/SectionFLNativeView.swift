@@ -21,6 +21,15 @@ class SectionFLNativeView: NSObject, FlutterPlatformView, ARSCNViewDelegate {
     private var binaryMessenger: FlutterBinaryMessenger
     private var predictionValue: String = "RAMEN"  // 예측값 초기화
     public var shoppingBasketMap: [String: Int]
+    private var channel: FlutterMethodChannel
+
+    // Add properties to track the AR object and its position
+    private var arObjectNode: SCNNode?
+    private var arObjectPosition: simd_float4x4?
+
+    private var labelText: String = "매대 찾기"
+
+    private var findShelfLabel: UILabel?
 
     // AR 세션 구성 및 시작
     private let configuration = ARWorldTrackingConfiguration()
@@ -29,9 +38,12 @@ class SectionFLNativeView: NSObject, FlutterPlatformView, ARSCNViewDelegate {
     private var gridDots: [UIView] = []
     private var gridLabels: [UILabel] = []
 
+    // 선들을 저장하는 배열
+    private var gridLines: [UIView] = []
+
     // 조준점 및 라벨의 갯수
-    private final var col: Int = 9
-    private final var rw: Int = 21
+    private final var col: Int = 3
+    private final var rw: Int = 3
 
     // 길게 누르기 인식 시간
     private final var longPressTime: Double = 0.5
@@ -58,8 +70,9 @@ class SectionFLNativeView: NSObject, FlutterPlatformView, ARSCNViewDelegate {
     // 사람용 바운딩 박스 저장하는 배열
     private var humanBoundingBoxViews: [UIView] = []
     
-    // 사람용 바운딩 박스와의 거리를 저장하는 배열
+    // 사람용 바운딩 박스와의 거리를 저장하는 배열과 각도를 저장하는 배열
     private var distanceMeasurements: [Float] = []
+    private var angleMeasurements: [Float] = []
     
     // HapticFeedbackManager 인스턴스 생성
     let hapticC = HapticFeedbackManager()
@@ -85,6 +98,7 @@ class SectionFLNativeView: NSObject, FlutterPlatformView, ARSCNViewDelegate {
             fatalError("Binary messenger is nil in SectionFLNativeView initializer")
         }
         self.binaryMessenger = messenger
+        self.channel = FlutterMethodChannel(name: "flutter/PV2P", binaryMessenger: binaryMessenger)
 
         self.shoppingBasketMap = [:]
         if let args = args as? [String: Any],let shoppingbag = args["shoppingbag"] as? [String:Int] {
@@ -128,8 +142,14 @@ class SectionFLNativeView: NSObject, FlutterPlatformView, ARSCNViewDelegate {
     @objc func handleShortPress(_ sender: UITapGestureRecognizer) {
         TTSManager.shared.play("짧게 누름")
         hapticC.impactFeedback(style: "heavy")
+        let screenCenter = CGPoint(x: arView.bounds.midX, y: arView.bounds.midY)
+        addArText()
+        if let hitTestResult = arView.hitTest(screenCenter, types: .existingPlaneUsingExtent).first {
+            print("test")
+            addArObject(at: hitTestResult)
+        }
         if let currentFrame = ARSessionManager.shared.session.currentFrame {
-            processFrame(currentFrame)
+            //processFrame(currentFrame)
         }
     }
 
@@ -180,15 +200,13 @@ class SectionFLNativeView: NSObject, FlutterPlatformView, ARSCNViewDelegate {
     }
 
     private func sendDataToFlutter() {
-        let channel = FlutterMethodChannel(name: "flutter/PV2P", binaryMessenger: binaryMessenger)
         let data: [String: Any] = [
             "predictionValue": predictionValue,
             "shoppingbag": shoppingBasketMap // 예시 데이터
         ]
-        channel.invokeMethod("sendData", arguments: data)
+        self.channel.invokeMethod("sendData", arguments: data)
     }
     private func sendShoppingbagToFlutter() {
-        dump( self.channel)
         let data: [String: Any] = [
             "shoppingbag": shoppingBasketMap // 예시 데이터
         ]
@@ -243,6 +261,7 @@ class SectionFLNativeView: NSObject, FlutterPlatformView, ARSCNViewDelegate {
         }
 
         distanceMeasurements.removeAll()
+        angleMeasurements.removeAll()
 
         for boundingBoxView in humanBoundingBoxViews {
             let boxCenter = CGPoint(
@@ -250,8 +269,10 @@ class SectionFLNativeView: NSObject, FlutterPlatformView, ARSCNViewDelegate {
                 y: boundingBoxView.frame.midY
             )
 
-            if let distance = performHitTesting(boxCenter) {
+            if let (distance, angle) = performHitTesting(boxCenter) {
                 distanceMeasurements.append(distance) // 거리 측정값 저장
+                angleMeasurements.append(angle)
+                self.labelText = "거리 : \(distance), 각도 : \(angle)"
             }
         }
 
@@ -264,6 +285,8 @@ class SectionFLNativeView: NSObject, FlutterPlatformView, ARSCNViewDelegate {
                 if let distance = self.indexDistance.first(where: { $0 > shortestDistance }) {
                     let timeInterval: TimeInterval = TimeInterval(distance)
                     triggerHapticFeedback(interval: timeInterval)
+                    
+                    findShelfLabel?.text = self.labelText
                 }
             }
         }
@@ -299,15 +322,23 @@ class SectionFLNativeView: NSObject, FlutterPlatformView, ARSCNViewDelegate {
         }
     }
 
-    func performHitTesting(_ screenPoint: CGPoint) -> Float? {
-        if let hitTestResult = arView.hitTest(screenPoint, types: .featurePoint).first {
-            if let currentFrame = ARSessionManager.shared.session.currentFrame {
-                let cameraPosition = currentFrame.camera.transform
-                let distance = calculateDistance(from: cameraPosition, to: hitTestResult.worldTransform)
-                return distance
-            }
+    // 특정 지점까지의 거리와 각도를 반환하는 함수
+    func performHitTesting(_ screenPoint: CGPoint) -> (distance: Float, angle: Float)? {
+        guard let hitTestResult = arView.hitTest(screenPoint, types: .featurePoint).first,
+            let currentFrame = ARSessionManager.shared.session.currentFrame else {
+            return nil
         }
-        return nil
+
+        let cameraTransform = currentFrame.camera.transform
+        let hitPoint = hitTestResult.worldTransform
+
+        // 카메라(사용자 위치)로부터의 거리 계산
+        let distance = calculateDistance(from: cameraTransform, to: hitPoint)
+
+        // 카메라(사용자 위치)로부터의 각도 계산
+        let angle = calculateAngle(from: cameraTransform, to: hitPoint)
+
+        return (distance, angle)
     }
 
     // 거리 계산 함수
@@ -319,6 +350,32 @@ class SectionFLNativeView: NSObject, FlutterPlatformView, ARSCNViewDelegate {
             pow(cameraPosition.y - hitPosition.y, 2) +
             pow(cameraPosition.z - hitPosition.z, 2)
         )
+    }
+
+    // 카메라(사용자)의 포워드 벡터를 계산하는 함수
+    func forwardVector(from transform: simd_float4x4) -> simd_float3 {
+        return simd_normalize(simd_float3(-transform.columns.2.x, -transform.columns.2.y, -transform.columns.2.z))
+    }
+
+    // 두 벡터 사이의 각도를 계산하는 함수
+    func angleBetweenVectors(_ vectorA: simd_float3, _ vectorB: simd_float3) -> Float {
+        let dotProduct = simd_dot(simd_normalize(vectorA), simd_normalize(vectorB))
+        return acos(min(max(dotProduct, -1.0), 1.0)) // 결과는 라디안 단위
+    }
+
+    // 특정 지점까지의 각도를 반환하는 함수
+    func calculateAngle(from cameraTransform: simd_float4x4, to hitTransform: matrix_float4x4) -> Float {
+        let cameraPosition = cameraTransform.columns.3
+        let hitPosition = hitTransform.columns.3
+
+        // 카메라 위치에서 타겟 위치까지의 방향 벡터
+        let directionToTarget = simd_float3(hitPosition.x - cameraPosition.x, hitPosition.y - cameraPosition.y, hitPosition.z - cameraPosition.z)
+
+        // 카메라의 포워드 벡터
+        let cameraForward = forwardVector(from: cameraTransform)
+
+        // 두 벡터 사이의 각도 계산
+        return angleBetweenVectors(cameraForward, directionToTarget)
     }
 
     private func setupGridDots() {
@@ -355,6 +412,8 @@ class SectionFLNativeView: NSObject, FlutterPlatformView, ARSCNViewDelegate {
         DispatchQueue.main.async {
             self.updateGridDotsPosition()
             self.updateDistanceDisplay()
+            self.drawGridLines()
+            self.addFindShelfLabel()
 
             // 사람 거리 측정
             self.performHitTestAndMeasureDistance()
@@ -369,6 +428,12 @@ class SectionFLNativeView: NSObject, FlutterPlatformView, ARSCNViewDelegate {
                     try imageRequestHandler.perform(self.requests)
                 } catch {
                     print("Failed to perform Vision request: \(error)")
+                }
+
+                if let arObjectPosition = self.arObjectPosition {
+                    let distance = self.calculateDistance(from: currentFrame.camera.transform, to: arObjectPosition)
+                    let angle = self.calculateAngle(from: currentFrame.camera.transform, to: arObjectPosition)
+                    self.findShelfLabel?.text = "거리: \(distance) 미터, 각도: \(angle) 라디안"
                 }
             }
         }
@@ -477,6 +542,122 @@ class SectionFLNativeView: NSObject, FlutterPlatformView, ARSCNViewDelegate {
                 self.arView.addSubview(boundingBoxView)
                 self.humanBoundingBoxViews.append(boundingBoxView)
             }
+        }
+    }
+
+    private func drawGridLines() {
+        let screenWidth = arView.bounds.width
+        let screenHeight = arView.bounds.height
+        let lineThickness: CGFloat = 2
+        let totalLinesNeeded = col + rw - 2 // 가로 및 세로에 필요한 총 선의 수
+
+        // 필요한 선의 수보다 더 많은 선이 있는 경우, 초과분 제거
+        if gridLines.count > totalLinesNeeded {
+            for _ in totalLinesNeeded..<gridLines.count {
+                gridLines.removeLast().removeFromSuperview()
+            }
+        }
+
+        // 세로선 생성 또는 업데이트
+        for column in 1..<col {
+            let xPosition = CGFloat(column) * screenWidth / CGFloat(col)
+            if column - 1 < gridLines.count {
+                let line = gridLines[column - 1]
+                line.frame = CGRect(x: xPosition, y: 0, width: lineThickness, height: screenHeight)
+            } else {
+                let line = UIView(frame: CGRect(x: xPosition, y: 0, width: lineThickness, height: screenHeight))
+                line.backgroundColor = .white
+                arView.addSubview(line)
+                gridLines.append(line)
+            }
+        }
+
+        // 가로선 생성 또는 업데이트
+        for row in 1..<rw {
+            let yPosition = CGFloat(row) * screenHeight / CGFloat(rw)
+            let lineIndex = col - 1 + row - 1
+            if lineIndex < gridLines.count {
+                let line = gridLines[lineIndex]
+                line.frame = CGRect(x: 0, y: yPosition, width: screenWidth, height: lineThickness)
+            } else {
+                let line = UIView(frame: CGRect(x: 0, y: yPosition, width: screenWidth, height: lineThickness))
+                line.backgroundColor = .white
+                arView.addSubview(line)
+                gridLines.append(line)
+            }
+        }
+    }
+
+
+    private func addFindShelfLabel() {
+        if findShelfLabel == nil {
+            let labelHeight: CGFloat = 150
+            let label = UILabel()
+            label.backgroundColor = UIColor.black
+            label.alpha = 0.7 // 투명도 조정
+            label.text = self.labelText
+            label.textColor = .red
+            label.textAlignment = .center
+            label.font = UIFont.boldSystemFont(ofSize: 10)
+            label.layer.cornerRadius = 10
+            label.layer.masksToBounds = true
+            arView.addSubview(label)
+            findShelfLabel = label
+        }
+
+        findShelfLabel?.frame = CGRect(x: 20, y: arView.safeAreaInsets.top, width: arView.bounds.width - 40, height: 150)
+    }
+
+    // Method to add the AR object
+    private func addArObject(at hitTestResult: ARHitTestResult) {
+        let objectNode = SCNNode(geometry: SCNSphere(radius: 5.0)) // Example: A simple sphere
+        objectNode.position = SCNVector3(hitTestResult.worldTransform.columns.3.x,
+                                        hitTestResult.worldTransform.columns.3.y,
+                                        hitTestResult.worldTransform.columns.3.z)
+        arView.scene.rootNode.addChildNode(objectNode)
+        arObjectNode = objectNode
+        arObjectPosition = hitTestResult.worldTransform
+        dump(objectNode)
+    }
+    // Method to add the AR object
+    private func addArText() {
+        let textGeometry = SCNText(string: "Hello World", extrusionDepth: 1.0)
+        textGeometry.firstMaterial?.diffuse.contents = UIColor.black
+
+        let textNode = SCNNode(geometry: textGeometry)
+        textNode.scale = SCNVector3(-0.01, 0.01, 0.01) // 크기 조정
+
+        // 화면 중앙의 hitTest 수행
+        let centerPoint = CGPoint(x: arView.bounds.midX, y: arView.bounds.midY)
+
+        if let (distance, angle) = performHitTesting(centerPoint) {
+            findShelfLabel?.text = "\(distance) : \(angle)"
+            if distance < 1.0 {
+                textNode.scale = SCNVector3(0.01, 0.01, 0.01) // 크기 조정
+            }
+        }
+        let hitTestResults = arView.hitTest(centerPoint, types: .featurePoint)
+
+        if let closestResult = hitTestResults.first {
+            // hitTest 결과로 얻은 위치에 텍스트 배치
+            let transform = closestResult.worldTransform
+            let position = SCNVector3(transform.columns.3.x, transform.columns.3.y, transform.columns.3.z)
+            textNode.position = position
+
+            // 카메라의 현재 방향 얻기
+            if let cameraTransform = arView.session.currentFrame?.camera.transform {
+                let cameraOrientation = SCNVector3(-cameraTransform.columns.2.x, -cameraTransform.columns.2.y, -cameraTransform.columns.2.z)
+                let cameraPosition = SCNVector3(cameraTransform.columns.3.x, cameraTransform.columns.3.y, cameraTransform.columns.3.z)
+                let direction = SCNVector3(cameraOrientation.x + cameraPosition.x, cameraOrientation.y + cameraPosition.y, cameraOrientation.z + cameraPosition.z)
+                
+                textNode.look(at: direction)
+            }
+
+            // 텍스트 노드를 ARSCNView의 루트 노드에 추가
+            self.arView.scene.rootNode.addChildNode(textNode)
+        } else {
+            print("Hit test 결과가 없습니다.")
+            // 필요한 경우 표면을 찾지 못했을 때 처리
         }
     }
 }
