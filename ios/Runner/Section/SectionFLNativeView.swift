@@ -11,6 +11,15 @@ import CoreML
 import NotificationCenter
 import CoreImage
 
+extension SCNVector3 {
+    static func - (left: SCNVector3, right: SCNVector3) -> SCNVector3 {
+        return SCNVector3Make(left.x - right.x, left.y - right.y, left.z - right.z)
+    }
+    
+    var length: Float {
+        return sqrt(x * x + y * y + z * z)
+    }
+}
 
 
 // FlutterPlatformView 프로토콜을 구현하여 Flutter 뷰로 사용될 수 있음
@@ -29,7 +38,17 @@ class SectionFLNativeView: NSObject, FlutterPlatformView, ARSCNViewDelegate {
 
     private var labelText: String = "매대 찾기"
 
+    // 마지막으로 읽은 텍스트와 시간을 저장하는 변수 추가
+    private var lastReadText: String?
+    private var lastReadTime: Date?
+
     private var findShelfLabel: UILabel?
+
+    // AR 텍스트 노드를 저장하는 배열
+    private var arTextNodes: [SCNNode] = []
+
+    // 선택된 텍스트 노드
+    private var selectedTextNode: SCNNode?
 
     // AR 세션 구성 및 시작
     private let configuration = ARWorldTrackingConfiguration()
@@ -140,6 +159,7 @@ class SectionFLNativeView: NSObject, FlutterPlatformView, ARSCNViewDelegate {
     }
     // 짧게 누르기 제스쳐 핸들러
     @objc func handleShortPress(_ sender: UITapGestureRecognizer) {
+        TTSManager.shared.stop()
         TTSManager.shared.play("짧게 누름")
         hapticC.impactFeedback(style: "heavy")
         let screenCenter = CGPoint(x: arView.bounds.midX, y: arView.bounds.midY)
@@ -352,6 +372,15 @@ class SectionFLNativeView: NSObject, FlutterPlatformView, ARSCNViewDelegate {
         )
     }
 
+    // 카메라에서 노드까지의 거리 계산 함수
+    private func calculateDistanceARContents(fromCameraTo nodePosition: SCNVector3) -> Float {
+        guard let cameraTransform = arView.session.currentFrame?.camera.transform else {
+            return Float.greatestFiniteMagnitude
+        }
+        let cameraPosition = SCNVector3(cameraTransform.columns.3.x, cameraTransform.columns.3.y, cameraTransform.columns.3.z)
+        return subtract(cameraPosition, nodePosition).length
+    }
+
     // 카메라(사용자)의 포워드 벡터를 계산하는 함수
     func forwardVector(from transform: simd_float4x4) -> simd_float3 {
         return simd_normalize(simd_float3(-transform.columns.2.x, -transform.columns.2.y, -transform.columns.2.z))
@@ -410,13 +439,12 @@ class SectionFLNativeView: NSObject, FlutterPlatformView, ARSCNViewDelegate {
     // ARSCNViewDelegate 메서드
     func renderer(_ renderer: SCNSceneRenderer, updateAtTime time: TimeInterval) {
         DispatchQueue.main.async {
-            self.updateGridDotsPosition()
-            self.updateDistanceDisplay()
+            //self.updateGridDotsPosition()
+            //self.updateDistanceDisplay()
             self.drawGridLines()
             self.addFindShelfLabel()
+            self.updateSelectedTextNode()
 
-            // 사람 거리 측정
-            self.performHitTestAndMeasureDistance()
 
             if let currentFrame = ARSessionManager.shared.session.currentFrame {
                 // Vision 요청 실행
@@ -429,13 +457,9 @@ class SectionFLNativeView: NSObject, FlutterPlatformView, ARSCNViewDelegate {
                 } catch {
                     print("Failed to perform Vision request: \(error)")
                 }
-
-                if let arObjectPosition = self.arObjectPosition {
-                    let distance = self.calculateDistance(from: currentFrame.camera.transform, to: arObjectPosition)
-                    let angle = self.calculateAngle(from: currentFrame.camera.transform, to: arObjectPosition)
-                    self.findShelfLabel?.text = "거리: \(distance) 미터, 각도: \(angle) 라디안"
-                }
             }
+            // 사람 거리 측정
+            self.performHitTestAndMeasureDistance()
         }
     }
 
@@ -588,10 +612,8 @@ class SectionFLNativeView: NSObject, FlutterPlatformView, ARSCNViewDelegate {
         }
     }
 
-
     private func addFindShelfLabel() {
         if findShelfLabel == nil {
-            let labelHeight: CGFloat = 150
             let label = UILabel()
             label.backgroundColor = UIColor.black
             label.alpha = 0.7 // 투명도 조정
@@ -604,7 +626,6 @@ class SectionFLNativeView: NSObject, FlutterPlatformView, ARSCNViewDelegate {
             arView.addSubview(label)
             findShelfLabel = label
         }
-
         findShelfLabel?.frame = CGRect(x: 20, y: arView.safeAreaInsets.top, width: arView.bounds.width - 40, height: 150)
     }
 
@@ -655,9 +676,56 @@ class SectionFLNativeView: NSObject, FlutterPlatformView, ARSCNViewDelegate {
 
             // 텍스트 노드를 ARSCNView의 루트 노드에 추가
             self.arView.scene.rootNode.addChildNode(textNode)
+            self.arTextNodes.append(textNode)
         } else {
             print("Hit test 결과가 없습니다.")
             // 필요한 경우 표면을 찾지 못했을 때 처리
         }
+    }
+
+    // 선택된 텍스트 식별 및 정보 출력 함수
+    private func updateSelectedTextNode() {
+        let screenWidth = CGFloat(arView.bounds.width)
+        let screenHeight = CGFloat(arView.bounds.height)
+        let currentTime = Date()
+
+        // 중앙 그리드 셀 위치 계산
+        let centerX = screenWidth / 2
+        let centerY = screenHeight / 2
+        let cellWidth = screenWidth / 3
+        let cellHeight = screenHeight / 3
+
+        selectedTextNode = nil
+        var minDistance: Float = Float.greatestFiniteMagnitude
+
+        for textNode in arTextNodes {
+            let textScreenPosition = arView.projectPoint(textNode.position)
+
+            // 중앙 그리드 셀에 있는 노드만 고려
+            if abs(Float(textScreenPosition.x) - Float(centerX)) <= Float(cellWidth) / 2 && 
+            abs(Float(textScreenPosition.y) - Float(centerY)) <= Float(cellHeight) / 2 {
+                let distance = calculateDistanceARContents(fromCameraTo: textNode.position)
+                if distance < minDistance {
+                    minDistance = distance
+                    selectedTextNode = textNode
+                }
+            }
+        }
+
+        if let selectedNode = selectedTextNode, let text = (selectedNode.geometry as? SCNText)?.string as? String {
+            // 마지막으로 읽은 텍스트와 현재 텍스트가 다르고, 마지막 읽은 시간으로부터 2초가 경과했는지 확인
+            if text != lastReadText || lastReadTime == nil || currentTime.timeIntervalSince(lastReadTime!) >= 10 {
+                TTSManager.shared.play("\(text), Distance: \(minDistance)")
+                lastReadText = text
+                lastReadTime = currentTime
+            }
+        }
+    }
+
+
+    
+    // SCNVector3의 연산자 오버로딩을 클래스 내부에 추가
+    private func subtract(_ left: SCNVector3, _ right: SCNVector3) -> SCNVector3 {
+        return SCNVector3Make(left.x - right.x, left.y - right.y, left.z - right.z)
     }
 }
