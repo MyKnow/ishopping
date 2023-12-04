@@ -61,11 +61,12 @@ class _CameraScreenState extends State<MapAndroidScreen> {
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
+          backgroundColor: Colors.white,
           title: Text("권한 거부됨"),
           content: Text("카메라 권한이 거부되었습니다. 앱 설정에서 권한을 허용해주세요."),
           actions: <Widget>[
             TextButton(
-              child: Text("확인"),
+              child: Text("확인", style: TextStyle(color: Colors.red)),
               onPressed: () {
                 Navigator.of(context).pushReplacement(
                   MaterialPageRoute(builder: (context) => MainScreen()),
