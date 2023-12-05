@@ -15,22 +15,22 @@ import 'product_model.dart';
 import 'package:uuid/uuid.dart';
 
 void main() async {
-  WidgetsFlutterBinding.ensureInitialized();
+  // WidgetsFlutterBinding.ensureInitialized();
 
-  final dbService = DatabaseService();
+  // final dbService = DatabaseService();
   // var testProduct = ProductModel(
   //     id: Uuid().v4(),
-  //     product: '튀김우동',
-  //     price: 1150,
+  //     product: '진라면',
+  //     price: 1100,
   //     barcodeNum: '10001',
   //     category: '라면');
   // dbService.insertProduct(testProduct);
 
   // DB 내 제품 확인
-  var productList = await dbService.getProducts();
-  for (int i = 0; i < productList.length; i++) {
-    print(productList[i].product);
-  }
+  // var productList = await dbService.getProducts();
+  // for (int i = 0; i < productList.length; i++) {
+  //   print(productList[i].product);
+  // }
 
   runApp(MyApp());
 }

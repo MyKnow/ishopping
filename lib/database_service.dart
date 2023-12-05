@@ -36,6 +36,20 @@ class DatabaseService {
     return products;
   }
 
+  Future<int> getPriceByProductName(String productName) async {
+    final db = await _databaseService.database;
+    var price = 0;
+    var data = await db.rawQuery(
+        'select price from Products where product = ?', [productName]);
+    if (data.length == 1) {
+      price = data[0]["price"] as int;
+    } else {
+      price = -1;
+    }
+
+    return price;
+  }
+
   Future<void> insertProduct(ProductModel product) async {
     final db = await _databaseService.database;
     var data = await db.rawInsert(
