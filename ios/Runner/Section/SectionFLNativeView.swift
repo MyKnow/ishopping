@@ -61,6 +61,8 @@ class SectionFLNativeView: NSObject, FlutterPlatformView, ARSCNViewDelegate {
     // AR 세션 구성 및 시작
     private let configuration = ARWorldTrackingConfiguration()
 
+    private var selectSection: String?
+
     // 가이드 dot 및 거리 label들
     private var gridDots: [UIView] = []
     private var gridLabels: [UILabel] = []
@@ -157,6 +159,7 @@ class SectionFLNativeView: NSObject, FlutterPlatformView, ARSCNViewDelegate {
         addSwipeGesture()
     }
     deinit {
+        TTSManager.shared.stop()
         ARSessionManager.shared.pauseSession()
     }
 
@@ -171,14 +174,8 @@ class SectionFLNativeView: NSObject, FlutterPlatformView, ARSCNViewDelegate {
         TTSManager.shared.play("짧게 누름")
         hapticC.impactFeedback(style: "heavy")
         let screenCenter = CGPoint(x: arView.bounds.midX, y: arView.bounds.midY)
-        addArText()
-        if let hitTestResult = arView.hitTest(screenCenter, types: .existingPlaneUsingExtent).first {
-            print("test")
-            addArObject(at: hitTestResult)
-        }
-        if let currentFrame = ARSessionManager.shared.session.currentFrame {
-            //processFrame(currentFrame)
-        }
+        //addArText()
+        findSection()
     }
 
     // 길게 누르기 제스쳐 추가
@@ -451,7 +448,7 @@ class SectionFLNativeView: NSObject, FlutterPlatformView, ARSCNViewDelegate {
             //self.updateDistanceDisplay()
             self.drawGridLines()
             self.addFindShelfLabel()
-            self.updateSelectedTextNode()
+            //self.updateSelectedTextNode()
 
 
             if let currentFrame = ARSessionManager.shared.session.currentFrame {
@@ -672,7 +669,7 @@ class SectionFLNativeView: NSObject, FlutterPlatformView, ARSCNViewDelegate {
     }
     // Method to add the AR object
     private func addArText() {
-        let textGeometry = SCNText(string: "Hello World", extrusionDepth: 1.0)
+        let textGeometry = SCNText(string: ". \(String(describing: self.selectSection))", extrusionDepth: 1.0)
         textGeometry.firstMaterial?.diffuse.contents = UIColor.black
 
         let textNode = SCNNode(geometry: textGeometry)
@@ -755,11 +752,92 @@ class SectionFLNativeView: NSObject, FlutterPlatformView, ARSCNViewDelegate {
             }
         }
     }
-
-
     
     // SCNVector3의 연산자 오버로딩을 클래스 내부에 추가
     private func subtract(_ left: SCNVector3, _ right: SCNVector3) -> SCNVector3 {
         return SCNVector3Make(left.x - right.x, left.y - right.y, left.z - right.z)
+    }
+
+    // findSection 함수
+    func findSection() {
+        guard let currentFrame = ARSessionManager.shared.session.currentFrame else {
+            print("현재 프레임을 가져올 수 없습니다.")
+            return
+        }
+
+        do {
+            let classifier = try SectionClassifier()
+            classifier.classifySections(in: currentFrame) { predictions in
+                // predictions 배열에는 각 섹션에 대한 분류 결과가 포함되어 있음
+                let filteredPredictions = predictions.filter { $0 != "" }
+
+                guard !filteredPredictions.isEmpty else {
+                    // 모든 예측이 "없음"인 경우
+                    TTSManager.shared.play("섹션을 찾을 수 없습니다. 다시 시도해주세요.")
+                    return
+                }
+
+                // 예시로 첫 번째 예측 결과를 사용
+                if let firstPrediction = filteredPredictions.first {
+                    self.selectSection = firstPrediction
+                    // 필요한 추가 작업 수행...
+                }
+            } 
+        }
+        catch {
+            print("분류기 초기화 중 오류 발생: \(error)")
+        }
+        /*
+        // 화면을 세로로 3등분하여 각 섹션에 대한 머신러닝 예측 결과를 받아옵니다.
+        let predictions = ["", "간편음식", "과자"] // 임시 예측 결과
+        let filteredPredictions = predictions.filter { $0 != "" }
+
+        guard !filteredPredictions.isEmpty else {
+            // 모든 예측이 "없음"이라면 사용자에게 다시 시도하도록 요청
+            TTSManager.shared.play("섹션을 찾을 수 없습니다. 다시 시도해주세요.")
+            return
+        }
+
+        // 사용자가 선택한 섹션을 저장합니다.
+        // 이 예제에서는 임의로 첫 번째 예측을 선택합니다. 실제 앱에서는 사용자 입력을 받아야 합니다.
+        selectSection = filteredPredictions.first
+        */
+        // 선택된 섹션에 대한 AR 텍스트 표시
+        if let section = selectSection {
+            addArText()
+            monitorDistanceToSection()
+        }
+    }
+
+    // 선택된 섹션까지의 거리를 모니터링하는 함수
+    private func monitorDistanceToSection() {
+        guard let section = selectSection else { return }
+
+        // Timer를 사용하여 거리 모니터링
+        Timer.scheduledTimer(withTimeInterval: 2, repeats: true) { [weak self] timer in
+            guard let self = self else { return }
+            guard let currentFrame = ARSessionManager.shared.session.currentFrame else { return }
+
+            // 현재 카메라 위치와 AR 텍스트 노드까지의 거리 측정
+            if let textNode = self.arTextNodes.first(where: { node in
+                if let text = (node.geometry as? SCNText)?.string as? String {
+                    return text.contains(section)
+                }
+                return false
+            }) {
+                let distance = self.calculateDistanceARContents(fromCameraTo: textNode.position)
+                let angle = self.calculateAngle(from: currentFrame.camera.transform, to: textNode.simdTransform)
+
+                // 거리가 N m 미만이면 완료
+                if distance < 1.0 {
+                    TTSManager.shared.stop()
+                    TTSManager.shared.play("목표에 도달했습니다.")
+                    timer.invalidate()
+                } else {
+                    TTSManager.shared.stop()
+                    TTSManager.shared.play("\(distance)미터")
+                }
+            }
+        }
     }
 }

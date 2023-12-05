@@ -11,7 +11,7 @@ import CoreImage
 import Alamofire
 
 class ImageProcessor {
-    func CVPB2UIImage(pixelBuffer: CVPixelBuffer) -> UIImage? {
+    func CVPB2UIImage(_ pixelBuffer: CVPixelBuffer) -> UIImage? {
         let ciImage = CIImage(cvPixelBuffer: pixelBuffer)
         let context = CIContext(options: nil)
         guard let cgImage = context.createCGImage(ciImage, from: ciImage.extent) else { return nil }
