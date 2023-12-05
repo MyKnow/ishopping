@@ -16,7 +16,7 @@ class SectionClassifier {
     private var rows: Int
     private var columns: Int
 
-    init(rows: Int = 1, columns: Int = 3) throws {
+    init(rows: Int = 3, columns: Int = 3) throws {
         self.rows = rows
         self.columns = columns
         let configuration = MLModelConfiguration()

@@ -766,7 +766,7 @@ class SectionFLNativeView: NSObject, FlutterPlatformView, ARSCNViewDelegate {
         }
 
         do {
-            let classifier = try SectionClassifier()
+            let classifier = try SectionClassifier(rows: rw, columns: col)
             classifier.classifySections(in: currentFrame) { predictions in
                 // predictions 배열에는 각 섹션에 대한 분류 결과가 포함되어 있음
                 let filteredPredictions = predictions.filter { $0 != "" }
