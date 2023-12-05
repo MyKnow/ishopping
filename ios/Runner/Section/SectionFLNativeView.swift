@@ -36,6 +36,14 @@ class SectionFLNativeView: NSObject, FlutterPlatformView, ARSCNViewDelegate {
     private var arObjectNode: SCNNode?
     private var arObjectPosition: simd_float4x4?
 
+    // 텍스트 노드와 관련된 정보를 저장할 구조체
+    struct TextNodeInfo {
+        var node: SCNNode
+        var firstVisibleTime: Date?
+    }
+    // 텍스트 노드 관련 정보를 저장하는 배열
+    private var textNodeInfos: [TextNodeInfo] = []
+
     private var labelText: String = "매대 찾기"
 
     // 마지막으로 읽은 텍스트와 시간을 저장하는 변수 추가
@@ -460,6 +468,28 @@ class SectionFLNativeView: NSObject, FlutterPlatformView, ARSCNViewDelegate {
             }
             // 사람 거리 측정
             self.performHitTestAndMeasureDistance()
+
+            // 카메라와의 거리가 1m 이내이고, 1초 이상 화면에 보이는 텍스트 노드를 찾아 제거
+            for (index, textNodeInfo) in self.textNodeInfos.enumerated().reversed() {
+                let distance = self.calculateDistanceARContents(fromCameraTo: textNodeInfo.node.position)
+                
+                if distance < 1.0 {
+                    // 텍스트 노드가 최초로 감지된 시간이 없으면 현재 시간을 설정
+                    if textNodeInfo.firstVisibleTime == nil {
+                        self.textNodeInfos[index].firstVisibleTime = Date()
+                    } else if let firstVisibleTime = textNodeInfo.firstVisibleTime {
+                        // 텍스트 노드가 1초 이상 화면에 보였는지 확인
+                        if Date().timeIntervalSince(firstVisibleTime) > 1 {
+                            // 텍스트 노드 제거
+                            textNodeInfo.node.removeFromParentNode()
+                            self.textNodeInfos.remove(at: index)
+                        }
+                    }
+                } else {
+                    // 거리가 1m 이상이면 시간을 초기화
+                    self.textNodeInfos[index].firstVisibleTime = nil
+                }
+            }
         }
     }
 
@@ -673,6 +703,10 @@ class SectionFLNativeView: NSObject, FlutterPlatformView, ARSCNViewDelegate {
                 
                 textNode.look(at: direction)
             }
+
+            // 텍스트 노드 정보 추가
+            let textNodeInfo = TextNodeInfo(node: textNode, firstVisibleTime: nil)
+            self.textNodeInfos.append(textNodeInfo)
 
             // 텍스트 노드를 ARSCNView의 루트 노드에 추가
             self.arView.scene.rootNode.addChildNode(textNode)
