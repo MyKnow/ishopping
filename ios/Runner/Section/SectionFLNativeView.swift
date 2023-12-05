@@ -10,6 +10,7 @@ import Vision
 import CoreML
 import NotificationCenter
 import CoreImage
+import SceneKit
 
 extension SCNVector3 {
     static func - (left: SCNVector3, right: SCNVector3) -> SCNVector3 {
@@ -45,6 +46,7 @@ class SectionFLNativeView: NSObject, FlutterPlatformView, ARSCNViewDelegate {
     private var textNodeInfos: [TextNodeInfo] = []
 
     var sectionPredictions: [String] = []
+    var sectionBest: [String] = []
 
     private var labelText: String = "매대 찾기"
 
@@ -54,11 +56,9 @@ class SectionFLNativeView: NSObject, FlutterPlatformView, ARSCNViewDelegate {
 
     private var findShelfLabel: UILabel?
 
-    // AR 텍스트 노드를 저장하는 배열
-    private var arTextNodes: [SCNNode] = []
-
     // 선택된 텍스트 노드
     private var selectedTextNode: SCNNode?
+    private var selectMode: Bool = false;
 
     // AR 세션 구성 및 시작
     private let configuration = ARWorldTrackingConfiguration()
@@ -104,6 +104,16 @@ class SectionFLNativeView: NSObject, FlutterPlatformView, ARSCNViewDelegate {
     // 사람용 바운딩 박스와의 거리를 저장하는 배열과 각도를 저장하는 배열
     private var distanceMeasurements: [Float] = []
     private var angleMeasurements: [Float] = []
+
+
+    private var gridWorldCoordinates: [SCNVector3] = []
+    private var selectCoord: SCNVector3 = SCNVector3(0, 0, 0) // 초기 좌표값 설정
+
+
+    // 타이머를 클래스 프로퍼티로 추가
+    private var monitoringTimer: Timer?
+
+    private var isGoMode: Bool = false
     
     // HapticFeedbackManager 인스턴스 생성
     let hapticC = HapticFeedbackManager()
@@ -162,8 +172,12 @@ class SectionFLNativeView: NSObject, FlutterPlatformView, ARSCNViewDelegate {
         addSwipeGesture()
     }
     deinit {
+        // 타이머를 무효화
+        monitoringTimer?.invalidate()
+        monitoringTimer = nil
         TTSManager.shared.stop()
         ARSessionManager.shared.pauseSession()
+        
     }
 
     // 짧게 누르기 제스쳐 추가
@@ -176,9 +190,15 @@ class SectionFLNativeView: NSObject, FlutterPlatformView, ARSCNViewDelegate {
         TTSManager.shared.stop()
         TTSManager.shared.play("짧게 누름")
         hapticC.impactFeedback(style: "heavy")
-        let screenCenter = CGPoint(x: arView.bounds.midX, y: arView.bounds.midY)
-        //addArText()
-        findSection()
+        if self.selectMode {
+            self.selectSection = self.sectionBest[1]
+            self.selectCoord = self.gridWorldCoordinates[1]
+            self.addArText()
+        } else {
+            //let screenCenter = CGPoint(x: arView.bounds.midX, y: arView.bounds.midY)
+            //addArText()
+            findSection()
+        }
     }
 
     // 길게 누르기 제스쳐 추가
@@ -208,18 +228,38 @@ class SectionFLNativeView: NSObject, FlutterPlatformView, ARSCNViewDelegate {
     }
     // 스와이프 제스쳐 핸들러
     @objc private func handleSwipe(_ gesture: UISwipeGestureRecognizer) {
+        TTSManager.shared.stop()
         hapticC.impactFeedback(style: "Heavy")
         switch gesture.direction {
         case .left: // 무언갈 진행하는 것
-            ARSessionManager.shared.pauseSession()
+            TTSManager.shared.play("왼쪽")
+            if self.selectMode {
+                self.selectMode = false
+                TTSManager.shared.play("취소")
+            }
             break
         case .right: // 무언갈 취소하는 것
+            TTSManager.shared.play("오른쪽")
             sendDataToFlutter()
             ARSessionManager.shared.pauseSession()
             break
         case .up: // 무언갈 더하는 것
+            TTSManager.shared.play("위")
+            if self.selectMode {
+                self.selectSection = self.sectionBest[0]
+                self.selectCoord = self.gridWorldCoordinates[0]
+                self.selectMode = false
+                self.addArText()
+            }
             break
         case .down: // 무언갈 빼는 것
+            TTSManager.shared.play("아래")
+            if self.selectMode {
+                self.selectSection = self.sectionBest[2]
+                self.selectCoord = self.gridWorldCoordinates[2]
+                self.selectMode = false
+                self.addArText()
+            }
             break
         default:
             break
@@ -415,6 +455,31 @@ class SectionFLNativeView: NSObject, FlutterPlatformView, ARSCNViewDelegate {
         return angleBetweenVectors(cameraForward, directionToTarget)
     }
 
+    func calculateAngleBetweenCameraAndArText(_ cameraTransform: simd_float4x4, _ arTextNodePosition: SCNVector3) -> Float {
+        // 카메라 위치
+        let cameraPosition = SCNVector3(cameraTransform.columns.3.x, cameraTransform.columns.3.y, cameraTransform.columns.3.z)
+
+        // ARText의 위치에서 카메라 위치를 빼서 방향 벡터를 계산합니다.
+        let direction = SCNVector3Make(arTextNodePosition.x - cameraPosition.x, arTextNodePosition.y - cameraPosition.y, arTextNodePosition.z - cameraPosition.z)
+
+        // 카메라의 전방 벡터
+        let forward = SCNVector3(-cameraTransform.columns.2.x, -cameraTransform.columns.2.y, -cameraTransform.columns.2.z)
+
+        // 수평 각도만 계산
+        let directionHorizontal = SCNVector3(direction.x, 0, direction.z)
+        let forwardHorizontal = SCNVector3(forward.x, 0, forward.z)
+
+        // 내적을 사용하여 각도를 계산
+        let dotProduct = dot(directionHorizontal.normalized(), forwardHorizontal.normalized())
+        let angleRadians = acos(min(max(dotProduct, -1.0), 1.0))
+
+        // 라디안을 도로 변환
+        return angleRadians * (180.0 / Float.pi)
+    }
+    func dot(_ vector1: SCNVector3, _ vector2: SCNVector3) -> Float {
+        return vector1.x * vector2.x + vector1.y * vector2.y + vector1.z * vector2.z
+    }
+
     private func setupGridDots() {
         let dotSize: CGFloat = 10
         let labelHeight: CGFloat = 20
@@ -464,8 +529,6 @@ class SectionFLNativeView: NSObject, FlutterPlatformView, ARSCNViewDelegate {
             //self.updateDistanceDisplay()
             self.drawGridLines()
             self.addFindShelfLabel()
-            //self.updateSelectedTextNode()
-
 
             if let currentFrame = ARSessionManager.shared.session.currentFrame {
                 // Vision 요청 실행
@@ -685,100 +748,35 @@ class SectionFLNativeView: NSObject, FlutterPlatformView, ARSCNViewDelegate {
     }
 
     // Method to add the AR object
-    private func addArObject(at hitTestResult: ARHitTestResult) {
-        let objectNode = SCNNode(geometry: SCNSphere(radius: 5.0)) // Example: A simple sphere
-        objectNode.position = SCNVector3(hitTestResult.worldTransform.columns.3.x,
-                                        hitTestResult.worldTransform.columns.3.y,
-                                        hitTestResult.worldTransform.columns.3.z)
-        arView.scene.rootNode.addChildNode(objectNode)
-        arObjectNode = objectNode
-        arObjectPosition = hitTestResult.worldTransform
-        dump(objectNode)
-    }
-    // Method to add the AR object
     private func addArText() {
+        // 텍스트 지오메트리 생성
         let textGeometry = SCNText(string: ". \(String(describing: self.selectSection))", extrusionDepth: 1.0)
         textGeometry.firstMaterial?.diffuse.contents = UIColor.black
 
         let textNode = SCNNode(geometry: textGeometry)
         textNode.scale = SCNVector3(-0.01, 0.01, 0.01) // 크기 조정
 
-        // 화면 중앙의 hitTest 수행
-        let centerPoint = CGPoint(x: arView.bounds.midX, y: arView.bounds.midY)
+        // 이미 저장된 좌표에 텍스트 노드 위치 설정
+        textNode.position = self.selectCoord
 
-        if let (distance, angle) = performHitTesting(centerPoint) {
-            findShelfLabel?.text = "\(distance) : \(angle)"
-            if distance < 1.0 {
-                textNode.scale = SCNVector3(0.01, 0.01, 0.01) // 크기 조정
-            }
-        }
-        let hitTestResults = arView.hitTest(centerPoint, types: .featurePoint)
-
-        if let closestResult = hitTestResults.first {
-            // hitTest 결과로 얻은 위치에 텍스트 배치
-            let transform = closestResult.worldTransform
-            let position = SCNVector3(transform.columns.3.x, transform.columns.3.y, transform.columns.3.z)
-            textNode.position = position
-
-            // 카메라의 현재 방향 얻기
-            if let cameraTransform = arView.session.currentFrame?.camera.transform {
-                let cameraOrientation = SCNVector3(-cameraTransform.columns.2.x, -cameraTransform.columns.2.y, -cameraTransform.columns.2.z)
-                let cameraPosition = SCNVector3(cameraTransform.columns.3.x, cameraTransform.columns.3.y, cameraTransform.columns.3.z)
-                let direction = SCNVector3(cameraOrientation.x + cameraPosition.x, cameraOrientation.y + cameraPosition.y, cameraOrientation.z + cameraPosition.z)
-                
-                textNode.look(at: direction)
-            }
-
-            // 텍스트 노드 정보 추가
-            let textNodeInfo = TextNodeInfo(node: textNode, firstVisibleTime: nil)
-            self.textNodeInfos.append(textNodeInfo)
-
-            // 텍스트 노드를 ARSCNView의 루트 노드에 추가
-            self.arView.scene.rootNode.addChildNode(textNode)
-            self.arTextNodes.append(textNode)
-        } else {
-            print("Hit test 결과가 없습니다.")
-            // 필요한 경우 표면을 찾지 못했을 때 처리
-        }
-    }
-
-    // 선택된 텍스트 식별 및 정보 출력 함수
-    private func updateSelectedTextNode() {
-        let screenWidth = CGFloat(arView.bounds.width)
-        let screenHeight = CGFloat(arView.bounds.height)
-        let currentTime = Date()
-
-        // 중앙 그리드 셀 위치 계산
-        let centerX = screenWidth / 2
-        let centerY = screenHeight / 2
-        let cellWidth = screenWidth / 3
-        let cellHeight = screenHeight / 3
-
-        selectedTextNode = nil
-        var minDistance: Float = Float.greatestFiniteMagnitude
-
-        for textNode in arTextNodes {
-            let textScreenPosition = arView.projectPoint(textNode.position)
-
-            // 중앙 그리드 셀에 있는 노드만 고려
-            if abs(Float(textScreenPosition.x) - Float(centerX)) <= Float(cellWidth) / 2 && 
-            abs(Float(textScreenPosition.y) - Float(centerY)) <= Float(cellHeight) / 2 {
-                let distance = calculateDistanceARContents(fromCameraTo: textNode.position)
-                if distance < minDistance {
-                    minDistance = distance
-                    selectedTextNode = textNode
-                }
-            }
+        // 카메라의 현재 방향 얻기
+        if let cameraTransform = arView.session.currentFrame?.camera.transform {
+            let cameraOrientation = SCNVector3(-cameraTransform.columns.2.x, -cameraTransform.columns.2.y, -cameraTransform.columns.2.z)
+            let cameraPosition = SCNVector3(cameraTransform.columns.3.x, cameraTransform.columns.3.y, cameraTransform.columns.3.z)
+            let direction = SCNVector3(cameraOrientation.x + cameraPosition.x, cameraOrientation.y + cameraPosition.y, cameraOrientation.z + cameraPosition.z)
+            
+            textNode.look(at: direction)
         }
 
-        if let selectedNode = selectedTextNode, let text = (selectedNode.geometry as? SCNText)?.string as? String {
-            // 마지막으로 읽은 텍스트와 현재 텍스트가 다르고, 마지막 읽은 시간으로부터 2초가 경과했는지 확인
-            if text != lastReadText || lastReadTime == nil || currentTime.timeIntervalSince(lastReadTime!) >= 10 {
-                TTSManager.shared.play("\(text), Distance: \(minDistance)")
-                lastReadText = text
-                lastReadTime = currentTime
-            }
-        }
+        // 텍스트 노드 정보 추가
+        let textNodeInfo = TextNodeInfo(node: textNode, firstVisibleTime: nil)
+        self.textNodeInfos.append(textNodeInfo)
+
+        // 텍스트 노드를 ARSCNView의 루트 노드에 추가
+        self.arView.scene.rootNode.addChildNode(textNode)
+        self.isGoMode = true
+
+        self.monitorDistanceToSection()
     }
     
     // SCNVector3의 연산자 오버로딩을 클래스 내부에 추가
@@ -789,89 +787,172 @@ class SectionFLNativeView: NSObject, FlutterPlatformView, ARSCNViewDelegate {
     // findSection 함수
     func findSection() {
         sectionPredictions.removeAll()
+        sectionBest.removeAll()
         guard let currentFrame = ARSessionManager.shared.session.currentFrame else {
             print("현재 프레임을 가져올 수 없습니다.")
             return
         }
 
+        self.hitTestForGrids(in: currentFrame)
+
         do {
             let classifier = try SectionClassifier(rows: rw, columns: col)
             classifier.classifySections(in: currentFrame) { predictions in
-                // predictions 배열에는 각 섹션에 대한 분류 결과가 포함되어 있음
-                /*
-                let filteredPredictions = predictions.filter { $0 != "" }
+                self.sectionPredictions = predictions
+                
+                // 예측 결과를 그룹화
+                let groupedPredictions = self.groupPredictions(predictions)
+                let bestPredict = self.findBestPredictions(in: groupedPredictions)
+                
+                // 가장 많은 예측 결과를 가진 섹션을 음성으로 출력
+                for (index, prediction) in bestPredict.enumerated() {
+                    if prediction != "" {
+                        TTSManager.shared.play("\(index + 1)번째: \(prediction)")
+                    }
+                }
 
-                guard !filteredPredictions.isEmpty else {
-                    // 모든 예측이 "없음"인 경우
-                    TTSManager.shared.play("섹션을 찾을 수 없습니다. 다시 시도해주세요.")
-                    return
-                }
-                */
-                for predic in predictions {
-                    self.sectionPredictions.append(predic)
-                }
-                // 예시로 첫 번째 예측 결과를 사용
-                //if let firstPrediction = filteredPredictions.first {
-                if let firstPrediction = self.sectionPredictions.first {
-                    self.selectSection = firstPrediction
-                    // 필요한 추가 작업 수행...
-                }
-            } 
-        }
-        catch {
+                self.sectionBest = bestPredict
+                self.sectionSelector()
+            }
+        } catch {
             print("분류기 초기화 중 오류 발생: \(error)")
-        }
-        /*
-        // 화면을 세로로 3등분하여 각 섹션에 대한 머신러닝 예측 결과를 받아옵니다.
-        let predictions = ["", "간편음식", "과자"] // 임시 예측 결과
-        let filteredPredictions = predictions.filter { $0 != "" }
-
-        guard !filteredPredictions.isEmpty else {
-            // 모든 예측이 "없음"이라면 사용자에게 다시 시도하도록 요청
-            TTSManager.shared.play("섹션을 찾을 수 없습니다. 다시 시도해주세요.")
-            return
-        }
-
-        // 사용자가 선택한 섹션을 저장합니다.
-        // 이 예제에서는 임의로 첫 번째 예측을 선택합니다. 실제 앱에서는 사용자 입력을 받아야 합니다.
-        selectSection = filteredPredictions.first
-        */
-        // 선택된 섹션에 대한 AR 텍스트 표시
-        if let section = selectSection {
-            addArText()
-            monitorDistanceToSection()
         }
     }
 
-    // 선택된 섹션까지의 거리를 모니터링하는 함수
-    private func monitorDistanceToSection() {
-        guard let section = selectSection else { return }
+    // 4, 5, 6번 그리드의 중심에 대한 hitTest를 수행하고 결과를 저장하는 함수
+    private func hitTestForGrids(in frame: ARFrame) {
+        let gridIndices = [3, 4, 5] // 4, 5, 6번 그리드 인덱스
+        gridWorldCoordinates.removeAll()
 
-        // Timer를 사용하여 거리 모니터링
-        Timer.scheduledTimer(withTimeInterval: 2, repeats: true) { [weak self] timer in
-            guard let self = self else { return }
-            guard let currentFrame = ARSessionManager.shared.session.currentFrame else { return }
-
-            // 현재 카메라 위치와 AR 텍스트 노드까지의 거리 측정
-            if let textNode = self.arTextNodes.first(where: { node in
-                if let text = (node.geometry as? SCNText)?.string as? String {
-                    return text.contains(section)
-                }
-                return false
-            }) {
-                let distance = self.calculateDistanceARContents(fromCameraTo: textNode.position)
-                let angle = self.calculateAngle(from: currentFrame.camera.transform, to: textNode.simdTransform)
-
-                // 거리가 N m 미만이면 완료
-                if distance < 1.0 {
-                    TTSManager.shared.stop()
-                    TTSManager.shared.play("목표에 도달했습니다.")
-                    timer.invalidate()
-                } else {
-                    TTSManager.shared.stop()
-                    TTSManager.shared.play("\(distance)미터")
-                }
+        for index in gridIndices {
+            let dotView = gridDots[index]
+            let screenPoint = CGPoint(x: dotView.center.x, y: dotView.center.y)
+            
+            if let hitTestResult = arView.hitTest(screenPoint, types: .featurePoint).first {
+                let worldPosition = SCNVector3(
+                    hitTestResult.worldTransform.columns.3.x,
+                    hitTestResult.worldTransform.columns.3.y,
+                    hitTestResult.worldTransform.columns.3.z
+                )
+                gridWorldCoordinates.append(worldPosition)
             }
         }
+    }
+
+    // 예측 결과를 그룹화하는 함수
+    private func groupPredictions(_ predictions: [String]) -> [[String]] {
+        var groups: [[String]] = Array(repeating: [], count: 3) // 3개의 그룹
+
+        for (index, prediction) in predictions.enumerated() {
+            let groupIndex = index % 3
+            groups[groupIndex].append(prediction)
+        }
+
+        return groups
+    }
+
+    // 각 그룹에서 가장 많은 예측 결과를 가진 섹션을 찾는 함수
+    private func findBestPredictions(in groups: [[String]]) -> [String] {
+        var bestPredicts: [String] = []
+
+        for group in groups {
+            let grouped = Dictionary(grouping: group, by: { $0 })
+            let sorted = grouped.sorted { $0.value.count > $1.value.count }
+            
+            if let bestPrediction = sorted.first, bestPrediction.value.count == 1 {
+                let simplifiedGroup = group.map { $0.components(separatedBy: CharacterSet.decimalDigits).first ?? "" }
+                let simpleGrouped = Dictionary(grouping: simplifiedGroup, by: { $0 })
+                let simpleSorted = simpleGrouped.sorted { $0.value.count > $1.value.count }
+
+                if let simpleBestPrediction = simpleSorted.first, simpleBestPrediction.value.count == 1 {
+                    bestPredicts.append("")
+                } else {
+                    bestPredicts.append("\(simpleSorted.first?.key ?? "")1")
+                }
+            } else {
+                bestPredicts.append(sorted.first?.key ?? "")
+            }
+        }
+
+        return bestPredicts
+    }
+
+
+
+    // 기존의 monitorDistanceToSection 함수 수정
+    func monitorDistanceToSection() {
+        guard selectSection != nil else { return }
+
+        // 타이머가 이미 실행 중인 경우 중지
+        if monitoringTimer != nil {
+            monitoringTimer?.invalidate()
+            monitoringTimer = nil
+        }
+
+        // 3초마다 반복되는 타이머 설정
+        monitoringTimer = Timer.scheduledTimer(withTimeInterval: 3.0, repeats: true) { [weak self] timer in
+            guard let self = self, let currentFrame = ARSessionManager.shared.session.currentFrame else {
+                timer.invalidate()
+                return
+            }
+
+            let cameraTransform = currentFrame.camera.transform
+            let cameraPosition = SCNVector3(cameraTransform.columns.3.x, cameraTransform.columns.3.y, cameraTransform.columns.3.z)
+            let distance = self.calculateDistanceARContents(fromCameraTo: self.selectCoord)
+            let angle = self.calculateAngleBetweenCameraAndArText(cameraTransform, self.selectCoord)
+
+            // 각도 계산을 위한 추가적인 로직 필요
+
+            // 거리가 N m 미만이면 완료
+            if distance < 1.0 {
+                TTSManager.shared.stop()
+                TTSManager.shared.play("목표에 도달했습니다.")
+                timer.invalidate()
+                self.selectMode = false
+                self.isGoMode = false
+            } else {
+                TTSManager.shared.stop()
+                TTSManager.shared.play("\(distance)미터, \(angle)도")
+            }
+        }
+    }
+
+
+    func sectionSelector() {
+        self.selectMode = true
+        var array = self.sectionBest
+        if array.isEmpty || self.gridWorldCoordinates.isEmpty {
+            TTSManager.shared.play("다시 터치해주십시오")
+            self.selectMode = false
+        } else {
+            if array[0] != "" {
+                TTSManager.shared.play("\(array[0])로 가려면 위로 스와이프")
+            }
+            if array[1] != "" {
+                TTSManager.shared.play("\(array[1])로 가려면 터치 ")
+            }
+            if array[2] != "" {
+                TTSManager.shared.play("\(array[2])로 가려면 아래로 스와이프")
+            }
+        }
+    }
+}
+
+// selectCoord의 simdTransform 프로퍼티를 생성하는 확장 함수
+extension SCNVector3 {
+    var simdTransform: matrix_float4x4 {
+        return matrix_float4x4(columns: (
+            simd_float4(x, 0, 0, 0),
+            simd_float4(0, y, 0, 0),
+            simd_float4(0, 0, z, 0),
+            simd_float4(0, 0, 0, 1)
+        ))
+    }
+    func normalized() -> SCNVector3 {
+        let length = sqrt(self.x * self.x + self.y * self.y + self.z * self.z)
+        guard length != 0 else {
+            return SCNVector3(0, 0, 0)
+        }
+        return SCNVector3(self.x / length, self.y / length, self.z / length)
     }
 }
