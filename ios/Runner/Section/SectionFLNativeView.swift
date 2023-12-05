@@ -44,6 +44,8 @@ class SectionFLNativeView: NSObject, FlutterPlatformView, ARSCNViewDelegate {
     // 텍스트 노드 관련 정보를 저장하는 배열
     private var textNodeInfos: [TextNodeInfo] = []
 
+    var sectionPredictions: [String] = []
+
     private var labelText: String = "매대 찾기"
 
     // 마지막으로 읽은 텍스트와 시간을 저장하는 변수 추가
@@ -154,6 +156,7 @@ class SectionFLNativeView: NSObject, FlutterPlatformView, ARSCNViewDelegate {
 
         ARSessionManager.shared.runSession()
         setupVision()
+        setupGridDots()
         addShortPressGesture()
         addLongPressGesture()
         addSwipeGesture()
@@ -415,27 +418,40 @@ class SectionFLNativeView: NSObject, FlutterPlatformView, ARSCNViewDelegate {
     private func setupGridDots() {
         let dotSize: CGFloat = 10
         let labelHeight: CGFloat = 20
+        let labelWidth: CGFloat = 100
+        let labelBackgroundOpacity: CGFloat = 0.5
+        let labelCornerRadius: CGFloat = 10
+        let labelTextColor: UIColor = .red
+        let labelFont: UIFont = UIFont.boldSystemFont(ofSize: 14)
+        
         let screenWidth = arView.bounds.width
         let screenHeight = arView.bounds.height
+        let sectionWidth = screenWidth / CGFloat(col)
+        let sectionHeight = screenHeight / CGFloat(rw)
 
         for row in 0..<rw {
             for column in 0..<col {
+                let x = CGFloat(column) * sectionWidth + sectionWidth / 2
+                let y = CGFloat(row) * sectionHeight + sectionHeight / 2
+
                 // 점 생성
-                let dot = UIView(frame: CGRect(x: 0, y: 0, width: dotSize, height: dotSize))
+                let dot = UIView(frame: CGRect(x: x - dotSize / 2, y: y - dotSize / 2, width: dotSize, height: dotSize))
                 dot.backgroundColor = .red
                 dot.layer.cornerRadius = dotSize / 2
-                let x = CGFloat(column) * screenWidth / CGFloat(col) + screenWidth / CGFloat(2*col)
-                let y = CGFloat(row) * screenHeight / CGFloat(rw) + screenHeight / CGFloat(2*rw)
-                dot.center = CGPoint(x: x, y: y)
                 arView.addSubview(dot)
                 gridDots.append(dot)
 
                 // 레이블 생성
-                let label = UILabel(frame: CGRect(x: x - 50, y: y + dotSize, width: 100, height: labelHeight))
+                let label = UILabel(frame: CGRect(x: x - labelWidth / 2, y: y - labelHeight / 2, width: labelWidth, height: labelHeight))
+                label.text = "\(row * col + column + 1)" // 1부터 9까지의 숫자
                 label.textAlignment = .center
-                label.textColor = .white
-                label.backgroundColor = .black.withAlphaComponent(0.5)
-                //arView.addSubview(label)
+                label.textColor = labelTextColor
+                label.backgroundColor = .black.withAlphaComponent(labelBackgroundOpacity)
+                label.adjustsFontSizeToFitWidth = true // 텍스트 크기를 라벨 너비에 맞게 조정
+                label.layer.cornerRadius = labelCornerRadius
+                label.layer.masksToBounds = true
+                label.font = labelFont
+                arView.addSubview(label)
                 gridLabels.append(label)
             }
         }
@@ -444,7 +460,7 @@ class SectionFLNativeView: NSObject, FlutterPlatformView, ARSCNViewDelegate {
     // ARSCNViewDelegate 메서드
     func renderer(_ renderer: SCNSceneRenderer, updateAtTime time: TimeInterval) {
         DispatchQueue.main.async {
-            //self.updateGridDotsPosition()
+            self.updateGridDotsPosition()
             //self.updateDistanceDisplay()
             self.drawGridLines()
             self.addFindShelfLabel()
@@ -493,16 +509,28 @@ class SectionFLNativeView: NSObject, FlutterPlatformView, ARSCNViewDelegate {
     private func updateGridDotsPosition() {
         let screenWidth = arView.bounds.width
         let screenHeight = arView.bounds.height
+        let sectionWidth = screenWidth / CGFloat(col)
+        let sectionHeight = screenHeight / CGFloat(rw)
 
-        for (i, dot) in gridDots.enumerated() {
-            let rowIndex = i / col // 가로 줄 개수로 나눔
-            let columnIndex = i % col // 가로 줄 개수로 나머지 연산
+        for (index, dot) in gridDots.enumerated() {
+            let rowIndex = index / col // 가로 줄 개수로 나눔
+            let columnIndex = index % col // 가로 줄 개수로 나머지 연산
 
-            let x = CGFloat(columnIndex) * screenWidth / CGFloat(col) + screenWidth / CGFloat(2 * col)
-            let y = CGFloat(rowIndex) * screenHeight / CGFloat(rw) + screenHeight / CGFloat(2 * rw)
+            let x = CGFloat(columnIndex) * sectionWidth + sectionWidth / 2
+            let y = CGFloat(rowIndex) * sectionHeight + sectionHeight / 2
             dot.center = CGPoint(x: x, y: y)
+
+            // 레이블 위치와 텍스트 업데이트
+            let label = gridLabels[index]
+            label.center = CGPoint(x: x, y: y + dot.frame.size.height + 10) // 10은 점과 레이블 사이의 간격입니다
+            
+            // 예측값을 포함한 텍스트 설정
+            let predictionText = index < sectionPredictions.count ? sectionPredictions[index] : "N/A"
+            label.text = "번호 \(index + 1): \(predictionText)"
         }
     }
+
+
 
     private func updateDistanceDisplay() {
         let screenWidth = arView.bounds.width
@@ -760,6 +788,7 @@ class SectionFLNativeView: NSObject, FlutterPlatformView, ARSCNViewDelegate {
 
     // findSection 함수
     func findSection() {
+        sectionPredictions.removeAll()
         guard let currentFrame = ARSessionManager.shared.session.currentFrame else {
             print("현재 프레임을 가져올 수 없습니다.")
             return
@@ -769,6 +798,7 @@ class SectionFLNativeView: NSObject, FlutterPlatformView, ARSCNViewDelegate {
             let classifier = try SectionClassifier(rows: rw, columns: col)
             classifier.classifySections(in: currentFrame) { predictions in
                 // predictions 배열에는 각 섹션에 대한 분류 결과가 포함되어 있음
+                /*
                 let filteredPredictions = predictions.filter { $0 != "" }
 
                 guard !filteredPredictions.isEmpty else {
@@ -776,9 +806,13 @@ class SectionFLNativeView: NSObject, FlutterPlatformView, ARSCNViewDelegate {
                     TTSManager.shared.play("섹션을 찾을 수 없습니다. 다시 시도해주세요.")
                     return
                 }
-
+                */
+                for predic in predictions {
+                    self.sectionPredictions.append(predic)
+                }
                 // 예시로 첫 번째 예측 결과를 사용
-                if let firstPrediction = filteredPredictions.first {
+                //if let firstPrediction = filteredPredictions.first {
+                if let firstPrediction = self.sectionPredictions.first {
                     self.selectSection = firstPrediction
                     // 필요한 추가 작업 수행...
                 }
