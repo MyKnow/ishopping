@@ -10,7 +10,28 @@ import 'map_platform.dart';
 import 'product_platform.dart';
 import 'shopping_bag.dart';
 
-void main() {
+import 'database_service.dart';
+import 'product_model.dart';
+import 'package:uuid/uuid.dart';
+
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+
+  final dbService = DatabaseService();
+  // var testProduct = ProductModel(
+  //     id: Uuid().v4(),
+  //     product: '튀김우동',
+  //     price: 1150,
+  //     barcodeNum: '10001',
+  //     category: '라면');
+  // dbService.insertProduct(testProduct);
+
+  // DB 내 제품 확인
+  var productList = await dbService.getProducts();
+  for (int i = 0; i < productList.length; i++) {
+    print(productList[i].product);
+  }
+
   runApp(MyApp());
 }
 
