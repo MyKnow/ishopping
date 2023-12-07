@@ -40,7 +40,8 @@ class _MainScreenState extends State<MainScreen> {
     flutterTts = FlutterTts();
     await flutterTts.setLanguage("ko-KR");
     await flutterTts.setPitch(1.0);
-    await flutterTts.setSpeechRate(0.7);
+    await flutterTts.setSpeechRate(0.8);
+    await flutterTts.speak("세션 모드. 제품 모드. 결제 모드. ");
   }
 
   @override
@@ -71,12 +72,36 @@ class _MainScreenState extends State<MainScreen> {
 
   void _handleSwipe(DragEndDetails details) {
     if (details.primaryVelocity != null) {
-      if (details.primaryVelocity! < 0 && _currentMode < 2) {
-        setState(() => _currentMode++);
-      } else if (details.primaryVelocity! > 0 && _currentMode > 0) {
-        setState(() => _currentMode--);
+      if (details.primaryVelocity! > 0 && _currentMode < 2) {
+        setState(() {
+          _currentMode++;
+          speakCurrentMode(); // 모드가 변경될 때 TTS로 읽어줍니다.
+        });
+      } else if (details.primaryVelocity! < 0 && _currentMode > 0) {
+        setState(() {
+          _currentMode--;
+          speakCurrentMode(); // 모드가 변경될 때 TTS로 읽어줍니다.
+        });
       }
     }
+  }
+
+  // 모드가 변경될 때 TTS로 읽어주는 함수
+  void speakCurrentMode() async {
+    String modeText = "";
+    switch (_currentMode) {
+      case 0:
+        modeText = "세션 모드";
+        break;
+      case 1:
+        modeText = "제품 모드";
+        break;
+      case 2:
+        modeText = "결제 모드";
+        break;
+    }
+
+    await flutterTts.speak(modeText);
   }
 
   void _navigateToCurrentMode(BuildContext context) {
