@@ -7,7 +7,6 @@ import 'package:haptic_feedback/haptic_feedback.dart';
 import 'map_platform.dart';
 import 'product_platform.dart';
 import 'shopping_bag.dart';
-import 'storelist.dart';
 
 void main() {
   runApp(MyApp());
@@ -17,7 +16,7 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      home: StoreListScreen(),
+      home: MainScreen(),
     );
   }
 }
@@ -29,6 +28,7 @@ class MainScreen extends StatefulWidget {
 
 class _MainScreenState extends State<MainScreen> {
   late FlutterTts flutterTts;
+  int _currentMode = 0; // 0: 세션모드, 1: 제품모드, 2: 결제모드
 
   @override
   void initState() {
@@ -41,18 +41,6 @@ class _MainScreenState extends State<MainScreen> {
     await flutterTts.setLanguage("ko-KR");
     await flutterTts.setPitch(1.0);
     await flutterTts.setSpeechRate(0.7);
-
-    await _speakText("세션모드. 제품모드. 결제모드. ");
-  }
-
-  Future<void> _speakText(String text) async {
-    var sentences = text.split(". ");
-    for (var sentence in sentences) {
-      if (sentence.isNotEmpty) {
-        await flutterTts.speak(sentence);
-        await Future.delayed(Duration(milliseconds: 700));
-      }
-    }
   }
 
   @override
@@ -66,55 +54,56 @@ class _MainScreenState extends State<MainScreen> {
     return Scaffold(
       backgroundColor: const Color(0xFFFFF9E6),
       body: SafeArea(
-        child: OrientationBuilder(
-          builder: (context, orientation) {
-            return Stack(
-              children: <Widget>[
-                CustomPaint(
-                  painter: BackgroundPainter(),
-                  size: const Size(double.infinity, double.infinity),
-                ),
+        child: GestureDetector(
+          onVerticalDragEnd: (details) => _handleSwipe(details),
+          onHorizontalDragEnd: (details) => _handleSwipe(details),
+          onTap: () => _navigateToCurrentMode(context),
+          child: OrientationBuilder(
+            builder: (context, orientation) =>
                 orientation == Orientation.portrait
                     ? buildVerticalLayout()
                     : buildHorizontalLayout(),
-              ],
-            );
-          },
+          ),
         ),
       ),
     );
   }
 
+  void _handleSwipe(DragEndDetails details) {
+    if (details.primaryVelocity != null) {
+      if (details.primaryVelocity! < 0 && _currentMode < 2) {
+        setState(() => _currentMode++);
+      } else if (details.primaryVelocity! > 0 && _currentMode > 0) {
+        setState(() => _currentMode--);
+      }
+    }
+  }
+
+  void _navigateToCurrentMode(BuildContext context) {
+    switch (_currentMode) {
+      case 0:
+        navigateToSessionMode(context);
+        break;
+      case 1:
+        navigateToProductMode(context);
+        break;
+      case 2:
+        navigateToShoppingBagMode(context);
+        break;
+    }
+  }
+
   Widget buildVerticalLayout() {
+    double screenHeight = MediaQuery.of(context).size.height;
+
     return Column(
       children: <Widget>[
-        Expanded(
-          child: buildButton(
-            context,
-            "세션 모드",
-            "assets/images/public/maps.png",
-            EdgeInsets.fromLTRB(10, 30, 10, 5),
-            () => navigateToSessionMode(context),
-          ),
-        ),
-        Expanded(
-          child: buildButton(
-            context,
-            "제품 모드",
-            "assets/images/public/coke.png",
-            EdgeInsets.fromLTRB(10, 5, 10, 5),
-            () => navigateToProductMode(context),
-          ),
-        ),
-        Expanded(
-          child: buildButton(
-            context,
-            "결제 모드",
-            "assets/images/public/coins.png",
-            EdgeInsets.fromLTRB(10, 5, 10, 30),
-            () => navigateToShoppingBagMode(context),
-          ),
-        ),
+        buildModeButton(
+            "세션 모드", "assets/images/public/maps.png", 0, screenHeight),
+        buildModeButton(
+            "제품 모드", "assets/images/public/coke.png", 1, screenHeight),
+        buildModeButton(
+            "결제 모드", "assets/images/public/coins.png", 2, screenHeight),
       ],
     );
   }
@@ -124,94 +113,65 @@ class _MainScreenState extends State<MainScreen> {
 
     return Row(
       children: <Widget>[
-        Expanded(
-          child: Container(
-            height: screenHeight,
-            child: buildButton(
-              context,
-              "세션 모드",
-              "assets/images/public/maps.png",
-              EdgeInsets.fromLTRB(10, 10, 5, 10),
-              () => navigateToSessionMode(context),
-            ),
-          ),
-        ),
-        Expanded(
-          child: Container(
-            height: screenHeight,
-            child: buildButton(
-              context,
-              "제품 모드",
-              "assets/images/public/coke.png",
-              EdgeInsets.fromLTRB(5, 10, 5, 10),
-              () => navigateToProductMode(context),
-            ),
-          ),
-        ),
-        Expanded(
-          child: Container(
-            height: screenHeight,
-            child: buildButton(
-              context,
-              "결제 모드",
-              "assets/images/public/coins.png",
-              EdgeInsets.fromLTRB(5, 10, 10, 10),
-              () => navigateToShoppingBagMode(context),
-            ),
-          ),
-        ),
+        buildModeButton(
+            "세션 모드", "assets/images/public/maps.png", 0, screenHeight),
+        buildModeButton(
+            "제품 모드", "assets/images/public/coke.png", 1, screenHeight),
+        buildModeButton(
+            "결제 모드", "assets/images/public/coins.png", 2, screenHeight),
       ],
     );
   }
 
-  Widget buildButton(BuildContext context, String text, String imagePath,
-      EdgeInsets margin, VoidCallback onPressed) {
-    // 화면의 너비와 높이를 가져옵니다.
+  Widget buildModeButton(
+      String text, String imagePath, int modeIndex, double buttonHeight) {
     double screenWidth = MediaQuery.of(context).size.width;
-    double screenHeight = MediaQuery.of(context).size.height;
+    double imageSize = min(screenWidth, buttonHeight) * 0.15;
+    double fontSize = min(screenWidth, buttonHeight) * 0.1;
 
-    // 화면 크기에 따라 동적으로 크기를 조정합니다.
-    double imageSize =
-        min(screenWidth, screenHeight) * 0.15; // 이미지 크기를 화면의 10%로 설정
-    double fontSize =
-        min(screenWidth, screenHeight) * 0.1; // 텍스트 크기를 화면의 5%로 설정
-
-    return Container(
-      margin: margin,
-      child: ElevatedButton(
-        onPressed: onPressed,
-        style: ElevatedButton.styleFrom(
-          primary: Colors.white,
-          onPrimary: Colors.black,
-          shadowColor: Colors.grey,
-          elevation: 5,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(15),
-          ),
-          padding: EdgeInsets.symmetric(vertical: 20),
-          minimumSize: Size(double.infinity, 100),
-        ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: <Widget>[
-            Image.asset(imagePath, width: imageSize),
-            const SizedBox(width: 15),
-            Text(
-              text,
-              style: TextStyle(
-                color: Colors.red,
-                fontWeight: FontWeight.bold,
-                fontFamily: 'CustomFont',
-                fontSize: fontSize,
-              ),
+    return Expanded(
+      child: Container(
+        margin: EdgeInsets.all(10),
+        child: ElevatedButton(
+          onPressed: () {
+            // 클릭 이벤트 처리
+            _navigateToCurrentMode(context);
+          },
+          style: ElevatedButton.styleFrom(
+            primary: _currentMode == modeIndex ? Colors.yellow : Colors.white,
+            onPrimary: Colors.black,
+            shadowColor: Colors.grey,
+            elevation: 5,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(15),
             ),
-          ],
+            padding: EdgeInsets.symmetric(vertical: 20),
+            // 높이를 화면 높이로 설정
+            minimumSize: Size(double.infinity, buttonHeight),
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: <Widget>[
+              Image.asset(imagePath, width: imageSize),
+              SizedBox(width: 15),
+              Text(
+                text,
+                style: TextStyle(
+                  color: Colors.red,
+                  fontWeight: FontWeight.bold,
+                  fontFamily: 'CustomFont',
+                  fontSize: fontSize,
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
   }
 
-  void navigateToSessionMode(BuildContext context) async {
+  // Navigation functions for each mode
+  void navigateToSessionMode(BuildContext context) {
     heavyVibration(3);
     Navigator.push(
         context,
@@ -219,7 +179,7 @@ class _MainScreenState extends State<MainScreen> {
             builder: (context) => const PlatformSpecificMapScreen()));
   }
 
-  void navigateToProductMode(BuildContext context) async {
+  void navigateToProductMode(BuildContext context) {
     heavyVibration(3);
     Navigator.push(
         context,
@@ -227,12 +187,13 @@ class _MainScreenState extends State<MainScreen> {
             builder: (context) => const PlatformSpecificProductScreen()));
   }
 
-  void navigateToShoppingBagMode(BuildContext context) async {
+  void navigateToShoppingBagMode(BuildContext context) {
     heavyVibration(3);
     Navigator.push(
         context, MaterialPageRoute(builder: (context) => ShoppingBagScreen()));
   }
 
+  // Haptic feedback functions
   Future<void> heavyVibration(int rep) async {
     if (await Haptics.canVibrate()) {
       for (int i = 0; i < rep; i++) {
