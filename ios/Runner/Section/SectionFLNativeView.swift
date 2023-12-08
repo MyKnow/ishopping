@@ -33,6 +33,8 @@ class SectionFLNativeView: NSObject, FlutterPlatformView, ARSCNViewDelegate {
     public var shoppingBasketMap: [String: Int]
     private var channel: FlutterMethodChannel
 
+    private var overlayView: UIView?
+
     // Add properties to track the AR object and its position
     private var arObjectNode: SCNNode?
     private var arObjectPosition: simd_float4x4?
@@ -114,6 +116,7 @@ class SectionFLNativeView: NSObject, FlutterPlatformView, ARSCNViewDelegate {
     private var monitoringTimer: Timer?
 
     private var isGoMode: Bool = false
+    private var willFind: Bool = false
     
     // HapticFeedbackManager 인스턴스 생성
     let hapticC = HapticFeedbackManager()
@@ -191,6 +194,7 @@ class SectionFLNativeView: NSObject, FlutterPlatformView, ARSCNViewDelegate {
         TTSManager.shared.play("짧게 누름")
         hapticC.impactFeedback(style: "heavy")
         if self.selectMode {
+            self.willFind = false
             self.selectSection = self.sectionBest[1]
             self.selectCoord = self.gridWorldCoordinates[1]
             self.addArText()
@@ -210,9 +214,14 @@ class SectionFLNativeView: NSObject, FlutterPlatformView, ARSCNViewDelegate {
     // 길게 누르기 제스처 핸들러
     @objc func handleLongPress(_ sender: UILongPressGestureRecognizer) {
         if sender.state == .began {
-            TTSManager.shared.play("길게 누름")
-            hapticC.notificationFeedback(style: "success")
-            sendShoppingbagToFlutter()
+            if self.willFind {
+                sendDataToFlutter()
+                ARSessionManager.shared.pauseSession()
+            } else {
+                TTSManager.shared.play("길게 누름")
+                hapticC.notificationFeedback(style: "success")
+                sendShoppingbagToFlutter()
+            }
         }
     }
 
@@ -240,8 +249,6 @@ class SectionFLNativeView: NSObject, FlutterPlatformView, ARSCNViewDelegate {
             break
         case .right: // 무언갈 취소하는 것
             TTSManager.shared.play("오른쪽")
-            sendDataToFlutter()
-            ARSessionManager.shared.pauseSession()
             break
         case .up: // 무언갈 더하는 것
             TTSManager.shared.play("위")
@@ -269,8 +276,8 @@ class SectionFLNativeView: NSObject, FlutterPlatformView, ARSCNViewDelegate {
 
     private func sendDataToFlutter() {
         let data: [String: Any] = [
-            "predictionValue": predictionValue,
-            "shoppingbag": shoppingBasketMap // 예시 데이터
+            "predictionValue": self.predictionValue,
+            "shoppingbag": self.shoppingBasketMap // 예시 데이터
         ]
         self.channel.invokeMethod("sendData", arguments: data)
     }
@@ -428,6 +435,20 @@ class SectionFLNativeView: NSObject, FlutterPlatformView, ARSCNViewDelegate {
         let cameraPosition = SCNVector3(cameraTransform.columns.3.x, cameraTransform.columns.3.y, cameraTransform.columns.3.z)
         return subtract(cameraPosition, nodePosition).length
     }
+    private func calculateDistanceARContents2D(fromCameraTo nodePosition: SCNVector3) -> Float {
+        guard let cameraTransform = arView.session.currentFrame?.camera.transform else {
+            return Float.greatestFiniteMagnitude
+        }
+        let cameraPosition = SCNVector3(cameraTransform.columns.3.x, cameraTransform.columns.3.y, cameraTransform.columns.3.z)
+        
+        // 2D 평면에서의 거리를 계산합니다 (x와 z 좌표만 고려)
+        let deltaX = cameraPosition.x - nodePosition.x
+        let deltaZ = cameraPosition.z - nodePosition.z
+        
+        // 거리를 계산하여 반환합니다.
+        return sqrt(deltaX * deltaX + deltaZ * deltaZ)
+    }
+
 
     // 카메라(사용자)의 포워드 벡터를 계산하는 함수
     func forwardVector(from transform: simd_float4x4) -> simd_float3 {
@@ -471,11 +492,34 @@ class SectionFLNativeView: NSObject, FlutterPlatformView, ARSCNViewDelegate {
 
         // 내적을 사용하여 각도를 계산
         let dotProduct = dot(directionHorizontal.normalized(), forwardHorizontal.normalized())
-        let angleRadians = acos(min(max(dotProduct, -1.0), 1.0))
+        var angleRadians = acos(min(max(dotProduct, -1.0), 1.0))
+
+        // 스마트폰 각도에 따라 달라짐
+        if UIDevice.current.orientation.isPortrait { 
+            // 카메라 아래쪽 벡터
+            let down = SCNVector3(cameraTransform.columns.1.x, cameraTransform.columns.1.y, cameraTransform.columns.1.z)
+
+            // 왼쪽 또는 오른쪽에 있는지 확인
+            let isLeft = dot(directionHorizontal, down) < 0
+            if isLeft {
+                angleRadians *= -1
+            }
+        //} else if UIDevice.current.orientation.isLandscape { 
+        } else { 
+            // 카메라의 오른쪽 벡터 계산
+            let right = SCNVector3(cameraTransform.columns.0.x, cameraTransform.columns.0.y, cameraTransform.columns.0.z)
+
+            // 왼쪽 또는 오른쪽에 있는지 확인
+            let isLeft = dot(directionHorizontal, right) < 0
+            if isLeft {
+                angleRadians *= -1
+            }
+        }
 
         // 라디안을 도로 변환
         return angleRadians * (180.0 / Float.pi)
     }
+
     func dot(_ vector1: SCNVector3, _ vector2: SCNVector3) -> Float {
         return vector1.x * vector2.x + vector1.y * vector2.y + vector1.z * vector2.z
     }
@@ -550,20 +594,9 @@ class SectionFLNativeView: NSObject, FlutterPlatformView, ARSCNViewDelegate {
                 let distance = self.calculateDistanceARContents(fromCameraTo: textNodeInfo.node.position)
                 
                 if distance < 1.0 {
-                    // 텍스트 노드가 최초로 감지된 시간이 없으면 현재 시간을 설정
-                    if textNodeInfo.firstVisibleTime == nil {
-                        self.textNodeInfos[index].firstVisibleTime = Date()
-                    } else if let firstVisibleTime = textNodeInfo.firstVisibleTime {
-                        // 텍스트 노드가 1초 이상 화면에 보였는지 확인
-                        if Date().timeIntervalSince(firstVisibleTime) > 1 {
-                            // 텍스트 노드 제거
-                            textNodeInfo.node.removeFromParentNode()
-                            self.textNodeInfos.remove(at: index)
-                        }
-                    }
-                } else {
-                    // 거리가 1m 이상이면 시간을 초기화
-                    self.textNodeInfos[index].firstVisibleTime = nil
+                    // 텍스트 노드 제거
+                    textNodeInfo.node.removeFromParentNode()
+                    self.textNodeInfos.remove(at: index)
                 }
             }
         }
@@ -750,11 +783,18 @@ class SectionFLNativeView: NSObject, FlutterPlatformView, ARSCNViewDelegate {
     // Method to add the AR object
     private func addArText() {
         // 텍스트 지오메트리 생성
-        let textGeometry = SCNText(string: ". \(String(describing: self.selectSection))", extrusionDepth: 1.0)
-        textGeometry.firstMaterial?.diffuse.contents = UIColor.black
+        let sectionText: String
+        if let section = self.selectSection {
+            sectionText = "↓ \(section)" // selectSection이 nil이 아닐 경우
+        } else {
+            sectionText = "섹션 없음" // selectSection이 nil일 경우 대체 텍스트
+        }
+        let textGeometry = SCNText(string: sectionText, extrusionDepth: 1.0)
+
+        textGeometry.firstMaterial?.diffuse.contents = UIColor.red
 
         let textNode = SCNNode(geometry: textGeometry)
-        textNode.scale = SCNVector3(-0.01, 0.01, 0.01) // 크기 조정
+        textNode.scale = SCNVector3(-0.01, 0.01, 0.02) // 크기 조정
 
         // 이미 저장된 좌표에 텍스트 노드 위치 설정
         textNode.position = self.selectCoord
@@ -877,6 +917,27 @@ class SectionFLNativeView: NSObject, FlutterPlatformView, ARSCNViewDelegate {
         return bestPredicts
     }
 
+    private func showOverlay(isLeftSide: Bool, color: UIColor) {
+        let overlayWidth = self.arView.bounds.width / 2
+        let overlayHeight = self.arView.bounds.height
+
+        // 오버레이 뷰가 이미 있다면 제거
+        overlayView?.removeFromSuperview()
+
+        // 오버레이 뷰 생성
+        overlayView = UIView(frame: CGRect(x: isLeftSide ? 0 : overlayWidth, y: 0, width: overlayWidth, height: overlayHeight))
+        overlayView?.backgroundColor = color
+        overlayView?.alpha = 0.5 // 반투명
+        self.arView.addSubview(overlayView!)
+
+        // 오버레이 뷰를 빠르게 표시했다가 사라지게 함
+        UIView.animate(withDuration: 0.5, animations: {
+            self.overlayView?.alpha = 0
+        }) { _ in
+            self.overlayView?.removeFromSuperview()
+        }
+    }
+
 
 
     // 기존의 monitorDistanceToSection 함수 수정
@@ -890,7 +951,7 @@ class SectionFLNativeView: NSObject, FlutterPlatformView, ARSCNViewDelegate {
         }
 
         // 3초마다 반복되는 타이머 설정
-        monitoringTimer = Timer.scheduledTimer(withTimeInterval: 3.0, repeats: true) { [weak self] timer in
+        monitoringTimer = Timer.scheduledTimer(withTimeInterval: 2.0, repeats: true) { [weak self] timer in
             guard let self = self, let currentFrame = ARSessionManager.shared.session.currentFrame else {
                 timer.invalidate()
                 return
@@ -905,14 +966,29 @@ class SectionFLNativeView: NSObject, FlutterPlatformView, ARSCNViewDelegate {
 
             // 거리가 N m 미만이면 완료
             if distance < 1.0 {
-                TTSManager.shared.stop()
-                TTSManager.shared.play("목표에 도달했습니다.")
-                timer.invalidate()
                 self.selectMode = false
                 self.isGoMode = false
+                self.willFind = true
+                timer.invalidate()
+                TTSManager.shared.stop()
+                TTSManager.shared.play("목표에 도달했습니다. 몸을 돌리고 화면을 터치하여 다른 매대를 찾거나, 화면을 길게 눌러 매대에서 제품을 찾으십시오")
+                self.predictionValue = self.selectSection!
             } else {
                 TTSManager.shared.stop()
-                TTSManager.shared.play("\(distance)미터, \(angle)도")
+                TTSManager.shared.play("\(String(format: "%.1f", distance))미터")
+
+                // 경고 표시 로직
+                if angle <= -5 {
+                    self.showOverlay(isLeftSide: true, color: UIColor.red)
+                    TTSManager.shared.play("\(String(format: "왼쪽"))")
+                } else if angle >= 5 {
+                    self.showOverlay(isLeftSide: false, color: UIColor.blue)
+                    TTSManager.shared.play("\(String(format: "오른쪽"))")
+                } else {
+                    // 해당되지 않는 경우 오버레이 제거
+                    self.overlayView?.removeFromSuperview()
+                    TTSManager.shared.play("\(String(format: "직진"))")
+                }
             }
         }
     }
