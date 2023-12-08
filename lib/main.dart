@@ -4,9 +4,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_tts/flutter_tts.dart';
 import 'package:haptic_feedback/haptic_feedback.dart';
 
-import 'map_platform.dart';
 import 'product_platform.dart';
 import 'shopping_bag.dart';
+import 'storelist.dart';
 
 void main() {
   runApp(MyApp());
@@ -198,10 +198,8 @@ class _MainScreenState extends State<MainScreen> {
   // Navigation functions for each mode
   void navigateToSessionMode(BuildContext context) {
     heavyVibration(3);
-    Navigator.push(
-        context,
-        MaterialPageRoute(
-            builder: (context) => const PlatformSpecificMapScreen()));
+    Navigator.push(context,
+        MaterialPageRoute(builder: (context) => const StoreListScreen()));
   }
 
   void navigateToProductMode(BuildContext context) {

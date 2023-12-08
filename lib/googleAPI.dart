@@ -7,7 +7,7 @@ Future<List<Map<String, dynamic>>> findNearbyGS25(
     double lat, double lon) async {
   String apiKey = "AIzaSyCo53euhUWqaUQtNUnWrOAippT9dkUFdmM";
   String url =
-      "https://maps.googleapis.com/maps/api/place/nearbysearch/json?location=$lat,$lon&radius=1000&language=ko&keyword=GS25&key=$apiKey";
+      "https://maps.googleapis.com/maps/api/place/nearbysearch/json?location=$lat,$lon&radius=150&language=ko&keyword=GS25&key=$apiKey";
 
   List<Map<String, dynamic>> stores = [];
 
