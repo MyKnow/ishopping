@@ -76,7 +76,7 @@ class SectionFLNativeView: NSObject, FlutterPlatformView, ARSCNViewDelegate {
 
     // 조준점 및 라벨의 갯수
     private final var col: Int = 3
-    private final var rw: Int = 3
+    private final var rw: Int = 1
 
     // 길게 누르기 인식 시간
     private final var longPressTime: Double = 0.5
@@ -180,7 +180,7 @@ class SectionFLNativeView: NSObject, FlutterPlatformView, ARSCNViewDelegate {
         monitoringTimer = nil
         TTSManager.shared.stop()
         ARSessionManager.shared.pauseSession()
-        
+        self.nodeDelete()
     }
 
     // 짧게 누르기 제스쳐 추가
@@ -208,7 +208,7 @@ class SectionFLNativeView: NSObject, FlutterPlatformView, ARSCNViewDelegate {
     // 길게 누르기 제스쳐 추가
     private func addLongPressGesture() {
         let longPressGesture = UILongPressGestureRecognizer(target: self, action: #selector(handleLongPress))
-        longPressGesture.minimumPressDuration = longPressTime // 1초 이상 길게 누르기
+        longPressGesture.minimumPressDuration = longPressTime // N초 이상 길게 누르기
         arView.addGestureRecognizer(longPressGesture)
     }
     // 길게 누르기 제스처 핸들러
@@ -245,6 +245,13 @@ class SectionFLNativeView: NSObject, FlutterPlatformView, ARSCNViewDelegate {
             if self.selectMode {
                 self.selectMode = false
                 TTSManager.shared.play("취소")
+            } else if self.isGoMode {
+                self.selectMode = false
+                self.isGoMode = false
+                monitoringTimer?.invalidate()
+                TTSManager.shared.stop()
+                TTSManager.shared.play("취소")
+                self.nodeDelete()
             }
             break
         case .right: // 무언갈 취소하는 것
@@ -380,7 +387,7 @@ class SectionFLNativeView: NSObject, FlutterPlatformView, ARSCNViewDelegate {
         AudioServicesPlaySystemSound(systemSoundID)
 
         // 햅틱 피드백 재발 방지를 위해 일정 시간 대기 후 isVibrating 재설정
-        DispatchQueue.global(qos: .userInteractive).asyncAfter(deadline: .now() + (delay*0.5)) {
+        DispatchQueue.global(qos: .userInteractive).asyncAfter(deadline: .now() + (delay*0.2)) {
             DispatchQueue.main.async {
                 self.isVibrating = false
             }
@@ -591,12 +598,11 @@ class SectionFLNativeView: NSObject, FlutterPlatformView, ARSCNViewDelegate {
 
             // 카메라와의 거리가 1m 이내이고, 1초 이상 화면에 보이는 텍스트 노드를 찾아 제거
             for (index, textNodeInfo) in self.textNodeInfos.enumerated().reversed() {
-                let distance = self.calculateDistanceARContents(fromCameraTo: textNodeInfo.node.position)
+                let distance = self.calculateDistanceARContents2D(fromCameraTo: textNodeInfo.node.position)
                 
                 if distance < 1.0 {
                     // 텍스트 노드 제거
-                    textNodeInfo.node.removeFromParentNode()
-                    self.textNodeInfos.remove(at: index)
+                    self.nodeDelete()
                 }
             }
         }
@@ -608,7 +614,7 @@ class SectionFLNativeView: NSObject, FlutterPlatformView, ARSCNViewDelegate {
         let sectionWidth = screenWidth / CGFloat(col)
         let sectionHeight = screenHeight / CGFloat(rw)
 
-        for (index, dot) in gridDots.enumerated() {
+        for (index, dot) in self.gridDots.enumerated() {
             let rowIndex = index / col // 가로 줄 개수로 나눔
             let columnIndex = index % col // 가로 줄 개수로 나머지 연산
 
@@ -637,7 +643,7 @@ class SectionFLNativeView: NSObject, FlutterPlatformView, ARSCNViewDelegate {
         var whiteDotCount = 0
         var redDotCount = 0
 
-        for (i, dot) in gridDots.enumerated() {
+        for (i, dot) in self.gridDots.enumerated() {
             let row = i / col
             let column = i % col
             let x = CGFloat(column) * screenWidth / CGFloat(col) + screenWidth / CGFloat(2 * col)
@@ -768,7 +774,7 @@ class SectionFLNativeView: NSObject, FlutterPlatformView, ARSCNViewDelegate {
             let label = UILabel()
             label.backgroundColor = UIColor.black
             label.alpha = 0.7 // 투명도 조정
-            label.text = self.labelText
+            label.text = self.selectSection
             label.textColor = .red
             label.textAlignment = .center
             label.font = UIFont.boldSystemFont(ofSize: 10)
@@ -861,11 +867,18 @@ class SectionFLNativeView: NSObject, FlutterPlatformView, ARSCNViewDelegate {
 
     // 4, 5, 6번 그리드의 중심에 대한 hitTest를 수행하고 결과를 저장하는 함수
     private func hitTestForGrids(in frame: ARFrame) {
-        let gridIndices = [3, 4, 5] // 4, 5, 6번 그리드 인덱스
+        let ceilRow:Float = Float(self.rw)/2
+        let calRow:Int = Int(ceil(ceilRow)-1)
+        let startIndex = (self.col * calRow)
+        var gridIndices: [Int] = []
+        for i in startIndex..<startIndex+self.col {
+            gridIndices.append(i)
+        }
+        dump(gridIndices)
         gridWorldCoordinates.removeAll()
 
         for index in gridIndices {
-            let dotView = gridDots[index]
+            let dotView = self.gridDots[index]
             let screenPoint = CGPoint(x: dotView.center.x, y: dotView.center.y)
             
             if let hitTestResult = arView.hitTest(screenPoint, types: .featurePoint).first {
@@ -881,10 +894,10 @@ class SectionFLNativeView: NSObject, FlutterPlatformView, ARSCNViewDelegate {
 
     // 예측 결과를 그룹화하는 함수
     private func groupPredictions(_ predictions: [String]) -> [[String]] {
-        var groups: [[String]] = Array(repeating: [], count: 3) // 3개의 그룹
+        var groups: [[String]] = Array(repeating: [], count:self.rw) // 3개의 그룹
 
         for (index, prediction) in predictions.enumerated() {
-            let groupIndex = index % 3
+            let groupIndex = index % self.rw
             groups[groupIndex].append(prediction)
         }
 
@@ -895,27 +908,41 @@ class SectionFLNativeView: NSObject, FlutterPlatformView, ARSCNViewDelegate {
     private func findBestPredictions(in groups: [[String]]) -> [String] {
         var bestPredicts: [String] = []
 
-        for group in groups {
-            let grouped = Dictionary(grouping: group, by: { $0 })
-            let sorted = grouped.sorted { $0.value.count > $1.value.count }
-            
-            if let bestPrediction = sorted.first, bestPrediction.value.count == 1 {
-                let simplifiedGroup = group.map { $0.components(separatedBy: CharacterSet.decimalDigits).first ?? "" }
-                let simpleGrouped = Dictionary(grouping: simplifiedGroup, by: { $0 })
-                let simpleSorted = simpleGrouped.sorted { $0.value.count > $1.value.count }
+        dump(groups)
 
-                if let simpleBestPrediction = simpleSorted.first, simpleBestPrediction.value.count == 1 {
-                    bestPredicts.append("")
-                } else {
-                    bestPredicts.append("\(simpleSorted.first?.key ?? "")1")
-                }
+        dump(groups.count)
+        
+        if (groups.count == 1) {
+            for item in groups[0] {
+                dump(item)
+                bestPredicts.append(item)
+            }
+            return bestPredicts
+        }
+
+        // 각 열에 대해 반복
+        for group in groups {
+            var predictionCounts = [String: Int]()
+            
+            // 각 행을 순회하며 예측값의 등장 횟수를 카운트
+            for prediction in group {
+                predictionCounts[prediction, default: 0] += 1
+            }
+            
+            // 가장 많이 등장한 예측값 찾기
+            let sortedPredictions = predictionCounts.sorted { $0.value > $1.value }
+            if let bestPrediction = sortedPredictions.first {
+                bestPredicts.append(bestPrediction.key)
             } else {
-                bestPredicts.append(sorted.first?.key ?? "")
+                // 예측값이 없는 경우
+                bestPredicts.append("")
             }
         }
 
+        dump(bestPredicts)
         return bestPredicts
     }
+
 
     private func showOverlay(isLeftSide: Bool, color: UIColor) {
         let overlayWidth = self.arView.bounds.width / 2
@@ -953,13 +980,13 @@ class SectionFLNativeView: NSObject, FlutterPlatformView, ARSCNViewDelegate {
         // 3초마다 반복되는 타이머 설정
         monitoringTimer = Timer.scheduledTimer(withTimeInterval: 2.0, repeats: true) { [weak self] timer in
             guard let self = self, let currentFrame = ARSessionManager.shared.session.currentFrame else {
-                timer.invalidate()
+                self?.monitoringTimer?.invalidate()
                 return
             }
 
             let cameraTransform = currentFrame.camera.transform
             let cameraPosition = SCNVector3(cameraTransform.columns.3.x, cameraTransform.columns.3.y, cameraTransform.columns.3.z)
-            let distance = self.calculateDistanceARContents(fromCameraTo: self.selectCoord)
+            let distance = self.calculateDistanceARContents2D(fromCameraTo: self.selectCoord)
             let angle = self.calculateAngleBetweenCameraAndArText(cameraTransform, self.selectCoord)
 
             // 각도 계산을 위한 추가적인 로직 필요
@@ -996,7 +1023,7 @@ class SectionFLNativeView: NSObject, FlutterPlatformView, ARSCNViewDelegate {
 
     func sectionSelector() {
         self.selectMode = true
-        var array = self.sectionBest
+        let array = self.sectionBest
         if array.isEmpty || self.gridWorldCoordinates.isEmpty {
             TTSManager.shared.play("다시 터치해주십시오")
             self.selectMode = false
@@ -1011,6 +1038,11 @@ class SectionFLNativeView: NSObject, FlutterPlatformView, ARSCNViewDelegate {
                 TTSManager.shared.play("\(array[2])로 가려면 아래로 스와이프")
             }
         }
+    }
+
+    func nodeDelete() {
+        textNodeInfos[0].node.removeFromParentNode()
+        self.textNodeInfos.remove(at: 0)
     }
 }
 
