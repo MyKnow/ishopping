@@ -101,11 +101,11 @@ class ProductFLNativeView: NSObject, FlutterPlatformView, ARSCNViewDelegate {
     }
     deinit {
         ARSessionManager.shared.pauseSession()
+        TTSManager.shared.stop()
     }
 
 
     private func sendShoppingbagToSection() {
-        dump( self.channel)
         let data: [String: Any] = [
             "shoppingbag": shoppingBasketMap // 예시 데이터
         ]
@@ -113,7 +113,6 @@ class ProductFLNativeView: NSObject, FlutterPlatformView, ARSCNViewDelegate {
     }
 
     private func sendShoppingbagToFlutter() {
-        dump( self.channel)
         let data: [String: Any] = [
             "shoppingbag": shoppingBasketMap // 예시 데이터
         ]
@@ -188,7 +187,7 @@ class ProductFLNativeView: NSObject, FlutterPlatformView, ARSCNViewDelegate {
                 TTSManager.shared.play("결제 취소")
             } else {
                 TTSManager.shared.play("세션 모드로 이동")
-                sendShoppingbagToFlutter()
+                sendShoppingbagToSection()
             }
             break
         case .right: // 무언갈 진행하는 것
