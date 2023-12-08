@@ -345,6 +345,7 @@ class ProductFLNativeView: NSObject, FlutterPlatformView, ARSCNViewDelegate {
         if shoppingBasketMap.isEmpty {
             TTSManager.shared.play("현재 장바구니가 비어 있습니다.")
         } else {
+            /*
             TTSManager.shared.play("현재 장바구니에 있는 상품은, ")
             for (key, value) in shoppingBasketMap {
                 print("상품: \(key), 갯수: \(value)")
@@ -353,7 +354,9 @@ class ProductFLNativeView: NSObject, FlutterPlatformView, ARSCNViewDelegate {
             TTSManager.shared.play("수정하려면 화면을 위로 스와이프, ")
             TTSManager.shared.play("취소하려면 화면을 왼쪽으로 스와이프, ")
             TTSManager.shared.play("결제하려면 화면을 1초 이상 길게 누르세요")
-            self.willBuy = true
+            */
+            self.sendShoppingbagToFlutter()
+            //self.willBuy = true
         }
     }
 }
