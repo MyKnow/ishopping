@@ -28,6 +28,8 @@
 		6DC114F02B10EF9600013D36 /* UIViewManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6DC114EF2B10EF9600013D36 /* UIViewManager.swift */; };
 		6DCEAA9A2B2316D40015F254 /* SectionClassification_1208.mlmodel in Sources */ = {isa = PBXBuildFile; fileRef = 6DCEAA992B2316D40015F254 /* SectionClassification_1208.mlmodel */; };
 		6DCEAA9C2B23178A0015F254 /* RamenClassification_1208.mlmodel in Sources */ = {isa = PBXBuildFile; fileRef = 6DCEAA9B2B23178A0015F254 /* RamenClassification_1208.mlmodel */; };
+		6DCEAA9F2B2407A40015F254 /* FindFLNativeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6DCEAA9E2B2407A40015F254 /* FindFLNativeView.swift */; };
+		6DCEAAA12B2408040015F254 /* AuthenticateFLNativeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6DCEAAA02B2408040015F254 /* AuthenticateFLNativeView.swift */; };
 		6DD9875D2B1F05240097F296 /* SectionClassification.mlmodel in Sources */ = {isa = PBXBuildFile; fileRef = 6DD9875C2B1F05240097F296 /* SectionClassification.mlmodel */; };
 		6DD987632B1F170B0097F296 /* SectionProcessor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6DD987622B1F170B0097F296 /* SectionProcessor.swift */; };
 		74858FAF1ED2DC5600515810 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 74858FAE1ED2DC5600515810 /* AppDelegate.swift */; };
@@ -85,6 +87,8 @@
 		6DC114EF2B10EF9600013D36 /* UIViewManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UIViewManager.swift; sourceTree = "<group>"; };
 		6DCEAA992B2316D40015F254 /* SectionClassification_1208.mlmodel */ = {isa = PBXFileReference; lastKnownFileType = file.mlmodel; path = SectionClassification_1208.mlmodel; sourceTree = "<group>"; };
 		6DCEAA9B2B23178A0015F254 /* RamenClassification_1208.mlmodel */ = {isa = PBXFileReference; lastKnownFileType = file.mlmodel; path = RamenClassification_1208.mlmodel; sourceTree = "<group>"; };
+		6DCEAA9E2B2407A40015F254 /* FindFLNativeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FindFLNativeView.swift; sourceTree = "<group>"; };
+		6DCEAAA02B2408040015F254 /* AuthenticateFLNativeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthenticateFLNativeView.swift; sourceTree = "<group>"; };
 		6DD9875C2B1F05240097F296 /* SectionClassification.mlmodel */ = {isa = PBXFileReference; lastKnownFileType = file.mlmodel; path = SectionClassification.mlmodel; sourceTree = "<group>"; };
 		6DD987622B1F170B0097F296 /* SectionProcessor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SectionProcessor.swift; sourceTree = "<group>"; };
 		74858FAD1ED2DC5600515810 /* Runner-Bridging-Header.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "Runner-Bridging-Header.h"; sourceTree = "<group>"; };
@@ -152,9 +156,9 @@
 		6D3DD8932B1A1D80004D3D4D /* Product */ = {
 			isa = PBXGroup;
 			children = (
-				6DCEAA9B2B23178A0015F254 /* RamenClassification_1208.mlmodel */,
 				6D4FA77D2B1981FC00B174B6 /* BarcodeProcessor.swift */,
 				6D3DD88F2B1A1B6C004D3D4D /* ProductFLNativeView.swift */,
+				6DCEAA9B2B23178A0015F254 /* RamenClassification_1208.mlmodel */,
 			);
 			path = Product;
 			sourceTree = "<group>";
@@ -162,10 +166,10 @@
 		6D3DD8942B1A1D8A004D3D4D /* Section */ = {
 			isa = PBXGroup;
 			children = (
+				6DC114E92B10EF4800013D36 /* HumanDetectionManager.swift */,
 				6DCEAA992B2316D40015F254 /* SectionClassification_1208.mlmodel */,
 				6DD9875C2B1F05240097F296 /* SectionClassification.mlmodel */,
 				6D3DD8912B1A1BDB004D3D4D /* SectionFLNativeView.swift */,
-				6DC114E92B10EF4800013D36 /* HumanDetectionManager.swift */,
 				6DD987622B1F170B0097F296 /* SectionProcessor.swift */,
 			);
 			path = Section;
@@ -174,10 +178,11 @@
 		6D3DD8952B1A1EBA004D3D4D /* Shared */ = {
 			isa = PBXGroup;
 			children = (
-				6DC114E72B10EF0400013D36 /* ARSessionManager.swift */,
 				74858FAE1ED2DC5600515810 /* AppDelegate.swift */,
-				6D3DD8972B1A1F37004D3D4D /* RamenClassification_NEW.mlmodel */,
+				6DC114E72B10EF0400013D36 /* ARSessionManager.swift */,
+				6DCEAAA02B2408040015F254 /* AuthenticateFLNativeView.swift */,
 				6D7E66D42B05E9F0003179C3 /* FLPlugin.swift */,
+				6D3DD8972B1A1F37004D3D4D /* RamenClassification_NEW.mlmodel */,
 				6D4FA77B2B18513200B174B6 /* TTSManager.swift */,
 			);
 			path = Shared;
@@ -190,6 +195,14 @@
 				1498D2331E8E89220040F4C2 /* GeneratedPluginRegistrant.m */,
 			);
 			path = _ETC;
+			sourceTree = "<group>";
+		};
+		6DCEAA9D2B2407630015F254 /* Find */ = {
+			isa = PBXGroup;
+			children = (
+				6DCEAA9E2B2407A40015F254 /* FindFLNativeView.swift */,
+			);
+			path = Find;
 			sourceTree = "<group>";
 		};
 		9740EEB11CF90186004384FC /* Flutter */ = {
@@ -227,18 +240,19 @@
 		97C146F01CF9000F007C117D /* Runner */ = {
 			isa = PBXGroup;
 			children = (
-				6D3DD8982B1A1F58004D3D4D /* _ETC */,
-				6D3DD8952B1A1EBA004D3D4D /* Shared */,
-				6D3DD8942B1A1D8A004D3D4D /* Section */,
-				6D3DD8932B1A1D80004D3D4D /* Product */,
 				74858FAD1ED2DC5600515810 /* Runner-Bridging-Header.h */,
-				6DC114EB2B10EF6100013D36 /* HapticFeedbackManager.swift */,
 				97C147021CF9000F007C117D /* Info.plist */,
-				6D501FA52B1B6BD500CA7A6B /* Assets.xcassets */,
 				6D501FA72B1B6BD500CA7A6B /* LaunchScreen.storyboard */,
 				6D501FA62B1B6BD500CA7A6B /* Main.storyboard */,
+				6DC114EB2B10EF6100013D36 /* HapticFeedbackManager.swift */,
 				6DC114ED2B10EF7900013D36 /* ImageProcessor.swift */,
 				6DC114EF2B10EF9600013D36 /* UIViewManager.swift */,
+				6D501FA52B1B6BD500CA7A6B /* Assets.xcassets */,
+				6D3DD8982B1A1F58004D3D4D /* _ETC */,
+				6DCEAA9D2B2407630015F254 /* Find */,
+				6D3DD8932B1A1D80004D3D4D /* Product */,
+				6D3DD8942B1A1D8A004D3D4D /* Section */,
+				6D3DD8952B1A1EBA004D3D4D /* Shared */,
 			);
 			path = Runner;
 			sourceTree = "<group>";
@@ -463,8 +477,10 @@
 				6D4FA77C2B18513200B174B6 /* TTSManager.swift in Sources */,
 				6DD9875D2B1F05240097F296 /* SectionClassification.mlmodel in Sources */,
 				74858FAF1ED2DC5600515810 /* AppDelegate.swift in Sources */,
+				6DCEAAA12B2408040015F254 /* AuthenticateFLNativeView.swift in Sources */,
 				6DCEAA9A2B2316D40015F254 /* SectionClassification_1208.mlmodel in Sources */,
 				6DC114EE2B10EF7900013D36 /* ImageProcessor.swift in Sources */,
+				6DCEAA9F2B2407A40015F254 /* FindFLNativeView.swift in Sources */,
 				6D3DD8902B1A1B6C004D3D4D /* ProductFLNativeView.swift in Sources */,
 				6DC114F02B10EF9600013D36 /* UIViewManager.swift in Sources */,
 				6D3DD8922B1A1BDB004D3D4D /* SectionFLNativeView.swift in Sources */,
