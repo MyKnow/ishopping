@@ -2,6 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_tts/flutter_tts.dart';
 import 'package:local_auth/local_auth.dart';
 import 'package:vibration/vibration.dart';
+import 'package:local_auth_platform_interface/local_auth_platform_interface.dart';
+import 'package:local_auth_android/local_auth_android.dart';
+import 'package:local_auth_ios/local_auth_ios.dart';
 
 class ShoppingBagScreen extends StatefulWidget {
   final Map<String, int>? shoppingbag;
@@ -16,6 +19,7 @@ class _ShoppingBagScreenState extends State<ShoppingBagScreen> {
   int totalPrice = 0;
   int _selectedIndex = 0;
   FlutterTts flutterTts = FlutterTts();
+  bool authenticated = false;
 
   @override
   void initState() {
@@ -65,8 +69,17 @@ class _ShoppingBagScreenState extends State<ShoppingBagScreen> {
     final LocalAuthentication auth = LocalAuthentication();
     bool authenticated = false;
     try {
-      authenticated =
-          await auth.authenticate(localizedReason: '생체 인식을 사용하여 인증해주세요.');
+      authenticated = await auth.authenticate(
+          localizedReason: '생체 인식을 사용하여 인증해주세요.',
+          authMessages: const <AuthMessages>[
+            AndroidAuthMessages(
+              signInTitle: 'Oops! Biometric authentication required!',
+              cancelButton: 'No thanks',
+            ),
+            IOSAuthMessages(
+              cancelButton: 'No thanks',
+            ),
+          ]);
       flutterTts.speak('생체 인식을 사용하여 인증해주세요.');
     } catch (e) {
       print(e);
@@ -230,6 +243,7 @@ class _ShoppingBagScreenState extends State<ShoppingBagScreen> {
                           fontSize: 20)),
                   style: ElevatedButton.styleFrom(primary: Colors.red),
                   onPressed: () async {
+                    final authenticate = await LocalAuth.authenticate();
                     await Vibration.vibrate();
                     if (await authenticateWithFingerprint()) {
                       executePurchase();
@@ -265,3 +279,33 @@ List<CartItem> cartItems = [
   CartItem(name: '짜파게티', quantity: 1, price: 1200),
   // ... 추가 상품 ...
 ];
+
+class LocalAuth {
+  static final _auth = LocalAuthentication();
+
+  static Future<bool> _canAuthenticate() async =>
+      await _auth.canCheckBiometrics || await _auth.isDeviceSupported();
+
+  static Future<bool> authenticate() async {
+    try {
+      if (!await _canAuthenticate()) return false;
+
+      return await _auth.authenticate(
+          authMessages: const [
+            AndroidAuthMessages(
+              signInTitle: "Sign in",
+              cancelButton: "No Thanks",
+            ),
+            IOSAuthMessages(
+              cancelButton: "No Thanks",
+            ),
+          ],
+          localizedReason: 'Use Face Id to authenticate',
+          options: const AuthenticationOptions(
+              useErrorDialogs: true, stickyAuth: true));
+    } catch (e) {
+      debugPrint('error $e');
+      return false;
+    }
+  }
+}
