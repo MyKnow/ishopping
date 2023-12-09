@@ -95,6 +95,8 @@ class SectionFLNativeView: NSObject, FlutterPlatformView, ARSCNViewDelegate {
 
     // 딕셔너리의 키들을 배열로 변환
     private var indexDistance: [Float] = []
+
+    private var requestedSection: String = "라면매대"
     
 
     // Vision 요청을 저장할 배열
@@ -145,8 +147,10 @@ class SectionFLNativeView: NSObject, FlutterPlatformView, ARSCNViewDelegate {
         self.channel = FlutterMethodChannel(name: "flutter/PV2P", binaryMessenger: binaryMessenger)
 
         self.shoppingBasketMap = [:]
-        if let args = args as? [String: Any],let shoppingbag = args["shoppingbag"] as? [String:Int] {
-            self.shoppingBasketMap = shoppingbag
+        if let args = args as? [String: Any]
+            if let shoppingbag = args["shoppingbag"] as? [String:Int] {
+                self.shoppingBasketMap = shoppingbag
+            }
         }
         super.init()
 
