@@ -258,7 +258,7 @@ class ProductFLNativeView: NSObject, FlutterPlatformView, ARSCNViewDelegate {
 
     func detect(image: CIImage) {
         // CoreML 모델 로딩
-        guard let coreMLModel = try? RamenClassification_NEW(configuration: MLModelConfiguration()),
+        guard let coreMLModel = try? RamenClassification_1208(configuration: MLModelConfiguration()),
             let visionModel = try? VNCoreMLModel(for: coreMLModel.model) else {
             print("CoreML 모델 로딩 실패")
             return

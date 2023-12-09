@@ -19,9 +19,12 @@ dependencies:
   flutter_tts: ^3.8.3
   dio : ^5.3.4
   tflite_flutter : ^0.10.3
-  local_auth : ^2.1.7
+  local_auth : ^2.1.0
   geolocator : ^10.1.0
   geocoding : ^2.1.1
+  local_auth_platform_interface: ^1.0.8
+  local_auth_android: ^1.0.35
+  local_auth_ios: ^1.1.5
 
 dev_dependencies:
   flutter_test:

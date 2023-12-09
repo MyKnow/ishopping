@@ -1,9 +1,14 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_tts/flutter_tts.dart';
 import 'package:local_auth/local_auth.dart';
-// import 'cart_items.dart'; // 상품 데이터를 가져오는 파일
+import 'package:vibration/vibration.dart';
+import 'package:local_auth_platform_interface/local_auth_platform_interface.dart';
+import 'package:local_auth_android/local_auth_android.dart';
+import 'package:local_auth_ios/local_auth_ios.dart';
 
 class ShoppingBagScreen extends StatefulWidget {
   final Map<String, int>? shoppingbag;
+
   const ShoppingBagScreen({super.key, this.shoppingbag});
 
   @override
@@ -11,8 +16,10 @@ class ShoppingBagScreen extends StatefulWidget {
 }
 
 class _ShoppingBagScreenState extends State<ShoppingBagScreen> {
-  //List<CartItem> cartItems = [];
   int totalPrice = 0;
+  int _selectedIndex = 0;
+  FlutterTts flutterTts = FlutterTts();
+  bool authenticated = false;
 
   @override
   void initState() {
@@ -21,16 +28,59 @@ class _ShoppingBagScreenState extends State<ShoppingBagScreen> {
       cartItems.add(CartItem(
           name: name,
           quantity: quantity,
-          price: 1000)); // 가격을 1000원으로 고정, 나중에 DB걸로 바꿀 거임.
+          price: 1000)); // 가격을 1000원으로 고정, 나중에 DB로 바꿀 예정
     });
+    initializeTts();
+    readCartItems();
+  }
+
+  void initializeTts() async {
+    await flutterTts.setLanguage("ko-KR");
+    await flutterTts.setPitch(1.0);
+    await flutterTts.setSpeechRate(0.6);
+  }
+
+  void readCartItems() {
+    String toRead = '장바구니에 있는 제품: ';
+    totalPrice = 0;
+    for (var item in cartItems) {
+      totalPrice += item.price * item.quantity;
+      toRead += '${item.name} ${item.quantity}개, ';
+    }
+    toRead += '총 금액은 ${totalPrice}원 입니다.';
+    flutterTts.speak(toRead);
+  }
+
+  void readCurrentItem() {
+    if (cartItems.isNotEmpty && _selectedIndex < cartItems.length) {
+      var currentItem = cartItems[_selectedIndex];
+      flutterTts.speak('${currentItem.name}, ${currentItem.quantity}개');
+    }
+  }
+
+  void readCurrentQuantity() {
+    if (cartItems.isNotEmpty && _selectedIndex < cartItems.length) {
+      var currentItem = cartItems[_selectedIndex];
+      flutterTts.speak('${currentItem.quantity}개');
+    }
   }
 
   Future<bool> authenticateWithFingerprint() async {
     final LocalAuthentication auth = LocalAuthentication();
     bool authenticated = false;
     try {
-      authenticated =
-          await auth.authenticate(localizedReason: '지문을 사용하여 인증해주세요.');
+      authenticated = await auth.authenticate(
+          localizedReason: '생체 인식을 사용하여 인증해주세요.',
+          authMessages: const <AuthMessages>[
+            AndroidAuthMessages(
+              signInTitle: 'Oops! Biometric authentication required!',
+              cancelButton: 'No thanks',
+            ),
+            IOSAuthMessages(
+              cancelButton: 'No thanks',
+            ),
+          ]);
+      flutterTts.speak('생체 인식을 사용하여 인증해주세요.');
     } catch (e) {
       print(e);
     }
@@ -38,6 +88,7 @@ class _ShoppingBagScreenState extends State<ShoppingBagScreen> {
   }
 
   void showPurchasingPopup() {
+    flutterTts.speak('구매 중');
     showDialog(
       context: context,
       builder: (BuildContext context) {
@@ -45,11 +96,11 @@ class _ShoppingBagScreenState extends State<ShoppingBagScreen> {
           backgroundColor: Colors.white,
           title: Text("구매 중", style: TextStyle(color: Colors.red)),
           content: Column(
-            mainAxisSize: MainAxisSize.min, // 최소 크기를 갖도록 설정
+            mainAxisSize: MainAxisSize.min,
             children: <Widget>[
               SizedBox(
-                height: 50.0, // 높이와 너비를 동일하게 설정
-                width: 50.0, // CircularProgressIndicator의 크기
+                height: 50.0,
+                width: 50.0,
                 child: CircularProgressIndicator(
                   valueColor: AlwaysStoppedAnimation<Color>(Colors.grey),
                 ),
@@ -63,6 +114,7 @@ class _ShoppingBagScreenState extends State<ShoppingBagScreen> {
 
   void showPurchaseCompletePopup() {
     Navigator.pop(context); // 이전 팝업 닫기
+    flutterTts.speak('구매 완료. 구매가 성공적으로 완료되었습니다.');
     showDialog(
       context: context,
       builder: (BuildContext context) {
@@ -90,6 +142,7 @@ class _ShoppingBagScreenState extends State<ShoppingBagScreen> {
     for (var item in cartItems) {
       totalPrice += item.price * item.quantity;
     }
+
     return Scaffold(
       appBar: AppBar(
         title: Text('장바구니',
@@ -100,38 +153,75 @@ class _ShoppingBagScreenState extends State<ShoppingBagScreen> {
       body: Column(
         children: [
           Expanded(
-            child: ListView.builder(
-              itemCount: cartItems.length,
-              itemBuilder: (context, index) {
-                final item = cartItems[index];
-                return item.quantity > 0
-                    ? Column(
-                        children: [
-                          ListTile(
-                            title: Text('${item.name} ${item.quantity}개',
-                                style: TextStyle(
-                                    fontFamily: 'CustomFont',
-                                    color: Colors.red,
-                                    fontSize: 20)),
-                            trailing: Text('${item.price * item.quantity}원',
-                                style: TextStyle(
-                                    fontFamily: 'CustomFont',
-                                    color: Colors.red,
-                                    fontSize: 20)),
-                            leading: IconButton(
-                              icon: Icon(Icons.cancel, color: Colors.red),
-                              onPressed: () {
+            child: GestureDetector(
+              onLongPress: () async {
+                if (await authenticateWithFingerprint()) {
+                  await Vibration.vibrate();
+                  executePurchase();
+                }
+              },
+              onVerticalDragEnd: (details) {
+                if (details.primaryVelocity! > 0 &&
+                    _selectedIndex < cartItems.length - 1) {
+                  setState(() {
+                    _selectedIndex++;
+                    readCurrentItem();
+                  });
+                } else if (details.primaryVelocity! < 0 && _selectedIndex > 0) {
+                  setState(() {
+                    _selectedIndex--;
+                    readCurrentItem();
+                  });
+                }
+              },
+              onHorizontalDragEnd: (details) {
+                if (details.primaryVelocity! > 0 &&
+                    cartItems[_selectedIndex].quantity < 99) {
+                  setState(() {
+                    cartItems[_selectedIndex].quantity++;
+                    readCurrentQuantity();
+                  });
+                } else if (details.primaryVelocity! < 0 &&
+                    cartItems[_selectedIndex].quantity > 0) {
+                  setState(() {
+                    cartItems[_selectedIndex].quantity--;
+                    readCurrentQuantity();
+                  });
+                }
+              },
+              child: ListView.builder(
+                itemCount: cartItems.length,
+                physics: NeverScrollableScrollPhysics(), // 스크롤 비활성화
+                itemBuilder: (context, index) {
+                  final item = cartItems[index];
+                  return item.quantity >= 0
+                      ? Column(
+                          children: [
+                            ListTile(
+                              title: Text('${item.name} ${item.quantity}개',
+                                  style: TextStyle(
+                                      color: _selectedIndex == index
+                                          ? Colors.red
+                                          : Color.fromARGB(255, 116, 116, 116),
+                                      fontSize: 22)),
+                              trailing: Text('${item.price * item.quantity}원',
+                                  style: TextStyle(
+                                      color: _selectedIndex == index
+                                          ? Colors.red
+                                          : Color.fromARGB(255, 116, 116, 116),
+                                      fontSize: 22)),
+                              onTap: () {
                                 setState(() {
-                                  item.quantity = 0;
+                                  _selectedIndex = index;
                                 });
                               },
                             ),
-                          ),
-                          Divider(color: Colors.grey),
-                        ],
-                      )
-                    : Container();
-              },
+                            Divider(),
+                          ],
+                        )
+                      : SizedBox.shrink();
+                },
+              ),
             ),
           ),
           Container(
@@ -153,12 +243,10 @@ class _ShoppingBagScreenState extends State<ShoppingBagScreen> {
                           fontSize: 20)),
                   style: ElevatedButton.styleFrom(primary: Colors.red),
                   onPressed: () async {
+                    final authenticate = await LocalAuth.authenticate();
+                    await Vibration.vibrate();
                     if (await authenticateWithFingerprint()) {
-                      showPurchasingPopup();
-                      await Future.delayed(
-                          Duration(seconds: 2)); // '결제 중' 상태를 가정하는 시간
-                      Navigator.pop(context); // '결제 중' 팝업 닫기
-                      showPurchaseCompletePopup();
+                      executePurchase();
                     }
                   },
                 ),
@@ -168,6 +256,13 @@ class _ShoppingBagScreenState extends State<ShoppingBagScreen> {
         ],
       ),
     );
+  }
+
+  void executePurchase() async {
+    showPurchasingPopup();
+    await Future.delayed(Duration(seconds: 2));
+    Navigator.pop(context);
+    showPurchaseCompletePopup();
   }
 }
 
@@ -179,18 +274,38 @@ class CartItem {
   CartItem({required this.name, this.quantity = 0, required this.price});
 }
 
-// 장바구니에 담긴 상품 목록 (예시 데이터)
 List<CartItem> cartItems = [
   CartItem(name: '까르보불닭', quantity: 2, price: 1500),
   CartItem(name: '짜파게티', quantity: 1, price: 1200),
-  // ... 추가 상품
-  CartItem(name: '까르보불닭', price: 1500),
-  CartItem(name: '짜파게티', price: 1200),
-  CartItem(name: '진라면매운맛', price: 3500),
-  CartItem(name: '불닭볶음면', price: 5000),
-  CartItem(name: '김치사발면', price: 3000),
-  CartItem(name: '육개장', price: 4000),
-  CartItem(name: '신라면', price: 4500),
-  CartItem(name: '튀김우동', price: 4300),
-  CartItem(name: '너구리', price: 4500),
+  // ... 추가 상품 ...
 ];
+
+class LocalAuth {
+  static final _auth = LocalAuthentication();
+
+  static Future<bool> _canAuthenticate() async =>
+      await _auth.canCheckBiometrics || await _auth.isDeviceSupported();
+
+  static Future<bool> authenticate() async {
+    try {
+      if (!await _canAuthenticate()) return false;
+
+      return await _auth.authenticate(
+          authMessages: const [
+            AndroidAuthMessages(
+              signInTitle: "Sign in",
+              cancelButton: "No Thanks",
+            ),
+            IOSAuthMessages(
+              cancelButton: "No Thanks",
+            ),
+          ],
+          localizedReason: 'Use Face Id to authenticate',
+          options: const AuthenticationOptions(
+              useErrorDialogs: true, stickyAuth: true));
+    } catch (e) {
+      debugPrint('error $e');
+      return false;
+    }
+  }
+}

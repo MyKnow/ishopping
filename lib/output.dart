@@ -1,4 +1,14 @@
 // 제품 모드 ==================================================
+String address = '위치정보를 찾을 수 없음';
+void setAddress(String newName) {
+  if (newName == '-1')
+    product_name = '인식안됨';
+  else
+    product_name = newName;
+}
+
+// ===========================================================
+// 제품 모드 ==================================================
 String product_name = "인식안됨";
 
 void setProductName(String newName) {

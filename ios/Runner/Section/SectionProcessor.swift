@@ -20,7 +20,7 @@ class SectionClassifier {
         self.rows = rows
         self.columns = columns
         let configuration = MLModelConfiguration()
-        self.model = try VNCoreMLModel(for: SectionClassification(configuration: configuration).model)
+        self.model = try VNCoreMLModel(for: SectionClassification_1208(configuration: configuration).model)
     }
 
     func classifySections(in frame: ARFrame, completion: @escaping ([String]) -> Void) {
