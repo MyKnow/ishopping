@@ -3,7 +3,9 @@ import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:flutter_tts/flutter_tts.dart';
 import 'package:haptic_feedback/haptic_feedback.dart';
+import 'package:ishopping/find_iOS.dart';
 
+import 'find_platform.dart';
 import 'map_platform.dart';
 import 'product_platform.dart';
 import 'shopping_bag.dart';
@@ -119,7 +121,7 @@ class _MainScreenState extends State<MainScreen> {
         navigateToProductMode(context);
         break;
       case 2:
-        navigateToShoppingBagMode(context);
+        navigateToFindMode(context);
         break;
     }
   }
@@ -134,7 +136,7 @@ class _MainScreenState extends State<MainScreen> {
         buildModeButton(
             "제품 모드", "assets/images/public/coke.png", 1, screenHeight),
         buildModeButton(
-            "결제 모드", "assets/images/public/coins.png", 2, screenHeight),
+            "찾기 모드", "assets/images/public/coins.png", 2, screenHeight),
       ],
     );
   }
@@ -149,7 +151,7 @@ class _MainScreenState extends State<MainScreen> {
         buildModeButton(
             "제품 모드", "assets/images/public/coke.png", 1, screenHeight),
         buildModeButton(
-            "결제 모드", "assets/images/public/coins.png", 2, screenHeight),
+            "찾기 모드", "assets/images/public/coins.png", 2, screenHeight),
       ],
     );
   }
@@ -219,10 +221,12 @@ class _MainScreenState extends State<MainScreen> {
             builder: (context) => const PlatformSpecificProductScreen()));
   }
 
-  void navigateToShoppingBagMode(BuildContext context) {
+  void navigateToFindMode(BuildContext context) {
     heavyVibration(4);
-    Navigator.push(context,
-        MaterialPageRoute(builder: (context) => const ShoppingBagScreen()));
+    Navigator.push(
+        context,
+        MaterialPageRoute(
+            builder: (context) => const PlatformSpecificFindScreen()));
   }
 
   // Haptic feedback functions

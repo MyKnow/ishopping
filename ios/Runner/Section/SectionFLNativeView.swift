@@ -12,15 +12,6 @@ import NotificationCenter
 import CoreImage
 import SceneKit
 
-extension SCNVector3 {
-    static func - (left: SCNVector3, right: SCNVector3) -> SCNVector3 {
-        return SCNVector3Make(left.x - right.x, left.y - right.y, left.z - right.z)
-    }
-    
-    var length: Float {
-        return sqrt(x * x + y * y + z * z)
-    }
-}
 
 
 // FlutterPlatformView 프로토콜을 구현하여 Flutter 뷰로 사용될 수 있음
@@ -1043,24 +1034,5 @@ class SectionFLNativeView: NSObject, FlutterPlatformView, ARSCNViewDelegate {
     func nodeDelete() {
         textNodeInfos[0].node.removeFromParentNode()
         self.textNodeInfos.remove(at: 0)
-    }
-}
-
-// selectCoord의 simdTransform 프로퍼티를 생성하는 확장 함수
-extension SCNVector3 {
-    var simdTransform: matrix_float4x4 {
-        return matrix_float4x4(columns: (
-            simd_float4(x, 0, 0, 0),
-            simd_float4(0, y, 0, 0),
-            simd_float4(0, 0, z, 0),
-            simd_float4(0, 0, 0, 1)
-        ))
-    }
-    func normalized() -> SCNVector3 {
-        let length = sqrt(self.x * self.x + self.y * self.y + self.z * self.z)
-        guard length != 0 else {
-            return SCNVector3(0, 0, 0)
-        }
-        return SCNVector3(self.x / length, self.y / length, self.z / length)
     }
 }
