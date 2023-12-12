@@ -299,7 +299,7 @@ class ProductFLNativeView: NSObject, FlutterPlatformView, ARSCNViewDelegate {
                     TTSManager.shared.play(barcode)
                 } else {
                     // Handle no barcode found
-                    if firstItem.confidence < 0.95 {
+                    if firstItem.confidence < 0.98 {
                         // Convert CIImage to UIImage;
                         TTSManager.shared.play("인식되지 않음")
                     } else {
@@ -308,6 +308,7 @@ class ProductFLNativeView: NSObject, FlutterPlatformView, ARSCNViewDelegate {
                         self.nowProduct = firstItem.identifier.capitalized
                         self.isBasketMode = true
                         print("\(self.nowProduct) : \(formattedConfidence)")
+                        TTSManager.shared.play(formattedConfidence)
                         self.editCount = self.productCount(self.nowProduct)
                         TTSManager.shared.play(self.nowProduct)
                         TTSManager.shared.play("현재 장바구니에 \(self.editCount)개 있음")

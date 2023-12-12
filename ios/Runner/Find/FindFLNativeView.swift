@@ -64,6 +64,8 @@ class FindFLNativeView: NSObject, FlutterPlatformView, ARSCNViewDelegate {
     private let configuration = ARWorldTrackingConfiguration()
 
     private var selectSection: String?
+    private var wantSection: String?
+    private var sectionIndex: Int = 0;
 
     // 가이드 dot 및 거리 label들
     private var gridDots: [UIView] = []
@@ -143,12 +145,19 @@ class FindFLNativeView: NSObject, FlutterPlatformView, ARSCNViewDelegate {
         self.channel = FlutterMethodChannel(name: "flutter/PV2P", binaryMessenger: binaryMessenger)
 
         self.shoppingBasketMap = [:]
-        if let args = args as? [String: Any],let shoppingbag = args["shoppingbag"] as? [String:Int] {
-            self.shoppingBasketMap = shoppingbag
+        self.wantSection = "라면매대"
+        if let args = args as? [String: Any] {
+            if let shoppingbag = args["shoppingbag"] as? [String:Int] {
+                self.shoppingBasketMap = shoppingbag
+            }
+            if let wantSection = args["wantSection"] as? String {
+                self.wantSection = wantSection
+            }
         }
         super.init()
 
-        TTSManager.shared.play("섹션모드")
+        TTSManager.shared.stop()
+        TTSManager.shared.play("찾기 모드")
 
         // 여기에 조건문을 추가
         if type(of: configuration).supportsFrameSemantics(.sceneDepth) {
@@ -191,12 +200,7 @@ class FindFLNativeView: NSObject, FlutterPlatformView, ARSCNViewDelegate {
         TTSManager.shared.stop()
         TTSManager.shared.play("짧게 누름")
         hapticC.impactFeedback(style: "heavy")
-        if self.selectMode {
-            self.willFind = false
-            self.selectSection = self.sectionBest[1]
-            self.selectCoord = self.gridWorldCoordinates[1]
-            self.addArText()
-        } else {
+        if !self.selectMode {
             //let screenCenter = CGPoint(x: arView.bounds.midX, y: arView.bounds.midY)
             //addArText()
             findSection()
@@ -215,7 +219,12 @@ class FindFLNativeView: NSObject, FlutterPlatformView, ARSCNViewDelegate {
             if self.willFind {
                 sendDataToFlutter()
                 ARSessionManager.shared.pauseSession()
-            } else {
+            } else if self.selectMode {
+                self.selectSection = self.sectionBest[self.sectionIndex]
+                self.selectCoord = self.gridWorldCoordinates[self.sectionIndex]
+                self.selectMode = false
+                self.addArText()
+            }else {
                 TTSManager.shared.play("길게 누름")
                 hapticC.notificationFeedback(style: "success")
                 sendShoppingbagToFlutter()
@@ -257,21 +266,9 @@ class FindFLNativeView: NSObject, FlutterPlatformView, ARSCNViewDelegate {
             break
         case .up: // 무언갈 더하는 것
             TTSManager.shared.play("위")
-            if self.selectMode {
-                self.selectSection = self.sectionBest[0]
-                self.selectCoord = self.gridWorldCoordinates[0]
-                self.selectMode = false
-                self.addArText()
-            }
             break
         case .down: // 무언갈 빼는 것
             TTSManager.shared.play("아래")
-            if self.selectMode {
-                self.selectSection = self.sectionBest[2]
-                self.selectCoord = self.gridWorldCoordinates[2]
-                self.selectMode = false
-                self.addArText()
-            }
             break
         default:
             break
@@ -772,7 +769,7 @@ class FindFLNativeView: NSObject, FlutterPlatformView, ARSCNViewDelegate {
             let label = UILabel()
             label.backgroundColor = UIColor.black
             label.alpha = 0.7 // 투명도 조정
-            label.text = self.selectSection
+            label.text = self.wantSection
             label.textColor = .red
             label.textAlignment = .center
             label.font = UIFont.boldSystemFont(ofSize: 10)
@@ -847,13 +844,6 @@ class FindFLNativeView: NSObject, FlutterPlatformView, ARSCNViewDelegate {
                 // 예측 결과를 그룹화
                 let groupedPredictions = self.groupPredictions(predictions)
                 let bestPredict = self.findBestPredictions(in: groupedPredictions)
-                
-                // 가장 많은 예측 결과를 가진 섹션을 음성으로 출력
-                for (index, prediction) in bestPredict.enumerated() {
-                    if prediction != "" {
-                        TTSManager.shared.play("\(index + 1)번째: \(prediction)")
-                    }
-                }
 
                 self.sectionBest = bestPredict
                 self.sectionSelector()
@@ -1022,18 +1012,24 @@ class FindFLNativeView: NSObject, FlutterPlatformView, ARSCNViewDelegate {
     func sectionSelector() {
         self.selectMode = true
         let array = self.sectionBest
+        self.sectionIndex = 0
         if array.isEmpty || self.gridWorldCoordinates.isEmpty {
             TTSManager.shared.play("다시 터치해주십시오")
             self.selectMode = false
         } else {
-            if array[0] != "" {
-                TTSManager.shared.play("\(array[0])로 가려면 위로 스와이프")
+            var find: String = ""
+            for arr in array {
+                if arr == self.wantSection {
+                    find = arr;
+                    break;
+                }
+                self.sectionIndex+=1
             }
-            if array[1] != "" {
-                TTSManager.shared.play("\(array[1])로 가려면 터치 ")
-            }
-            if array[2] != "" {
-                TTSManager.shared.play("\(array[2])로 가려면 아래로 스와이프")
+            if find != "" {
+                TTSManager.shared.play("\(self.wantSection)가 시야 내에 있습니다. 안내를 받으려면 화면을 길게 누르세요")
+            } else {
+                TTSManager.shared.play("\(self.wantSection)가 시야 내에 없습니다. 이동 후 다시 시도해보세요")
+                self.selectMode = false
             }
         }
     }
@@ -1043,5 +1039,3 @@ class FindFLNativeView: NSObject, FlutterPlatformView, ARSCNViewDelegate {
         self.textNodeInfos.remove(at: 0)
     }
 }
-
-
