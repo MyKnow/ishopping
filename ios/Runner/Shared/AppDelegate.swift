@@ -17,6 +17,10 @@ class AppDelegate: FlutterAppDelegate {
         let sectionViewFactory = FLNativeViewFactory(messenger: registrar.messenger(), viewType: "section_view")
         registrar.register(sectionViewFactory, withId: "section_view")
 
+        let findViewFactory = FLNativeViewFactory(messenger: registrar.messenger(), viewType: "find_view")
+        registrar.register(findViewFactory, withId: "find_view")
+
+
         return super.application(application, didFinishLaunchingWithOptions: launchOptions)
     }
 }

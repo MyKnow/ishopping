@@ -1,3 +1,10 @@
+//
+//  FindFLNativeView.swift
+//  Runner
+//
+//  Created by 정민호 on 12/9/23.
+//
+
 import Flutter
 import UIKit
 import ARKit
@@ -16,7 +23,7 @@ import SceneKit
 
 // FlutterPlatformView 프로토콜을 구현하여 Flutter 뷰로 사용될 수 있음
 @available(iOS 17.0, *)
-class SectionFLNativeView: NSObject, FlutterPlatformView, ARSCNViewDelegate {
+class FindFLNativeView: NSObject, FlutterPlatformView, ARSCNViewDelegate {
     // AR 담당 Native View
     private var arView: ARSCNView
     private var binaryMessenger: FlutterBinaryMessenger
@@ -86,8 +93,6 @@ class SectionFLNativeView: NSObject, FlutterPlatformView, ARSCNViewDelegate {
 
     // 딕셔너리의 키들을 배열로 변환
     private var indexDistance: [Float] = []
-
-    private var requestedSection: String = "라면매대"
     
 
     // Vision 요청을 저장할 배열
@@ -138,10 +143,8 @@ class SectionFLNativeView: NSObject, FlutterPlatformView, ARSCNViewDelegate {
         self.channel = FlutterMethodChannel(name: "flutter/PV2P", binaryMessenger: binaryMessenger)
 
         self.shoppingBasketMap = [:]
-        if let args = args as? [String: Any]
-            if let shoppingbag = args["shoppingbag"] as? [String:Int] {
-                self.shoppingBasketMap = shoppingbag
-            }
+        if let args = args as? [String: Any],let shoppingbag = args["shoppingbag"] as? [String:Int] {
+            self.shoppingBasketMap = shoppingbag
         }
         super.init()
 
@@ -1040,3 +1043,5 @@ class SectionFLNativeView: NSObject, FlutterPlatformView, ARSCNViewDelegate {
         self.textNodeInfos.remove(at: 0)
     }
 }
+
+
