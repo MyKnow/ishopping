@@ -4,8 +4,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_tts/flutter_tts.dart';
 import 'package:haptic_feedback/haptic_feedback.dart';
 
+import 'find.dart';
+import 'map_platform.dart';
 import 'product_platform.dart';
-import 'shopping_bag.dart';
 import 'storelist.dart';
 
 void main() {
@@ -28,7 +29,8 @@ class MainScreen extends StatefulWidget {
 
 class _MainScreenState extends State<MainScreen> {
   late FlutterTts flutterTts;
-  int _currentMode = 0; // 0: 세션모드, 1: 제품모드, 2: 결제모드
+  int _currentMode = 0; // 0: 세션모드, 1: 찾기모드, 2: 제품모드
+  int selectstore = 0;
 
   @override
   void initState() {
@@ -41,7 +43,7 @@ class _MainScreenState extends State<MainScreen> {
     await flutterTts.setLanguage("ko-KR");
     await flutterTts.setPitch(1.0);
     await flutterTts.setSpeechRate(0.8);
-    await flutterTts.speak("세션 모드. 제품 모드. 결제 모드. ");
+    await flutterTts.speak("세션 모드. 찾기 모드. 제품 모드. ");
   }
 
   @override
@@ -94,10 +96,10 @@ class _MainScreenState extends State<MainScreen> {
         modeText = "세션 모드";
         break;
       case 1:
-        modeText = "제품 모드";
+        modeText = "찾기 모드";
         break;
       case 2:
-        modeText = "결제 모드";
+        modeText = "제품 모드";
         break;
     }
 
@@ -110,10 +112,10 @@ class _MainScreenState extends State<MainScreen> {
         navigateToSessionMode(context);
         break;
       case 1:
-        navigateToProductMode(context);
+        navigateToFindMode(context);
         break;
       case 2:
-        navigateToShoppingBagMode(context);
+        navigateToProductMode(context);
         break;
     }
   }
@@ -126,9 +128,9 @@ class _MainScreenState extends State<MainScreen> {
         buildModeButton(
             "세션 모드", "assets/images/public/maps.png", 0, screenHeight),
         buildModeButton(
-            "제품 모드", "assets/images/public/coke.png", 1, screenHeight),
+            "찾기 모드", "assets/images/public/lens.png", 1, screenHeight),
         buildModeButton(
-            "결제 모드", "assets/images/public/coins.png", 2, screenHeight),
+            "제품 모드", "assets/images/public/coke.png", 2, screenHeight),
       ],
     );
   }
@@ -141,9 +143,9 @@ class _MainScreenState extends State<MainScreen> {
         buildModeButton(
             "세션 모드", "assets/images/public/maps.png", 0, screenHeight),
         buildModeButton(
-            "제품 모드", "assets/images/public/coke.png", 1, screenHeight),
+            "찾기 모드", "assets/images/public/lens.png", 1, screenHeight),
         buildModeButton(
-            "결제 모드", "assets/images/public/coins.png", 2, screenHeight),
+            "제품 모드", "assets/images/public/coke.png", 2, screenHeight),
       ],
     );
   }
@@ -198,22 +200,54 @@ class _MainScreenState extends State<MainScreen> {
   // Navigation functions for each mode
   void navigateToSessionMode(BuildContext context) {
     heavyVibration(3);
-    Navigator.push(context,
-        MaterialPageRoute(builder: (context) => const StoreListScreen()));
+    if (selectstore == 0) {
+      Navigator.push(
+          context,
+          MaterialPageRoute(
+              builder: (context) =>
+                  StoreListScreen(currentMode: _currentMode)));
+
+      selectstore = 1;
+    } else if (selectstore == 1) {
+      Navigator.push(
+          context,
+          MaterialPageRoute(
+              builder: (context) => const PlatformSpecificMapScreen()));
+    }
   }
 
   void navigateToProductMode(BuildContext context) {
     heavyVibration(3);
-    Navigator.push(
-        context,
-        MaterialPageRoute(
-            builder: (context) => const PlatformSpecificProductScreen()));
+    if (selectstore == 0) {
+      Navigator.push(
+          context,
+          MaterialPageRoute(
+              builder: (context) =>
+                  StoreListScreen(currentMode: _currentMode)));
+
+      selectstore = 1;
+    } else if (selectstore == 1) {
+      Navigator.push(
+          context,
+          MaterialPageRoute(
+              builder: (context) => const PlatformSpecificProductScreen()));
+    }
   }
 
-  void navigateToShoppingBagMode(BuildContext context) {
+  void navigateToFindMode(BuildContext context) {
     heavyVibration(3);
-    Navigator.push(
-        context, MaterialPageRoute(builder: (context) => ShoppingBagScreen()));
+    if (selectstore == 0) {
+      Navigator.push(
+          context,
+          MaterialPageRoute(
+              builder: (context) =>
+                  StoreListScreen(currentMode: _currentMode)));
+
+      selectstore = 1;
+    } else if (selectstore == 1) {
+      Navigator.push(
+          context, MaterialPageRoute(builder: (context) => const FindScreen()));
+    }
   }
 
   // Haptic feedback functions

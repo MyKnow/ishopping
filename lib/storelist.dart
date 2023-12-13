@@ -2,12 +2,17 @@ import 'package:flutter/material.dart';
 import 'package:flutter_tts/flutter_tts.dart';
 import 'package:geolocator/geolocator.dart';
 
+import 'find.dart';
 import 'googleAPI.dart';
 import 'main.dart';
 import 'map_platform.dart';
+import 'product_platform.dart';
 
 class StoreListScreen extends StatefulWidget {
-  const StoreListScreen({super.key});
+  final int currentMode;
+
+  const StoreListScreen({Key? key, required this.currentMode})
+      : super(key: key);
 
   @override
   _StoreListScreenState createState() => _StoreListScreenState();
@@ -101,11 +106,28 @@ class _StoreListScreenState extends State<StoreListScreen> {
       ),
       body: GestureDetector(
         onTap: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-                builder: (context) => PlatformSpecificMapScreen()),
-          );
+          if (widget.currentMode == 0) {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => PlatformSpecificMapScreen(),
+              ),
+            );
+          } else if (widget.currentMode == 1) {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => FindScreen(),
+              ),
+            );
+          } else if (widget.currentMode == 2) {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => PlatformSpecificProductScreen(),
+              ),
+            );
+          }
         },
         onVerticalDragEnd: (details) {
           if (details.primaryVelocity! > 0 &&
