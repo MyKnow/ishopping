@@ -308,16 +308,51 @@ class ProductFLNativeView: NSObject, FlutterPlatformView, ARSCNViewDelegate {
                         self.nowProduct = firstItem.identifier.capitalized
                         self.isBasketMode = true
                         print("\(self.nowProduct) : \(formattedConfidence)")
-                        TTSManager.shared.play(formattedConfidence)
+                        //TTSManager.shared.play(formattedConfidence)
                         self.editCount = self.productCount(self.nowProduct)
-                        TTSManager.shared.play(self.nowProduct)
-                        TTSManager.shared.play("현재 장바구니에 \(self.editCount)개 있음")
-                        TTSManager.shared.play("갯수를 수정하려면 위, 아래로 스와이프")
-                        TTSManager.shared.play("취소하려면 왼쪽으로 스와이프")
+                        self.sendProductNameToServer(self.nowProduct)
                     }
                 }
             }
         }
+    }
+
+    func sendProductNameToServer(_ productName: String) {
+        // 서버 URL
+        let url = "http://ec2-3-36-61-193.ap-northeast-2.compute.amazonaws.com:8080/api-corner/get-info/"
+
+        // POST 요청의 본문에 포함될 파라미터
+        let parameters: [String: Any] = ["product_name": productName]
+
+        // Alamofire를 사용하여 POST 요청 실행
+        AF.request(url, method: .post, parameters: parameters, encoding: JSONEncoding.default).responseJSON { [weak self] response in
+            guard let strongSelf = self else { return }
+
+            switch response.result {
+            case .success(let value):
+                if let jsonDictionary = value as? [String: Any], let receivedPrice = jsonDictionary["price"] as? Int {
+                    // 서버 응답 후 가격 정보 처리
+                    DispatchQueue.main.async {
+                        strongSelf.handleServerResponse(productName: productName, receivedPrice: receivedPrice)
+                    }
+                }
+            case .failure(let error):
+                print("Error: \(error)")
+                DispatchQueue.main.async {
+                    // 에러 발생 시 처리
+                    TTSManager.shared.play("가격 정보를 가져오는 데 실패했습니다.")
+                }
+            }
+        }
+    }
+
+    private func handleServerResponse(productName: String, receivedPrice: Int) {
+        // 서버 응답에 따른 UI 처리
+        TTSManager.shared.play(productName)
+        TTSManager.shared.play("현재 장바구니에 \(editCount)개 있음")
+        TTSManager.shared.play("가격은 \(receivedPrice)원")
+        TTSManager.shared.play("갯수를 수정하려면 위, 아래로 스와이프")
+        TTSManager.shared.play("취소하려면 왼쪽으로 스와이프")
     }
 
     public func shoppingBasket(_ item: String) {

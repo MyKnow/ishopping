@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_tts/flutter_tts.dart';
 import 'package:local_auth/local_auth.dart';
@@ -12,6 +14,7 @@ class ShoppingBagScreen extends StatefulWidget {
   const ShoppingBagScreen({super.key, this.shoppingbag});
 
   @override
+  // ignore: library_private_types_in_public_api
   _ShoppingBagScreenState createState() => _ShoppingBagScreenState();
 }
 
@@ -21,17 +24,53 @@ class _ShoppingBagScreenState extends State<ShoppingBagScreen> {
   FlutterTts flutterTts = FlutterTts();
   bool authenticated = false;
 
+  get http => null;
+
   @override
   void initState() {
     super.initState();
-    widget.shoppingbag?.forEach((name, quantity) {
-      cartItems.add(CartItem(
-          name: name,
-          quantity: quantity,
-          price: 1000)); // 가격을 1000원으로 고정, 나중에 DB로 바꿀 예정
-    });
+    _fetchPrices();
+
+    // widget.shoppingbag?.forEach((name, quantity) {
+    //   cartItems.add(CartItem(
+    //       name: name,
+    //       quantity: quantity,
+    //       price: 1000)); // 가격을 1000원으로 고정, 나중에 DB로 바꿀 예정
+    // });
     initializeTts();
     readCartItems();
+  }
+
+  void _fetchPrices() async {
+    List<CartItem> tempCartItems = [];
+    for (var name in widget.shoppingbag!.keys) {
+      final quantity = widget.shoppingbag![name]!;
+      final response = await http.post(
+        Uri.parse(
+            'http://ec2-3-36-61-193.ap-northeast-2.compute.amazonaws.com:8080/api-corner/get-info/'),
+        headers: <String, String>{
+          'Content-Type': 'application/json; charset=UTF-8',
+        },
+        body: jsonEncode(<String, String>{
+          'product_name': name,
+        }),
+      );
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        final price = data['price'];
+        tempCartItems
+            .add(CartItem(name: name, quantity: quantity, price: price));
+      } else {
+        // 오류 처리
+        print('Failed to load price for $name');
+      }
+    }
+
+    setState(() {
+      cartItems = tempCartItems;
+      readCartItems(); // 가격 정보를 읽어주는 함수 (이미 존재한다면)
+    });
   }
 
   void initializeTts() async {
