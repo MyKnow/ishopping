@@ -72,6 +72,8 @@ class SectionFLNativeView: NSObject, FlutterPlatformView, ARSCNViewDelegate {
     // 길게 누르기 인식 시간
     private final var longPressTime: Double = 0.5
 
+    private var labelAlpha: CGFloat = 0.8
+
     // 거리에 따른 색상을 매핑하는 사전
     private var distanceColorMap: [Float: UIColor] = [
         0.1: .white,
@@ -574,7 +576,7 @@ class SectionFLNativeView: NSObject, FlutterPlatformView, ARSCNViewDelegate {
                 label.textAlignment = .center
                 label.textColor = labelTextColor
                 label.backgroundColor = UIColor.white
-                label.alpha = 0.9 // 투명도 조정
+                label.alpha = self.labelAlpha // 투명도 조정
                 //label.adjustsFontSizeToFitWidth = true // 텍스트 크기를 라벨 너비에 맞게 조정
                 label.numberOfLines = 0 // 여러 줄을 허용
                 label.lineBreakMode = .byWordWrapping // 단어 단위로 개행
@@ -646,7 +648,7 @@ class SectionFLNativeView: NSObject, FlutterPlatformView, ARSCNViewDelegate {
             //label.text = "번호 : \(index + 1)\n\(predictionText)"
             label.text = "\(predictionText)"
             label.font = UIFont.boldSystemFont(ofSize: min(sectionWidth * 0.9, screenHeight * 0.2) * 0.5)
-            label.alpha = 0.9 // 투명도 조정
+            label.alpha = self.labelAlpha // 투명도 조정
             label.backgroundColor = UIColor.white
             label.adjustsFontSizeToFitWidth = true // 텍스트 크기를 라벨 너비에 맞게 조정
             //label.numberOfLines = 0 // 여러 줄을 허용
@@ -793,7 +795,7 @@ class SectionFLNativeView: NSObject, FlutterPlatformView, ARSCNViewDelegate {
         if findShelfLabel == nil {
             let label = UILabel()
             label.backgroundColor = UIColor.white
-            label.alpha = 0.9 // 투명도 조정
+            label.alpha = self.labelAlpha // 투명도 조정
             label.text = self.predictionValue
             label.textColor = .red
             label.textAlignment = .center

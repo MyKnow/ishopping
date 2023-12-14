@@ -57,6 +57,8 @@ class ProductFLNativeView: NSObject, FlutterPlatformView, ARSCNViewDelegate {
 
     private var alertTimer: Timer?
 
+    private var labelAlpha: CGFloat = 0.8
+
     // 뷰의 프레임, 뷰 식별자, 선택적 인자, 그리고 바이너리 메신저를 사용하여 네이티브 뷰를 초기화
     init( frame: CGRect, viewIdentifier viewId: Int64, arguments args: Any?, binaryMessenger messenger: FlutterBinaryMessenger?) {
         // ARSCNView 인스턴스 생성 및 초기화
@@ -468,7 +470,7 @@ class ProductFLNativeView: NSObject, FlutterPlatformView, ARSCNViewDelegate {
             let label = UILabel()
             label.backgroundColor = UIColor.white
             label.adjustsFontSizeToFitWidth = true // 텍스트 크기를 라벨 너비에 맞게 조정
-            label.alpha = 0.9 // 투명도 조정
+            label.alpha = self.labelAlpha // 투명도 조정
             label.text = self.nowSection
             label.textColor = .red
             label.textAlignment = .center

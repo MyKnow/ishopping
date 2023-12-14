@@ -72,6 +72,8 @@ class FindFLNativeView: NSObject, FlutterPlatformView, ARSCNViewDelegate {
     // 선들을 저장하는 배열
     private var gridLines: [UIView] = []
 
+    private var labelAlpha: CGFloat = 0.8
+
     // 조준점 및 라벨의 갯수
     private final var col: Int = 3
     private final var rw: Int = 1
@@ -554,7 +556,7 @@ class FindFLNativeView: NSObject, FlutterPlatformView, ARSCNViewDelegate {
                 label.textAlignment = .center
                 label.textColor = labelTextColor
                 label.backgroundColor = UIColor.white
-                label.alpha = 0.9
+                label.alpha = self.labelAlpha
                 //label.adjustsFontSizeToFitWidth = true // 텍스트 크기를 라벨 너비에 맞게 조정
                 label.numberOfLines = 0 // 여러 줄을 허용
                 label.lineBreakMode = .byWordWrapping // 단어 단위로 개행
@@ -626,7 +628,7 @@ class FindFLNativeView: NSObject, FlutterPlatformView, ARSCNViewDelegate {
             //label.text = "번호 : \(index + 1)\n\(predictionText)"
             label.text = "\(predictionText)"
             label.font = UIFont.boldSystemFont(ofSize: min(sectionWidth * 0.9, screenHeight * 0.2) * 0.5)
-            label.alpha = 0.9 // 투명도 조정
+            label.alpha = self.labelAlpha // 투명도 조정
             label.adjustsFontSizeToFitWidth = true // 텍스트 크기를 라벨 너비에 맞게 조정
             //label.numberOfLines = 0 // 여러 줄을 허용
             //label.lineBreakMode = .byWordWrapping // 단어 단위로 개행
@@ -774,7 +776,7 @@ class FindFLNativeView: NSObject, FlutterPlatformView, ARSCNViewDelegate {
         if findShelfLabel == nil {
             let label = UILabel()
             label.backgroundColor = UIColor.white
-            label.alpha = 0.9 // 투명도 조정
+            label.alpha = self.labelAlpha // 투명도 조정
             label.text = self.predictionValue
             label.textColor = .red
             label.textAlignment = .center
