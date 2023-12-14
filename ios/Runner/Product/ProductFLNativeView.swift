@@ -308,7 +308,9 @@ class ProductFLNativeView: NSObject, FlutterPlatformView, ARSCNViewDelegate {
             BarcodeProcessor.shared.processBarcode(from: imageP.CVPB2UIImage(pixelBuffer: pixelBuffer)!) { barcodeString in
                 if let barcode = barcodeString {
                     // Handle barcode detected
-                    TTSManager.shared.play(barcode)
+                    self.processBarcode2Server(barcode)
+                    self.isBasketMode = true
+                    self.editCount = self.productCount(self.nowProduct)
                 } else {
                     // Handle no barcode found
                     if firstItem.confidence < 0.98 {
@@ -316,11 +318,12 @@ class ProductFLNativeView: NSObject, FlutterPlatformView, ARSCNViewDelegate {
                         TTSManager.shared.play("인식되지 않음")
                     } else {
                         let formattedConfidence = String(format: "%.2f", firstItem.confidence)
+                        //TTSManager.shared.play(formattedConfidence)
+                        print("\(self.nowProduct) : \(formattedConfidence)")
                         TTSManager.shared.stop()
+
                         self.nowProduct = firstItem.identifier.capitalized
                         self.isBasketMode = true
-                        print("\(self.nowProduct) : \(formattedConfidence)")
-                        //TTSManager.shared.play(formattedConfidence)
                         self.editCount = self.productCount(self.nowProduct)
                         self.sendProductNameToServer(self.nowProduct)
                     }
@@ -357,12 +360,37 @@ class ProductFLNativeView: NSObject, FlutterPlatformView, ARSCNViewDelegate {
             }
         }
     }
+    // 예시: 바코드 정보를 서버에 보내고 제품 정보를 받아오는 함수
+    func processBarcode2Server(_ barcode: String) {
+        BarcodeProcessor.shared.sendProductInfoToServer(barcode) { productName, receivedPrice in
+            // 클로저 내에서 productName과 receivedPrice를 사용하거나 처리
+            if let productName = productName, let receivedPrice = receivedPrice {
+                self.nowProduct = productName
+                self.handleServerResponse(productName: self.nowProduct, receivedPrice: receivedPrice)
+                // 여기에서 원하는 작업 수행
+            } else {
+                print("제품 정보를 가져오는 데 실패했습니다.")
+                // 실패 시 처리
+            }
+        }
+    }
 
-    private func handleServerResponse(productName: String, receivedPrice: Int) {
+    private func handleServerResponse(productName: String?, receivedPrice: Int?) {
         // 서버 응답에 따른 UI 처리
-        TTSManager.shared.play(productName)
-        TTSManager.shared.play("현재 장바구니에 \(editCount)개 있음")
-        TTSManager.shared.play("가격은 \(receivedPrice)원")
+        if let productName = productName {
+            TTSManager.shared.play(productName)
+            TTSManager.shared.play("현재 장바구니에 \(editCount)개 있음")
+        } else {
+            TTSManager.shared.play("상품 정보를 가져오는 데 실패했습니다.")
+            return
+        }
+
+        if let receivedPrice = receivedPrice {
+            TTSManager.shared.play("가격은 \(receivedPrice)원")
+        } else {
+            TTSManager.shared.play("가격 정보를 가져오는 데 실패했습니다.")
+        }
+
         TTSManager.shared.play("갯수를 수정하려면 위, 아래로 스와이프")
         TTSManager.shared.play("취소하려면 왼쪽으로 스와이프")
     }
