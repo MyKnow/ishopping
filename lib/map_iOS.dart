@@ -7,7 +7,9 @@ import 'shopping_bag.dart';
 
 class MapScreen extends StatefulWidget {
   final Map<String, int> shoppingbag;
-  const MapScreen({super.key, required this.shoppingbag});
+  final String predictionValue;
+  const MapScreen(
+      {super.key, required this.shoppingbag, required this.predictionValue});
   @override
   _MapScreenState createState() => _MapScreenState();
 }
@@ -70,7 +72,8 @@ class _MapScreenState extends State<MapScreen> {
   Widget build(BuildContext context) {
     const String viewType = 'section_view'; // 기본적으로 'section_view' 호출
     final Map<String, dynamic> creationParams = <String, dynamic>{
-      'shoppingbag': widget.shoppingbag
+      'shoppingbag': widget.shoppingbag,
+      'predictionValue': widget.predictionValue
     };
 
     return FutureBuilder(

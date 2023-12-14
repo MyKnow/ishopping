@@ -15,7 +15,7 @@ class PlatformSpecificMapScreen extends StatelessWidget {
       return MapAndroidScreen();
     } else if (Platform.isIOS) {
       // iOS용 화면 로딩
-      return MapScreen(shoppingbag: initMap);
+      return MapScreen(predictionValue: "선택모드", shoppingbag: initMap);
     } else {
       // 다른 플랫폼을 위한 대체 화면
       return const Center(child: Text('Unsupported platform'));

@@ -106,16 +106,17 @@ class ProductFLNativeView: NSObject, FlutterPlatformView, ARSCNViewDelegate {
     }
 
 
-    private func sendShoppingbagToSection() {
+    private func sendDataToSection() {
         let data: [String: Any] = [
-            "shoppingbag": shoppingBasketMap // 예시 데이터
+            "shoppingbag": self.shoppingBasketMap,
+            "predictionValue": self.nowSection
         ]
         self.channel.invokeMethod("sendData2S", arguments: data)
     }
 
     private func sendShoppingbagToFlutter() {
         let data: [String: Any] = [
-            "shoppingbag": shoppingBasketMap // 예시 데이터
+            "shoppingbag": self.shoppingBasketMap // 예시 데이터
         ]
         self.channel.invokeMethod("sendData2F", arguments: data)
     }
@@ -191,8 +192,7 @@ class ProductFLNativeView: NSObject, FlutterPlatformView, ARSCNViewDelegate {
                 findShelfLabel?.text = "현위치 : \(self.nowSection)"
             } else {
                 print("!")
-                TTSManager.shared.play("세션 모드로 이동")
-                sendShoppingbagToSection()
+                sendDataToSection()
             }
             break
         case .right: // 무언갈 진행하는 것

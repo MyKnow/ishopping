@@ -89,7 +89,6 @@ class SectionFLNativeView: NSObject, FlutterPlatformView, ARSCNViewDelegate {
 
     private var nowSection: String
     
-
     // Vision 요청을 저장할 배열
     var requests = [VNRequest]() 
 
@@ -124,7 +123,7 @@ class SectionFLNativeView: NSObject, FlutterPlatformView, ARSCNViewDelegate {
 
     private var isVibrating: Bool = false
 
-    private var arriveDistance: Float = 0.5
+    private var arriveDistance: Float = 1.0
 
     private var alertTimer: Timer?
 
@@ -140,12 +139,16 @@ class SectionFLNativeView: NSObject, FlutterPlatformView, ARSCNViewDelegate {
         self.channel = FlutterMethodChannel(name: "flutter/PV2P", binaryMessenger: binaryMessenger)
 
         self.shoppingBasketMap = [:]
-        if let args = args as? [String: Any],let shoppingbag = args["shoppingbag"] as? [String:Int] {
-            self.shoppingBasketMap = shoppingbag
-        }
         self.nowSection = "ALL"
-        if let predictionValue = args["predictionValue"] as? String {
-            self.nowSection = predictionValue
+        if let args = args as? [String: Any]{
+            if let shoppingbag = args["shoppingbag"] as? [String:Int] {
+                self.shoppingBasketMap = shoppingbag
+            }
+            if let predictionValue = args["predictionValue"] as? String {
+                self.nowSection = predictionValue
+                self.predictionValue = self.nowSection
+                print(self.nowSection)
+            }
         }
         super.init()
 
@@ -193,7 +196,7 @@ class SectionFLNativeView: NSObject, FlutterPlatformView, ARSCNViewDelegate {
         TTSManager.shared.play("짧게 누름")
         hapticC.impactFeedback(style: "heavy")
         if self.selectMode {
-            if self.sectionBest[1] != "" && self.sectionBest[1] != "알수없음" {
+            if self.sectionBest[1] != "알수없음" {
                 self.willFind = false
                 self.selectSection = self.sectionBest[1]
                 self.selectCoord = self.gridWorldCoordinates[1]
@@ -257,12 +260,13 @@ class SectionFLNativeView: NSObject, FlutterPlatformView, ARSCNViewDelegate {
             break
         case .right: // 다음 항목
             TTSManager.shared.play("오른쪽")
+            if self.predictionValue == "선택모드" { self.predictionValue = "ALL"}
             sendDataToFlutter()
             break
         case .up: // 무언갈 더하는 것
             TTSManager.shared.play("위")
             if self.selectMode {
-                if self.sectionBest[0] != "" &&  self.sectionBest[0] != "알수없음" {
+                if self.sectionBest[0] != "알수없음" {
                     self.selectSection = self.sectionBest[0]
                     self.selectCoord = self.gridWorldCoordinates[0]
                     self.selectMode = false
@@ -273,7 +277,7 @@ class SectionFLNativeView: NSObject, FlutterPlatformView, ARSCNViewDelegate {
         case .down: // 무언갈 빼는 것
             TTSManager.shared.play("아래")
             if self.selectMode {
-                if self.sectionBest[2] != "" && self.sectionBest[2] != "알수없음" {
+                if self.sectionBest[2] != "알수없음" {
                     self.selectSection = self.sectionBest[2]
                     self.selectCoord = self.gridWorldCoordinates[2]
                     self.selectMode = false
@@ -981,8 +985,6 @@ class SectionFLNativeView: NSObject, FlutterPlatformView, ARSCNViewDelegate {
         }
     }
 
-
-
     // 기존의 monitorDistanceToSection 함수 수정
     func monitorDistanceToSection() {
         guard selectSection != nil else { return }
@@ -1037,7 +1039,7 @@ class SectionFLNativeView: NSObject, FlutterPlatformView, ARSCNViewDelegate {
         }
     }
 
-
+    // 스파게티 코드 수정해야 함
     func sectionSelector() {
         self.selectMode = true
         let array = self.sectionBest
@@ -1045,24 +1047,53 @@ class SectionFLNativeView: NSObject, FlutterPlatformView, ARSCNViewDelegate {
             TTSManager.shared.play("다시 터치해주십시오")
             self.selectMode = false
         } else {
-            if array[0] != "" && array[0] != "알수없음" {
-                TTSManager.shared.play("\(array[0])로 가려면 위로 스와이프")
-            }
-            if array[1] != "" && array[1] != "알수없음" {
-                TTSManager.shared.play("\(array[1])로 가려면 터치 ")
-            }
-            if array[2] != "" && array[2] != "알수없음" {
-                TTSManager.shared.play("\(array[2])로 가려면 아래로 스와이프")
-            }
+            // 0, 1, 2가 같을 때
             if array[0] == array[1] && array[1] == array[2] {
+                // 유효한 값이라면
                 if array[0] != "알수없음" {
                     TTSManager.shared.play("\(array[1])로 가려면 터치 ")
-                } else {
-                    TTSManager.shared.play("다시 터치해주십시오.")
+                } 
+                // 알 수 없음이라면
+                else {
+                    TTSManager.shared.play("다시 터치해주십시오")
                     self.selectMode = false
                 }
+            } 
+            // 0과 1이 같을 때
+            else if array[0] == array[1] {
+                // 1이 알 수 없음이 아니라면
+                if array[1] != "알수없음" {
+                    TTSManager.shared.play("\(array[1])로 가려면 터치")
+                }
+                // 2가 알 수 없음이 아니라면
+                if array[2] != "알수없음" {
+                    TTSManager.shared.play("\(array[2])로 가려면 아래로 스와이프")
+                }
+            } 
+            // 1과 2가 같을 때
+            else if array[2] == array[1] {
+                // 0이 알 수 없음이 아니라면
+                if array[0] != "알수없음" {
+                    TTSManager.shared.play("\(array[0])로 가려면 위로 스와이프")
+                }
+                // 1이 알 수 없음이 아니라면
+                if array[1] != "알수없음" {
+                    TTSManager.shared.play("\(array[1])로 가려면 터치")
+                }
+            } 
+            // 전부 다 다르다면
+            else {
+                if array[0] != "알수없음" {
+                    TTSManager.shared.play("\(array[0])로 가려면 위로 스와이프")
+                }
+                if array[1] != "알수없음" {
+                    TTSManager.shared.play("\(array[1])로 가려면 터치 ")
+                }
+                if array[2] != "알수없음" {
+                    TTSManager.shared.play("\(array[2])로 가려면 아래로 스와이프")
+                }
             }
-            TTSManager.shared.play("다시 탐색하려면 왼쪽으로 스와이프")
+            if self.selectMode { TTSManager.shared.play("다시 탐색하려면 왼쪽으로 스와이프") }
         }
     }
 
