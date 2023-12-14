@@ -3,27 +3,34 @@ import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:flutter_tts/flutter_tts.dart';
 import 'package:haptic_feedback/haptic_feedback.dart';
+import 'package:ishopping/find_iOS.dart';
 
+import 'find_platform.dart';
 import 'find.dart';
 import 'map_platform.dart';
 import 'product_platform.dart';
 import 'storelist.dart';
 
 void main() {
-  runApp(MyApp());
+  runApp(const MyApp());
 }
 
 class MyApp extends StatelessWidget {
+  const MyApp({super.key});
+
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
+    return const MaterialApp(
       home: MainScreen(),
     );
   }
 }
 
 class MainScreen extends StatefulWidget {
+  const MainScreen({super.key});
+
   @override
+  // ignore: library_private_types_in_public_api
   _MainScreenState createState() => _MainScreenState();
 }
 
@@ -73,6 +80,7 @@ class _MainScreenState extends State<MainScreen> {
   }
 
   void _handleSwipe(DragEndDetails details) {
+    heavyVibration(1);
     if (details.primaryVelocity != null) {
       if (details.primaryVelocity! > 0 && _currentMode < 2) {
         setState(() {
@@ -158,7 +166,7 @@ class _MainScreenState extends State<MainScreen> {
 
     return Expanded(
       child: Container(
-        margin: EdgeInsets.all(10),
+        margin: const EdgeInsets.all(10),
         child: ElevatedButton(
           onPressed: () {
             // 클릭 이벤트 처리
@@ -172,7 +180,7 @@ class _MainScreenState extends State<MainScreen> {
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(15),
             ),
-            padding: EdgeInsets.symmetric(vertical: 20),
+            padding: const EdgeInsets.symmetric(vertical: 20),
             // 높이를 화면 높이로 설정
             minimumSize: Size(double.infinity, buttonHeight),
           ),
@@ -180,7 +188,7 @@ class _MainScreenState extends State<MainScreen> {
             mainAxisAlignment: MainAxisAlignment.center,
             children: <Widget>[
               Image.asset(imagePath, width: imageSize),
-              SizedBox(width: 15),
+              const SizedBox(width: 15),
               Text(
                 text,
                 style: TextStyle(

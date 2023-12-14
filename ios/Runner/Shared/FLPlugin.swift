@@ -14,7 +14,13 @@ class FLNativeViewFactory: NSObject, FlutterPlatformViewFactory {
     }
 
     func create(withFrame frame: CGRect, viewIdentifier viewId: Int64, arguments args: Any?) -> FlutterPlatformView {
-        return viewType == "product_view" ? ProductFLNativeView(frame: frame, viewIdentifier: viewId, arguments: args, binaryMessenger: messenger) : SectionFLNativeView(frame: frame, viewIdentifier: viewId, arguments: args, binaryMessenger: messenger)
+        if viewType == "product_view" {
+            return ProductFLNativeView(frame: frame, viewIdentifier: viewId, arguments: args, binaryMessenger: messenger)
+        } else if viewType == "section_view" { 
+            return SectionFLNativeView(frame: frame, viewIdentifier: viewId, arguments: args, binaryMessenger: messenger)
+        } else {
+            return FindFLNativeView(frame: frame, viewIdentifier: viewId, arguments: args, binaryMessenger: messenger)
+        }
     }
 
     public func createArgsCodec() -> FlutterMessageCodec & NSObjectProtocol {

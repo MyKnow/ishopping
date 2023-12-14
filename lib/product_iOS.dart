@@ -17,6 +17,7 @@ class ProductiOSScreen extends StatefulWidget {
 
 class _ProductiOSScreenState extends State<ProductiOSScreen> {
   UniqueKey viewKey = UniqueKey();
+  String _predictionValue = '';
 
   final _platformChannel = const MethodChannel('flutter/SB2S');
   late Map<String, int> _shoppingbag;
@@ -33,10 +34,11 @@ class _ProductiOSScreenState extends State<ProductiOSScreen> {
     if (call.method == 'sendData2S') {
       final data = Map<String, dynamic>.from(call.arguments);
       setState(() {
+        _predictionValue = data['predictionValue'];
         _shoppingbag = Map<String, int>.from(data['shoppingbag']);
       });
-      print(_shoppingbag);
-      _callSectionFLNativeView(_shoppingbag);
+      print(_predictionValue);
+      _callSectionFLNativeView(_predictionValue, _shoppingbag);
     } else if (call.method == 'sendData2F') {
       final data = Map<String, dynamic>.from(call.arguments);
       setState(() {
@@ -47,12 +49,14 @@ class _ProductiOSScreenState extends State<ProductiOSScreen> {
     }
   }
 
-  void _callSectionFLNativeView(Map<String, int> shoppingbag) {
+  void _callSectionFLNativeView(
+      String predictionValue, Map<String, int> shoppingbag) {
     // ProductiOSScreen으로 전환하고 예측값을 전달
     Navigator.pushReplacement(
       context,
       MaterialPageRoute(
-          builder: (context) => MapScreen(shoppingbag: shoppingbag)),
+          builder: (context) => MapScreen(
+              predictionValue: predictionValue, shoppingbag: shoppingbag)),
     );
   }
 

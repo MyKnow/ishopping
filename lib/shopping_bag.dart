@@ -1,7 +1,16 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_tts/flutter_tts.dart';
 import 'package:local_auth/local_auth.dart';
 import 'package:vibration/vibration.dart';
+import 'package:local_auth_platform_interface/local_auth_platform_interface.dart';
+import 'package:local_auth_android/local_auth_android.dart';
+
+import 'dart:io' show Platform;
+import 'package:local_auth_ios/local_auth_ios.dart';
+
+import 'package:http/http.dart' as http;
 
 class ShoppingBagScreen extends StatefulWidget {
   final Map<String, int>? shoppingbag;
@@ -9,6 +18,7 @@ class ShoppingBagScreen extends StatefulWidget {
   const ShoppingBagScreen({super.key, this.shoppingbag});
 
   @override
+  // ignore: library_private_types_in_public_api
   _ShoppingBagScreenState createState() => _ShoppingBagScreenState();
 }
 
@@ -16,18 +26,56 @@ class _ShoppingBagScreenState extends State<ShoppingBagScreen> {
   int totalPrice = 0;
   int _selectedIndex = 0;
   FlutterTts flutterTts = FlutterTts();
+  bool authenticated = false;
 
   @override
   void initState() {
     super.initState();
-    widget.shoppingbag?.forEach((name, quantity) {
-      cartItems.add(CartItem(
-          name: name,
-          quantity: quantity,
-          price: 1000)); // 가격을 1000원으로 고정, 나중에 DB로 바꿀 예정
-    });
+    _fetchPrices();
+
+    // widget.shoppingbag?.forEach((name, quantity) {
+    //   cartItems.add(CartItem(
+    //       name: name,
+    //       quantity: quantity,
+    //       price: 1000)); // 가격을 1000원으로 고정, 나중에 DB로 바꿀 예정
+    // });
     initializeTts();
-    readCartItems();
+  }
+
+  void _fetchPrices() async {
+    List<CartItem> tempCartItems = [];
+    for (var name in widget.shoppingbag!.keys) {
+      final quantity = widget.shoppingbag![name]!;
+      final response = await http.post(
+        Uri.parse(
+            'http://ec2-3-36-61-193.ap-northeast-2.compute.amazonaws.com:8080/api-corner/get-info/'),
+        headers: <String, String>{
+          'Content-Type': 'application/json; charset=UTF-8',
+        },
+        body: jsonEncode(<String, String>{
+          'product_name': name,
+        }),
+      );
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        final price = (data['price'] as double).toInt();
+        tempCartItems
+            .add(CartItem(name: name, quantity: quantity, price: price));
+
+        setState(() {
+          cartItems = tempCartItems;
+        });
+      } else {
+        // 오류 처리
+        print('Failed to load price for $name');
+      }
+    }
+
+    setState(() {
+      cartItems = tempCartItems;
+      readCartItems(); // 가격 정보를 읽어주는 함수 (이미 존재한다면)
+    });
   }
 
   void initializeTts() async {
@@ -48,6 +96,7 @@ class _ShoppingBagScreenState extends State<ShoppingBagScreen> {
   }
 
   void readCurrentItem() {
+    flutterTts.stop();
     if (cartItems.isNotEmpty && _selectedIndex < cartItems.length) {
       var currentItem = cartItems[_selectedIndex];
       flutterTts.speak('${currentItem.name}, ${currentItem.quantity}개');
@@ -55,6 +104,7 @@ class _ShoppingBagScreenState extends State<ShoppingBagScreen> {
   }
 
   void readCurrentQuantity() {
+    flutterTts.stop();
     if (cartItems.isNotEmpty && _selectedIndex < cartItems.length) {
       var currentItem = cartItems[_selectedIndex];
       flutterTts.speak('${currentItem.quantity}개');
@@ -65,8 +115,17 @@ class _ShoppingBagScreenState extends State<ShoppingBagScreen> {
     final LocalAuthentication auth = LocalAuthentication();
     bool authenticated = false;
     try {
-      authenticated =
-          await auth.authenticate(localizedReason: '생체 인식을 사용하여 인증해주세요.');
+      authenticated = await auth.authenticate(
+          localizedReason: '생체 인식을 사용하여 인증해주세요.',
+          authMessages: const <AuthMessages>[
+            AndroidAuthMessages(
+              signInTitle: 'Oops! Biometric authentication required!',
+              cancelButton: 'No thanks',
+            ),
+            IOSAuthMessages(
+              cancelButton: 'No thanks',
+            ),
+          ]);
       flutterTts.speak('생체 인식을 사용하여 인증해주세요.');
     } catch (e) {
       print(e);
@@ -142,7 +201,12 @@ class _ShoppingBagScreenState extends State<ShoppingBagScreen> {
           Expanded(
             child: GestureDetector(
               onLongPress: () async {
-                if (await authenticateWithFingerprint()) {
+                if (Platform.isAndroid) {
+                  if (await authenticateWithFingerprint()) {
+                    await Vibration.vibrate();
+                    executePurchase();
+                  }
+                } else {
                   await Vibration.vibrate();
                   executePurchase();
                 }
@@ -230,8 +294,13 @@ class _ShoppingBagScreenState extends State<ShoppingBagScreen> {
                           fontSize: 20)),
                   style: ElevatedButton.styleFrom(primary: Colors.red),
                   onPressed: () async {
-                    await Vibration.vibrate();
-                    if (await authenticateWithFingerprint()) {
+                    if (Platform.isAndroid) {
+                      final authenticate = await LocalAuth.authenticate();
+                      await Vibration.vibrate();
+                      if (await authenticateWithFingerprint()) {
+                        executePurchase();
+                      }
+                    } else {
                       executePurchase();
                     }
                   },
@@ -265,3 +334,33 @@ List<CartItem> cartItems = [
   CartItem(name: '짜파게티', quantity: 1, price: 1200),
   // ... 추가 상품 ...
 ];
+
+class LocalAuth {
+  static final _auth = LocalAuthentication();
+
+  static Future<bool> _canAuthenticate() async =>
+      await _auth.canCheckBiometrics || await _auth.isDeviceSupported();
+
+  static Future<bool> authenticate() async {
+    try {
+      if (!await _canAuthenticate()) return false;
+
+      return await _auth.authenticate(
+          authMessages: const [
+            AndroidAuthMessages(
+              signInTitle: "Sign in",
+              cancelButton: "No Thanks",
+            ),
+            IOSAuthMessages(
+              cancelButton: "No Thanks",
+            ),
+          ],
+          localizedReason: 'Use Face Id to authenticate',
+          options: const AuthenticationOptions(
+              useErrorDialogs: true, stickyAuth: true));
+    } catch (e) {
+      debugPrint('error $e');
+      return false;
+    }
+  }
+}
