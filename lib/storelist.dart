@@ -81,6 +81,7 @@ class _StoreListScreenState extends State<StoreListScreen> {
           desiredAccuracy: LocationAccuracy.high);
       var storesList =
           await findNearbyGS25(position.latitude, position.longitude);
+      print("2002 ${position.latitude}, ${position.longitude}");
       setState(() {
         stores = storesList;
       });

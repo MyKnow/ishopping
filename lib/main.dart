@@ -167,7 +167,7 @@ class _MainScreenState extends State<MainScreen> {
           style: ElevatedButton.styleFrom(
             primary: _currentMode == modeIndex ? Colors.yellow : Colors.white,
             onPrimary: Colors.black,
-            shadowColor: Colors.grey,
+            shadowColor: const Color.fromARGB(255, 88, 77, 77),
             elevation: 5,
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(15),
@@ -268,20 +268,4 @@ class _MainScreenState extends State<MainScreen> {
       }
     }
   }
-}
-
-class BackgroundPainter extends CustomPainter {
-  @override
-  void paint(Canvas canvas, Size size) {
-    var paintSmall = Paint()..color = const Color(0xFFFFF2CC);
-    var paintLarge = Paint()..color = const Color(0xFFFFF2CC);
-
-    canvas.drawCircle(
-        Offset(size.width * 0.2, size.height * 0.1), 100, paintSmall);
-    canvas.drawCircle(
-        Offset(size.width * 0.8, size.height * 0.7), 200, paintLarge);
-  }
-
-  @override
-  bool shouldRepaint(CustomPainter oldDelegate) => false;
 }
