@@ -25,7 +25,7 @@ class FindFLNativeView: NSObject, FlutterPlatformView, ARSCNViewDelegate {
     // AR 담당 Native View
     private var arView: ARSCNView
     private var binaryMessenger: FlutterBinaryMessenger
-    private var predictionValue: String = "RAMEN"  // 예측값 초기화
+    private var predictionValue: String = "찾기모드"  // 예측값 초기화
     public var shoppingBasketMap: [String: Int]
     private var channel: FlutterMethodChannel
 
@@ -553,7 +553,8 @@ class FindFLNativeView: NSObject, FlutterPlatformView, ARSCNViewDelegate {
                 label.text = "\(row * col + column + 1)" // 1부터 9까지의 숫자
                 label.textAlignment = .center
                 label.textColor = labelTextColor
-                label.backgroundColor = .black.withAlphaComponent(labelBackgroundOpacity)
+                label.backgroundColor = UIColor.white
+                label.alpha = 0.9
                 //label.adjustsFontSizeToFitWidth = true // 텍스트 크기를 라벨 너비에 맞게 조정
                 label.numberOfLines = 0 // 여러 줄을 허용
                 label.lineBreakMode = .byWordWrapping // 단어 단위로 개행
@@ -772,8 +773,8 @@ class FindFLNativeView: NSObject, FlutterPlatformView, ARSCNViewDelegate {
     private func addFindShelfLabel() {
         if findShelfLabel == nil {
             let label = UILabel()
-            label.backgroundColor = UIColor.black
-            label.alpha = 0.8 // 투명도 조정
+            label.backgroundColor = UIColor.white
+            label.alpha = 0.9 // 투명도 조정
             label.text = self.predictionValue
             label.textColor = .red
             label.textAlignment = .center

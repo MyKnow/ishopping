@@ -23,6 +23,8 @@ class ProductFLNativeView: NSObject, FlutterPlatformView, ARSCNViewDelegate {
     // AR 세션 구성 및 시작
     private let configuration = ARWorldTrackingConfiguration()
 
+    private var findShelfLabel: UILabel?
+
     // 길게 누르기 인식 시간
     private final var longPressTime: Double = 0.5
 
@@ -65,7 +67,7 @@ class ProductFLNativeView: NSObject, FlutterPlatformView, ARSCNViewDelegate {
         self.binaryMessenger = messenger
 
         self.channel = FlutterMethodChannel(name: "flutter/SB2S", binaryMessenger: self.binaryMessenger)
-        self.nowSection = "ALL"
+        self.nowSection = "제품모드"
         self.shoppingBasketMap = [:]
         if let args = args as? [String: Any] {
             if let shoppingbag = args["shoppingbag"] as? [String:Int] {
@@ -74,7 +76,8 @@ class ProductFLNativeView: NSObject, FlutterPlatformView, ARSCNViewDelegate {
             if let predictionValue = args["predictionValue"] as? String {
                 self.nowSection = predictionValue
             }
-        } 
+        }
+
         super.init()
 
         TTSManager.shared.play("제품모드, \(self.nowSection)")
@@ -174,15 +177,18 @@ class ProductFLNativeView: NSObject, FlutterPlatformView, ARSCNViewDelegate {
                 self.isEditMode = false
                 self.isBasketMode = false
                 TTSManager.shared.play("수정 취소")
+                findShelfLabel?.text = "현위치 : \(self.nowSection)"
             }
             else if self.isBasketMode {
                 self.isBasketMode = false
                 TTSManager.shared.play("취소")
                 self.nowProduct = ""
+                findShelfLabel?.text = "현위치 : \(self.nowSection)"
             } else if self.willBuy {
                 self.isBasketMode = false
                 self.willBuy = false
                 TTSManager.shared.play("결제 취소")
+                findShelfLabel?.text = "현위치 : \(self.nowSection)"
             } else {
                 print("!")
                 TTSManager.shared.play("세션 모드로 이동")
@@ -233,6 +239,8 @@ class ProductFLNativeView: NSObject, FlutterPlatformView, ARSCNViewDelegate {
     // ARSCNViewDelegate 메서드
     func renderer(_ renderer: SCNSceneRenderer, updateAtTime time: TimeInterval) {
         DispatchQueue.main.async {
+            self.addFindShelfLabel()
+
             // Depth map 오버레이가 활성화된 경우에만 처리
             if ARSessionManager.shared.isDepthMapOverlayEnabled, let currentFrame = ARSessionManager.shared.session.currentFrame, let depthData = currentFrame.sceneDepth {
                 ARSessionManager.shared.overlayDepthMap(self.arView)
@@ -260,12 +268,24 @@ class ProductFLNativeView: NSObject, FlutterPlatformView, ARSCNViewDelegate {
         var coreMLModel: MLModel?
 
         switch self.nowSection {
-        case "라면매대":
-            coreMLModel = try? RamenClassification_1208(configuration: MLModelConfiguration()).model
         case "간편식품매대":
             coreMLModel = try? SGClassification_1214(configuration: MLModelConfiguration()).model
-        case "ALL" :
+        // case "과자매대_스낵":
+        // case "과자매대_젤리":
+        // case "기획매대":
+        case "라면매대":
             coreMLModel = try? RamenClassification_1208(configuration: MLModelConfiguration()).model
+        // case "빵매대":
+        // case "생필품매대":
+        // case "냉동매대":
+        case "음료매대":
+            coreMLModel = try? DrinkClassification_1214(configuration: MLModelConfiguration()).model
+        case "ALL" :
+            coreMLModel = try? AllClassification_1214(configuration: MLModelConfiguration()).model
+        // case "계산대":
+        // case "알수없음":
+        // case "조리대":
+        // case "취식대":
         default:
             TTSManager.shared.play("해당하는 섹션이 없습니다.")
             return
@@ -307,7 +327,9 @@ class ProductFLNativeView: NSObject, FlutterPlatformView, ARSCNViewDelegate {
 
             BarcodeProcessor.shared.processBarcode(from: imageP.CVPB2UIImage(pixelBuffer: pixelBuffer)!) { barcodeString in
                 if let barcode = barcodeString {
+                    TTSManager.shared.stop()
                     // Handle barcode detected
+                    print(barcode)
                     self.processBarcode2Server(barcode)
                     self.isBasketMode = true
                     self.editCount = self.productCount(self.nowProduct)
@@ -319,13 +341,13 @@ class ProductFLNativeView: NSObject, FlutterPlatformView, ARSCNViewDelegate {
                     } else {
                         let formattedConfidence = String(format: "%.2f", firstItem.confidence)
                         //TTSManager.shared.play(formattedConfidence)
+                        self.nowProduct = firstItem.identifier.capitalized
                         print("\(self.nowProduct) : \(formattedConfidence)")
                         TTSManager.shared.stop()
 
-                        self.nowProduct = firstItem.identifier.capitalized
+                        self.sendProductNameToServer(self.nowProduct)
                         self.isBasketMode = true
                         self.editCount = self.productCount(self.nowProduct)
-                        self.sendProductNameToServer(self.nowProduct)
                     }
                 }
             }
@@ -348,6 +370,7 @@ class ProductFLNativeView: NSObject, FlutterPlatformView, ARSCNViewDelegate {
                 if let jsonDictionary = value as? [String: Any], let receivedPrice = jsonDictionary["price"] as? Int {
                     // 서버 응답 후 가격 정보 처리
                     DispatchQueue.main.async {
+                        strongSelf.findShelfLabel?.text = productName
                         strongSelf.handleServerResponse(productName: productName, receivedPrice: receivedPrice)
                     }
                 }
@@ -362,14 +385,16 @@ class ProductFLNativeView: NSObject, FlutterPlatformView, ARSCNViewDelegate {
     }
     // 예시: 바코드 정보를 서버에 보내고 제품 정보를 받아오는 함수
     func processBarcode2Server(_ barcode: String) {
-        BarcodeProcessor.shared.sendProductInfoToServer(barcode) { productName, receivedPrice in
+        BarcodeProcessor.shared.sendProductInfoToServer(barcode) { [weak self] productName, receivedPrice in
             // 클로저 내에서 productName과 receivedPrice를 사용하거나 처리
             if let productName = productName, let receivedPrice = receivedPrice {
-                self.nowProduct = productName
-                self.handleServerResponse(productName: self.nowProduct, receivedPrice: receivedPrice)
+                self?.nowProduct = productName
+                self?.findShelfLabel?.text = productName
+                self?.handleServerResponse(productName: productName, receivedPrice: receivedPrice)
                 // 여기에서 원하는 작업 수행
             } else {
                 print("제품 정보를 가져오는 데 실패했습니다.")
+                self?.isBasketMode = false
                 // 실패 시 처리
             }
         }
@@ -378,6 +403,8 @@ class ProductFLNativeView: NSObject, FlutterPlatformView, ARSCNViewDelegate {
     private func handleServerResponse(productName: String?, receivedPrice: Int?) {
         // 서버 응답에 따른 UI 처리
         if let productName = productName {
+            self.nowProduct = productName
+            findShelfLabel?.text = self.nowProduct
             TTSManager.shared.play(productName)
             TTSManager.shared.play("현재 장바구니에 \(editCount)개 있음")
         } else {
@@ -434,5 +461,23 @@ class ProductFLNativeView: NSObject, FlutterPlatformView, ARSCNViewDelegate {
             self.sendShoppingbagToFlutter()
             //self.willBuy = true
         }
+    }
+
+    private func addFindShelfLabel() {
+        if findShelfLabel == nil {
+            let label = UILabel()
+            label.backgroundColor = UIColor.white
+            label.adjustsFontSizeToFitWidth = true // 텍스트 크기를 라벨 너비에 맞게 조정
+            label.alpha = 0.9 // 투명도 조정
+            label.text = self.nowSection
+            label.textColor = .red
+            label.textAlignment = .center
+            label.font = UIFont.boldSystemFont(ofSize: 60)
+            label.layer.cornerRadius = 30
+            label.layer.masksToBounds = true
+            arView.addSubview(label)
+            findShelfLabel = label
+        }
+        findShelfLabel?.frame = CGRect(x: 20, y: arView.safeAreaInsets.top, width: arView.bounds.width - 30, height: 120)
     }
 }

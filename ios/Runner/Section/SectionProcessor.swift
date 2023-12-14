@@ -20,7 +20,7 @@ class SectionClassifier {
         self.rows = rows
         self.columns = columns
         let configuration = MLModelConfiguration()
-        self.model = try VNCoreMLModel(for: SectionClassification_1208(configuration: configuration).model)
+        self.model = try VNCoreMLModel(for: SectionClassification_A_1214(configuration: configuration).model)
     }
 
     func classifySections(in frame: ARFrame, completion: @escaping ([String]) -> Void) {
@@ -64,7 +64,7 @@ class SectionClassifier {
                 return
             }
 
-            let threshold: Float = 0.9
+            let threshold: Float = 0.95
             // Confidence 값이 threshold보다 큰 경우에만 결과 반환
             if topResult.confidence >= threshold {
                 print(topResult.confidence)

@@ -20,7 +20,7 @@ class SectionFLNativeView: NSObject, FlutterPlatformView, ARSCNViewDelegate {
     // AR 담당 Native View
     private var arView: ARSCNView
     private var binaryMessenger: FlutterBinaryMessenger
-    private var predictionValue: String = "자유찾기"  // 예측값 초기화
+    private var predictionValue: String = "선택모드"  // 예측값 초기화
     public var shoppingBasketMap: [String: Int]
     private var channel: FlutterMethodChannel
 
@@ -86,6 +86,8 @@ class SectionFLNativeView: NSObject, FlutterPlatformView, ARSCNViewDelegate {
 
     // 딕셔너리의 키들을 배열로 변환
     private var indexDistance: [Float] = []
+
+    private var nowSection: String
     
 
     // Vision 요청을 저장할 배열
@@ -141,6 +143,10 @@ class SectionFLNativeView: NSObject, FlutterPlatformView, ARSCNViewDelegate {
         if let args = args as? [String: Any],let shoppingbag = args["shoppingbag"] as? [String:Int] {
             self.shoppingBasketMap = shoppingbag
         }
+        self.nowSection = "ALL"
+        if let predictionValue = args["predictionValue"] as? String {
+            self.nowSection = predictionValue
+        }
         super.init()
 
         TTSManager.shared.play("섹션모드")
@@ -187,10 +193,12 @@ class SectionFLNativeView: NSObject, FlutterPlatformView, ARSCNViewDelegate {
         TTSManager.shared.play("짧게 누름")
         hapticC.impactFeedback(style: "heavy")
         if self.selectMode {
-            self.willFind = false
-            self.selectSection = self.sectionBest[1]
-            self.selectCoord = self.gridWorldCoordinates[1]
-            self.addArText()
+            if self.sectionBest[1] != "" && self.sectionBest[1] != "알수없음" {
+                self.willFind = false
+                self.selectSection = self.sectionBest[1]
+                self.selectCoord = self.gridWorldCoordinates[1]
+                self.addArText()
+            }
         } else {
             //let screenCenter = CGPoint(x: arView.bounds.midX, y: arView.bounds.midY)
             //addArText()
@@ -233,11 +241,11 @@ class SectionFLNativeView: NSObject, FlutterPlatformView, ARSCNViewDelegate {
         TTSManager.shared.stop()
         hapticC.impactFeedback(style: "Heavy")
         switch gesture.direction {
-        case .left: // 무언갈 진행하는 것
+        case .left: // 이전 항목
             TTSManager.shared.play("왼쪽")
             if self.selectMode {
                 self.selectMode = false
-                TTSManager.shared.play("취소")
+                TTSManager.shared.play("재탐색")
             } else if self.isGoMode {
                 self.selectMode = false
                 self.isGoMode = false
@@ -247,25 +255,30 @@ class SectionFLNativeView: NSObject, FlutterPlatformView, ARSCNViewDelegate {
                 self.nodeDelete()
             }
             break
-        case .right: // 무언갈 취소하는 것
+        case .right: // 다음 항목
             TTSManager.shared.play("오른쪽")
+            sendDataToFlutter()
             break
         case .up: // 무언갈 더하는 것
             TTSManager.shared.play("위")
             if self.selectMode {
-                self.selectSection = self.sectionBest[0]
-                self.selectCoord = self.gridWorldCoordinates[0]
-                self.selectMode = false
-                self.addArText()
+                if self.sectionBest[0] != "" &&  self.sectionBest[0] != "알수없음" {
+                    self.selectSection = self.sectionBest[0]
+                    self.selectCoord = self.gridWorldCoordinates[0]
+                    self.selectMode = false
+                    self.addArText()
+                }
             }
             break
         case .down: // 무언갈 빼는 것
             TTSManager.shared.play("아래")
             if self.selectMode {
-                self.selectSection = self.sectionBest[2]
-                self.selectCoord = self.gridWorldCoordinates[2]
-                self.selectMode = false
-                self.addArText()
+                if self.sectionBest[2] != "" && self.sectionBest[2] != "알수없음" {
+                    self.selectSection = self.sectionBest[2]
+                    self.selectCoord = self.gridWorldCoordinates[2]
+                    self.selectMode = false
+                    self.addArText()
+                }
             }
             break
         default:
@@ -556,7 +569,8 @@ class SectionFLNativeView: NSObject, FlutterPlatformView, ARSCNViewDelegate {
                 label.text = "\(row * col + column + 1)" // 1부터 9까지의 숫자
                 label.textAlignment = .center
                 label.textColor = labelTextColor
-                label.backgroundColor = .black.withAlphaComponent(labelBackgroundOpacity)
+                label.backgroundColor = UIColor.white
+                label.alpha = 0.9 // 투명도 조정
                 //label.adjustsFontSizeToFitWidth = true // 텍스트 크기를 라벨 너비에 맞게 조정
                 label.numberOfLines = 0 // 여러 줄을 허용
                 label.lineBreakMode = .byWordWrapping // 단어 단위로 개행
@@ -629,6 +643,7 @@ class SectionFLNativeView: NSObject, FlutterPlatformView, ARSCNViewDelegate {
             label.text = "\(predictionText)"
             label.font = UIFont.boldSystemFont(ofSize: min(sectionWidth * 0.9, screenHeight * 0.2) * 0.5)
             label.alpha = 0.9 // 투명도 조정
+            label.backgroundColor = UIColor.white
             label.adjustsFontSizeToFitWidth = true // 텍스트 크기를 라벨 너비에 맞게 조정
             //label.numberOfLines = 0 // 여러 줄을 허용
             //label.lineBreakMode = .byWordWrapping // 단어 단위로 개행
@@ -773,8 +788,8 @@ class SectionFLNativeView: NSObject, FlutterPlatformView, ARSCNViewDelegate {
     private func addFindShelfLabel() {
         if findShelfLabel == nil {
             let label = UILabel()
-            label.backgroundColor = UIColor.black
-            label.alpha = 0.8 // 투명도 조정
+            label.backgroundColor = UIColor.white
+            label.alpha = 0.9 // 투명도 조정
             label.text = self.predictionValue
             label.textColor = .red
             label.textAlignment = .center
@@ -852,11 +867,11 @@ class SectionFLNativeView: NSObject, FlutterPlatformView, ARSCNViewDelegate {
                 let bestPredict = self.findBestPredictions(in: groupedPredictions)
                 
                 // 가장 많은 예측 결과를 가진 섹션을 음성으로 출력
-                for (index, prediction) in bestPredict.enumerated() {
-                    if prediction != "" {
-                        TTSManager.shared.play("\(index + 1)번째: \(prediction)")
-                    }
-                }
+                // for (index, prediction) in bestPredict.enumerated() {
+                //     if prediction != "알수없음" {
+                //         TTSManager.shared.play("\(index + 1)번째: \(prediction)")
+                //     }
+                // }
 
                 self.sectionBest = bestPredict
                 self.sectionSelector()
@@ -1030,15 +1045,24 @@ class SectionFLNativeView: NSObject, FlutterPlatformView, ARSCNViewDelegate {
             TTSManager.shared.play("다시 터치해주십시오")
             self.selectMode = false
         } else {
-            if array[0] != "" {
+            if array[0] != "" && array[0] != "알수없음" {
                 TTSManager.shared.play("\(array[0])로 가려면 위로 스와이프")
             }
-            if array[1] != "" {
+            if array[1] != "" && array[1] != "알수없음" {
                 TTSManager.shared.play("\(array[1])로 가려면 터치 ")
             }
-            if array[2] != "" {
+            if array[2] != "" && array[2] != "알수없음" {
                 TTSManager.shared.play("\(array[2])로 가려면 아래로 스와이프")
             }
+            if array[0] == array[1] && array[1] == array[2] {
+                if array[0] != "알수없음" {
+                    TTSManager.shared.play("\(array[1])로 가려면 터치 ")
+                } else {
+                    TTSManager.shared.play("다시 터치해주십시오.")
+                    self.selectMode = false
+                }
+            }
+            TTSManager.shared.play("다시 탐색하려면 왼쪽으로 스와이프")
         }
     }
 
