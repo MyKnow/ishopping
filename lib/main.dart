@@ -6,9 +6,10 @@ import 'package:haptic_feedback/haptic_feedback.dart';
 import 'package:ishopping/find_iOS.dart';
 
 import 'find_platform.dart';
+import 'find.dart';
 import 'map_platform.dart';
 import 'product_platform.dart';
-import 'shopping_bag.dart';
+import 'storelist.dart';
 
 void main() {
   runApp(const MyApp());
@@ -35,7 +36,8 @@ class MainScreen extends StatefulWidget {
 
 class _MainScreenState extends State<MainScreen> {
   late FlutterTts flutterTts;
-  int _currentMode = 0; // 0: 세션모드, 1: 제품모드, 2: 결제모드
+  int _currentMode = 0; // 0: 세션모드, 1: 찾기모드, 2: 제품모드
+  int selectstore = 0;
 
   @override
   void initState() {
@@ -48,7 +50,7 @@ class _MainScreenState extends State<MainScreen> {
     await flutterTts.setLanguage("ko-KR");
     await flutterTts.setPitch(1.0);
     await flutterTts.setSpeechRate(0.8);
-    await flutterTts.speak("세션 모드. 제품 모드. 결제 모드. ");
+    await flutterTts.speak("세션 모드. 찾기 모드. 제품 모드. ");
   }
 
   @override
@@ -102,10 +104,10 @@ class _MainScreenState extends State<MainScreen> {
         modeText = "세션 모드";
         break;
       case 1:
-        modeText = "제품 모드";
+        modeText = "찾기 모드";
         break;
       case 2:
-        modeText = "결제 모드";
+        modeText = "제품 모드";
         break;
     }
 
@@ -118,10 +120,10 @@ class _MainScreenState extends State<MainScreen> {
         navigateToSessionMode(context);
         break;
       case 1:
-        navigateToProductMode(context);
+        navigateToFindMode(context);
         break;
       case 2:
-        navigateToFindMode(context);
+        navigateToProductMode(context);
         break;
     }
   }
@@ -134,9 +136,9 @@ class _MainScreenState extends State<MainScreen> {
         buildModeButton(
             "세션 모드", "assets/images/public/maps.png", 0, screenHeight),
         buildModeButton(
-            "제품 모드", "assets/images/public/coke.png", 1, screenHeight),
+            "찾기 모드", "assets/images/public/lens.png", 1, screenHeight),
         buildModeButton(
-            "찾기 모드", "assets/images/public/coins.png", 2, screenHeight),
+            "제품 모드", "assets/images/public/coke.png", 2, screenHeight),
       ],
     );
   }
@@ -149,9 +151,9 @@ class _MainScreenState extends State<MainScreen> {
         buildModeButton(
             "세션 모드", "assets/images/public/maps.png", 0, screenHeight),
         buildModeButton(
-            "제품 모드", "assets/images/public/coke.png", 1, screenHeight),
+            "찾기 모드", "assets/images/public/lens.png", 1, screenHeight),
         buildModeButton(
-            "찾기 모드", "assets/images/public/coins.png", 2, screenHeight),
+            "제품 모드", "assets/images/public/coke.png", 2, screenHeight),
       ],
     );
   }
@@ -171,10 +173,9 @@ class _MainScreenState extends State<MainScreen> {
             _navigateToCurrentMode(context);
           },
           style: ElevatedButton.styleFrom(
-            foregroundColor: Colors.black,
-            backgroundColor:
-                _currentMode == modeIndex ? Colors.yellow : Colors.white,
-            shadowColor: Colors.grey,
+            primary: _currentMode == modeIndex ? Colors.yellow : Colors.white,
+            onPrimary: Colors.black,
+            shadowColor: const Color.fromARGB(255, 88, 77, 77),
             elevation: 5,
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(15),
@@ -206,27 +207,55 @@ class _MainScreenState extends State<MainScreen> {
 
   // Navigation functions for each mode
   void navigateToSessionMode(BuildContext context) {
-    heavyVibration(2);
-    Navigator.push(
-        context,
-        MaterialPageRoute(
-            builder: (context) => const PlatformSpecificMapScreen()));
+    heavyVibration(3);
+    if (selectstore == 0) {
+      Navigator.push(
+          context,
+          MaterialPageRoute(
+              builder: (context) =>
+                  StoreListScreen(currentMode: _currentMode)));
+
+      selectstore = 1;
+    } else if (selectstore == 1) {
+      Navigator.push(
+          context,
+          MaterialPageRoute(
+              builder: (context) => const PlatformSpecificMapScreen()));
+    }
   }
 
   void navigateToProductMode(BuildContext context) {
     heavyVibration(3);
-    Navigator.push(
-        context,
-        MaterialPageRoute(
-            builder: (context) => const PlatformSpecificProductScreen()));
+    if (selectstore == 0) {
+      Navigator.push(
+          context,
+          MaterialPageRoute(
+              builder: (context) =>
+                  StoreListScreen(currentMode: _currentMode)));
+
+      selectstore = 1;
+    } else if (selectstore == 1) {
+      Navigator.push(
+          context,
+          MaterialPageRoute(
+              builder: (context) => const PlatformSpecificProductScreen()));
+    }
   }
 
   void navigateToFindMode(BuildContext context) {
-    heavyVibration(4);
-    Navigator.push(
-        context,
-        MaterialPageRoute(
-            builder: (context) => const PlatformSpecificFindScreen()));
+    heavyVibration(3);
+    if (selectstore == 0) {
+      Navigator.push(
+          context,
+          MaterialPageRoute(
+              builder: (context) =>
+                  StoreListScreen(currentMode: _currentMode)));
+
+      selectstore = 1;
+    } else if (selectstore == 1) {
+      Navigator.push(
+          context, MaterialPageRoute(builder: (context) => const FindScreen()));
+    }
   }
 
   // Haptic feedback functions
@@ -247,20 +276,4 @@ class _MainScreenState extends State<MainScreen> {
       }
     }
   }
-}
-
-class BackgroundPainter extends CustomPainter {
-  @override
-  void paint(Canvas canvas, Size size) {
-    var paintSmall = Paint()..color = const Color(0xFFFFF2CC);
-    var paintLarge = Paint()..color = const Color(0xFFFFF2CC);
-
-    canvas.drawCircle(
-        Offset(size.width * 0.2, size.height * 0.1), 100, paintSmall);
-    canvas.drawCircle(
-        Offset(size.width * 0.8, size.height * 0.7), 200, paintLarge);
-  }
-
-  @override
-  bool shouldRepaint(CustomPainter oldDelegate) => false;
 }

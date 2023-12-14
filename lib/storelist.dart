@@ -1,21 +1,40 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_tts/flutter_tts.dart';
 import 'package:geolocator/geolocator.dart';
 
-import 'googleAPI.dart';
+import 'find.dart';
 import 'main.dart';
+import 'map_platform.dart';
+import 'product_platform.dart';
+import 'store_server_api.dart';
 
 class StoreListScreen extends StatefulWidget {
+  final int currentMode;
+
+  const StoreListScreen({Key? key, required this.currentMode})
+      : super(key: key);
+
   @override
   _StoreListScreenState createState() => _StoreListScreenState();
 }
 
 class _StoreListScreenState extends State<StoreListScreen> {
   List<Map<String, dynamic>> stores = [];
-  String locationMessage = "";
+  int _selectedIndex = 0;
+  FlutterTts flutterTts = FlutterTts();
+
   @override
   void initState() {
     super.initState();
     getCurrentLocation();
+    initializeTts();
+  }
+
+  void initializeTts() async {
+    await flutterTts.setLanguage("ko-KR");
+    await flutterTts.setPitch(1.0);
+    await flutterTts.setSpeechRate(0.7);
+    flutterTts.speak("가까운 GS25 매장. 현재 위치에 알맞는 편의점을 선택하세요.");
   }
 
   void _showPermissionDeniedDialog() {
@@ -62,6 +81,7 @@ class _StoreListScreenState extends State<StoreListScreen> {
           desiredAccuracy: LocationAccuracy.high);
       var storesList =
           await findNearbyGS25(position.latitude, position.longitude);
+      print("2002 ${position.latitude}, ${position.longitude}");
       setState(() {
         stores = storesList;
       });
@@ -85,49 +105,92 @@ class _StoreListScreenState extends State<StoreListScreen> {
         backgroundColor: Colors.white,
         elevation: 0,
       ),
-      body: ListView.separated(
-        itemCount: stores.length,
-        itemBuilder: (context, index) {
-          return Padding(
-            padding:
-                const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        stores[index]['name'],
-                        style: TextStyle(
-                          fontSize: fontSize,
-                          color: Colors.red,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      SizedBox(height: 4),
-                      Text(
-                        stores[index]['address'],
-                        style:
-                            TextStyle(fontSize: fontSize, color: Colors.grey),
-                      ),
-                    ],
-                  ),
-                ),
-                Text(
-                  stores[index]['distanceString'],
-                  style: TextStyle(
-                    fontSize: fontSize,
-                    color: Colors.black,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ],
-            ),
-          );
+      body: GestureDetector(
+        onTap: () {
+          if (widget.currentMode == 0) {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => PlatformSpecificMapScreen(),
+              ),
+            );
+          } else if (widget.currentMode == 1) {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => FindScreen(),
+              ),
+            );
+          } else if (widget.currentMode == 2) {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => PlatformSpecificProductScreen(),
+              ),
+            );
+          }
         },
-        separatorBuilder: (context, index) => Divider(color: Colors.grey[300]),
+        onVerticalDragEnd: (details) {
+          if (details.primaryVelocity! > 0 &&
+              _selectedIndex < stores.length - 1) {
+            setState(() {
+              _selectedIndex++;
+            });
+          } else if (details.primaryVelocity! < 0 && _selectedIndex > 0) {
+            setState(() {
+              _selectedIndex--;
+            });
+          }
+          flutterTts.speak(stores[_selectedIndex]['name']);
+        },
+        child: ListView.separated(
+          itemCount: stores.length,
+          separatorBuilder: (context, index) => Divider(color: Colors.grey),
+          physics: NeverScrollableScrollPhysics(), // 스크롤 비활성화
+          itemBuilder: (context, index) {
+            return Padding(
+              padding:
+                  const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          stores[index]['name'],
+                          style: TextStyle(
+                            fontSize: fontSize,
+                            color: _selectedIndex == index
+                                ? Colors.red
+                                : Colors.black,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        SizedBox(height: 4),
+                        Text(
+                          stores[index]['address'],
+                          style:
+                              TextStyle(fontSize: fontSize, color: Colors.grey),
+                        ),
+                      ],
+                    ),
+                  ),
+                  Text(
+                    stores[index]['distanceString'],
+                    style: TextStyle(
+                      fontSize: fontSize,
+                      color:
+                          _selectedIndex == index ? Colors.red : Colors.black,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ],
+              ),
+            );
+          },
+        ),
       ),
     );
   }
