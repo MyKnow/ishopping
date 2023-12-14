@@ -3,10 +3,10 @@ import 'package:flutter_tts/flutter_tts.dart';
 import 'package:geolocator/geolocator.dart';
 
 import 'find.dart';
-import 'googleAPI.dart';
 import 'main.dart';
 import 'map_platform.dart';
 import 'product_platform.dart';
+import 'store_server_api.dart';
 
 class StoreListScreen extends StatefulWidget {
   final int currentMode;
