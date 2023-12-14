@@ -38,7 +38,6 @@ class _FindScreenState extends State<FindScreen> {
       body: SafeArea(
         child: GestureDetector(
           onVerticalDragEnd: (details) => _VerticalhandleSwipe(details),
-          onHorizontalDragEnd: (details) => _HorizontalhandleSwipe(details),
           onTap: () => _navigateToCurrentMode(context),
           child: Stack(
             children: [
@@ -58,32 +57,12 @@ class _FindScreenState extends State<FindScreen> {
 
   void _VerticalhandleSwipe(DragEndDetails details) {
     if (details.primaryVelocity != null) {
-      if (details.primaryVelocity! > 0 && activeButtonIndex < 6) {
-        setState(() {
-          activeButtonIndex = activeButtonIndex + 2;
-          speakCurrentMode();
-        });
-      } else if (details.primaryVelocity! < 0 && activeButtonIndex > 1) {
-        setState(() {
-          activeButtonIndex = activeButtonIndex - 2;
-          speakCurrentMode();
-        });
-      }
-    }
-  }
-
-  void _HorizontalhandleSwipe(DragEndDetails details) {
-    if (details.primaryVelocity != null) {
-      if (details.primaryVelocity! > 0 &&
-          activeButtonIndex < 7 &&
-          activeButtonIndex % 2 == 0) {
+      if (details.primaryVelocity! > 0 && activeButtonIndex < 7) {
         setState(() {
           activeButtonIndex++;
           speakCurrentMode();
         });
-      } else if (details.primaryVelocity! < 0 &&
-          activeButtonIndex > 0 &&
-          activeButtonIndex % 2 == 1) {
+      } else if (details.primaryVelocity! < 0 && activeButtonIndex > 0) {
         setState(() {
           activeButtonIndex--;
           speakCurrentMode();
