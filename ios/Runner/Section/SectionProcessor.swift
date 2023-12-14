@@ -59,11 +59,19 @@ class SectionClassifier {
         let handler = VNImageRequestHandler(cgImage: image.cgImage!, options: [:])
         let request = VNCoreMLRequest(model: self.model) { request, error in
             guard let results = request.results as? [VNClassificationObservation],
-                  let topResult = results.first else {
+                let topResult = results.first else {
                 completion("")
                 return
             }
-            completion(topResult.identifier)
+
+            let threshold: Float = 0.9
+            // Confidence 값이 threshold보다 큰 경우에만 결과 반환
+            if topResult.confidence >= threshold {
+                print(topResult.confidence)
+                completion(topResult.identifier)
+            } else {
+                completion("알수없음")
+            }
         }
 
         do {

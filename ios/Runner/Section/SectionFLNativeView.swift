@@ -20,7 +20,7 @@ class SectionFLNativeView: NSObject, FlutterPlatformView, ARSCNViewDelegate {
     // AR 담당 Native View
     private var arView: ARSCNView
     private var binaryMessenger: FlutterBinaryMessenger
-    private var predictionValue: String = "RAMEN"  // 예측값 초기화
+    private var predictionValue: String = "자유찾기"  // 예측값 초기화
     public var shoppingBasketMap: [String: Int]
     private var channel: FlutterMethodChannel
 
@@ -121,6 +121,8 @@ class SectionFLNativeView: NSObject, FlutterPlatformView, ARSCNViewDelegate {
     private var model: VNCoreMLModel!
 
     private var isVibrating: Bool = false
+
+    private var arriveDistance: Float = 0.5
 
     private var alertTimer: Timer?
 
@@ -359,7 +361,7 @@ class SectionFLNativeView: NSObject, FlutterPlatformView, ARSCNViewDelegate {
                     let timeInterval: TimeInterval = TimeInterval(distance)
                     triggerHapticFeedback(interval: timeInterval)
                     
-                    findShelfLabel?.text = self.labelText
+                    //findShelfLabel?.text = self.labelText
                 }
             }
         }
@@ -522,20 +524,21 @@ class SectionFLNativeView: NSObject, FlutterPlatformView, ARSCNViewDelegate {
         return vector1.x * vector2.x + vector1.y * vector2.y + vector1.z * vector2.z
     }
 
+    // dot, label(라벨)
     private func setupGridDots() {
-        let dotSize: CGFloat = 10
-        let labelHeight: CGFloat = 20
-        let labelWidth: CGFloat = 100
-        let labelBackgroundOpacity: CGFloat = 0.5
-        let labelCornerRadius: CGFloat = 10
-        let labelTextColor: UIColor = .red
-        let labelFont: UIFont = UIFont.boldSystemFont(ofSize: 14)
-        
         let screenWidth = arView.bounds.width
         let screenHeight = arView.bounds.height
         let sectionWidth = screenWidth / CGFloat(col)
         let sectionHeight = screenHeight / CGFloat(rw)
 
+        let dotSize: CGFloat = 10
+        let labelHeight: CGFloat = 100
+        let labelWidth: CGFloat = 100
+        let labelBackgroundOpacity: CGFloat = 0.5
+        let labelCornerRadius: CGFloat = 30
+        let labelTextColor: UIColor = .red
+        let labelFont: UIFont = UIFont.boldSystemFont(ofSize: 14)
+        
         for row in 0..<rw {
             for column in 0..<col {
                 let x = CGFloat(column) * sectionWidth + sectionWidth / 2
@@ -549,12 +552,14 @@ class SectionFLNativeView: NSObject, FlutterPlatformView, ARSCNViewDelegate {
                 gridDots.append(dot)
 
                 // 레이블 생성
-                let label = UILabel(frame: CGRect(x: x - labelWidth / 2, y: y - labelHeight / 2, width: labelWidth, height: labelHeight))
+                let label = UILabel(frame: CGRect(x: x - labelWidth / 2, y: y - labelHeight / 2 + dotSize + 100, width: labelWidth, height: labelHeight))
                 label.text = "\(row * col + column + 1)" // 1부터 9까지의 숫자
                 label.textAlignment = .center
                 label.textColor = labelTextColor
                 label.backgroundColor = .black.withAlphaComponent(labelBackgroundOpacity)
-                label.adjustsFontSizeToFitWidth = true // 텍스트 크기를 라벨 너비에 맞게 조정
+                //label.adjustsFontSizeToFitWidth = true // 텍스트 크기를 라벨 너비에 맞게 조정
+                label.numberOfLines = 0 // 여러 줄을 허용
+                label.lineBreakMode = .byWordWrapping // 단어 단위로 개행
                 label.layer.cornerRadius = labelCornerRadius
                 label.layer.masksToBounds = true
                 label.font = labelFont
@@ -591,7 +596,7 @@ class SectionFLNativeView: NSObject, FlutterPlatformView, ARSCNViewDelegate {
             for (index, textNodeInfo) in self.textNodeInfos.enumerated().reversed() {
                 let distance = self.calculateDistanceARContents2D(fromCameraTo: textNodeInfo.node.position)
                 
-                if distance < 1.0 {
+                if distance < self.arriveDistance {
                     // 텍스트 노드 제거
                     self.nodeDelete()
                 }
@@ -604,6 +609,7 @@ class SectionFLNativeView: NSObject, FlutterPlatformView, ARSCNViewDelegate {
         let screenHeight = arView.bounds.height
         let sectionWidth = screenWidth / CGFloat(col)
         let sectionHeight = screenHeight / CGFloat(rw)
+        let bottomMargin: CGFloat = 50
 
         for (index, dot) in self.gridDots.enumerated() {
             let rowIndex = index / col // 가로 줄 개수로 나눔
@@ -615,15 +621,19 @@ class SectionFLNativeView: NSObject, FlutterPlatformView, ARSCNViewDelegate {
 
             // 레이블 위치와 텍스트 업데이트
             let label = gridLabels[index]
-            label.center = CGPoint(x: x, y: y + dot.frame.size.height + 10) // 10은 점과 레이블 사이의 간격입니다
+            label.frame = CGRect(x: x - sectionWidth * 0.45, y: screenHeight * 0.6, width: sectionWidth * 0.9, height: screenHeight * 0.4)
             
             // 예측값을 포함한 텍스트 설정
             let predictionText = index < sectionPredictions.count ? sectionPredictions[index] : "N/A"
-            label.text = "번호 \(index + 1): \(predictionText)"
+            //label.text = "번호 : \(index + 1)\n\(predictionText)"
+            label.text = "\(predictionText)"
+            label.font = UIFont.boldSystemFont(ofSize: min(sectionWidth * 0.9, screenHeight * 0.2) * 0.5)
+            label.alpha = 0.9 // 투명도 조정
+            label.adjustsFontSizeToFitWidth = true // 텍스트 크기를 라벨 너비에 맞게 조정
+            //label.numberOfLines = 0 // 여러 줄을 허용
+            //label.lineBreakMode = .byWordWrapping // 단어 단위로 개행
         }
     }
-
-
 
     private func updateDistanceDisplay() {
         let screenWidth = arView.bounds.width
@@ -661,7 +671,7 @@ class SectionFLNativeView: NSObject, FlutterPlatformView, ARSCNViewDelegate {
             }
 
             gridLabels[i].text = String(format: "%.2f m", distance)
-            gridLabels[i].frame = CGRect(x: x - 50, y: y + dotSize / 2 + labelHeight / 2, width: 100, height: labelHeight)
+            gridLabels[i].frame = CGRect(x: x - 50, y: y + dotSize / 2, width: 100, height: labelHeight)
         }
 
         let totalDots = col * rw
@@ -764,17 +774,17 @@ class SectionFLNativeView: NSObject, FlutterPlatformView, ARSCNViewDelegate {
         if findShelfLabel == nil {
             let label = UILabel()
             label.backgroundColor = UIColor.black
-            label.alpha = 0.7 // 투명도 조정
-            label.text = self.selectSection
+            label.alpha = 0.8 // 투명도 조정
+            label.text = self.predictionValue
             label.textColor = .red
             label.textAlignment = .center
-            label.font = UIFont.boldSystemFont(ofSize: 10)
-            label.layer.cornerRadius = 10
+            label.font = UIFont.boldSystemFont(ofSize: 60)
+            label.layer.cornerRadius = 30
             label.layer.masksToBounds = true
             arView.addSubview(label)
             findShelfLabel = label
         }
-        findShelfLabel?.frame = CGRect(x: 20, y: arView.safeAreaInsets.top, width: arView.bounds.width - 40, height: 150)
+        findShelfLabel?.frame = CGRect(x: 20, y: arView.safeAreaInsets.top, width: arView.bounds.width - 30, height: 120)
     }
 
     // Method to add the AR object
@@ -791,7 +801,7 @@ class SectionFLNativeView: NSObject, FlutterPlatformView, ARSCNViewDelegate {
         textGeometry.firstMaterial?.diffuse.contents = UIColor.red
 
         let textNode = SCNNode(geometry: textGeometry)
-        textNode.scale = SCNVector3(-0.01, 0.01, 0.02) // 크기 조정
+        textNode.scale = SCNVector3(-0.02, 0.02, 0.02) // 크기 조정
 
         // 이미 저장된 좌표에 텍스트 노드 위치 설정
         textNode.position = self.selectCoord
@@ -983,7 +993,7 @@ class SectionFLNativeView: NSObject, FlutterPlatformView, ARSCNViewDelegate {
             // 각도 계산을 위한 추가적인 로직 필요
 
             // 거리가 N m 미만이면 완료
-            if distance < 1.0 {
+            if distance < self.arriveDistance {
                 self.selectMode = false
                 self.isGoMode = false
                 self.willFind = true
@@ -991,6 +1001,7 @@ class SectionFLNativeView: NSObject, FlutterPlatformView, ARSCNViewDelegate {
                 TTSManager.shared.stop()
                 TTSManager.shared.play("목표에 도달했습니다. 몸을 돌리고 화면을 터치하여 다른 매대를 찾거나, 화면을 길게 눌러 매대에서 제품을 찾으십시오")
                 self.predictionValue = self.selectSection!
+                findShelfLabel?.text = self.predictionValue
             } else {
                 TTSManager.shared.stop()
                 TTSManager.shared.play("\(String(format: "%.1f", distance))미터")

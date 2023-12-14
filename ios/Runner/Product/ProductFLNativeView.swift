@@ -11,8 +11,6 @@ import CoreML
 import NotificationCenter
 import CoreImage
 
-
-
 // FlutterPlatformView 프로토콜을 구현하여 Flutter 뷰로 사용될 수 있음
 @available(iOS 17.0, *)
 class ProductFLNativeView: NSObject, FlutterPlatformView, ARSCNViewDelegate {
@@ -100,8 +98,8 @@ class ProductFLNativeView: NSObject, FlutterPlatformView, ARSCNViewDelegate {
         addSwipeGesture()
     }
     deinit {
-        ARSessionManager.shared.pauseSession()
-        TTSManager.shared.stop()
+        //ARSessionManager.shared.pauseSession()
+        //TTSManager.shared.stop()
     }
 
 
@@ -186,6 +184,7 @@ class ProductFLNativeView: NSObject, FlutterPlatformView, ARSCNViewDelegate {
                 self.willBuy = false
                 TTSManager.shared.play("결제 취소")
             } else {
+                print("!")
                 TTSManager.shared.play("세션 모드로 이동")
                 sendShoppingbagToSection()
             }
@@ -258,16 +257,28 @@ class ProductFLNativeView: NSObject, FlutterPlatformView, ARSCNViewDelegate {
 
     func detect(image: CIImage) {
         // CoreML 모델 로딩
-        guard let coreMLModel = try? RamenClassification_1208(configuration: MLModelConfiguration()),
-            let visionModel = try? VNCoreMLModel(for: coreMLModel.model) else {
+        var coreMLModel: MLModel?
+
+        switch self.nowSection {
+        case "라면매대":
+            coreMLModel = try? RamenClassification_1208(configuration: MLModelConfiguration()).model
+        case "간편식품매대":
+            coreMLModel = try? SGClassification_1214(configuration: MLModelConfiguration()).model
+        case "ALL" :
+            coreMLModel = try? RamenClassification_1208(configuration: MLModelConfiguration()).model
+        default:
+            TTSManager.shared.play("해당하는 섹션이 없습니다.")
+            return
+        }
+
+        guard let visionModel = try? VNCoreMLModel(for: coreMLModel!),
+            let request = try? VNCoreMLRequest(model: visionModel, completionHandler: { [weak self] request, error in
+                self?.handleClassification(request: request, error: error)
+            }) else {
             print("CoreML 모델 로딩 실패")
             return
         }
 
-        let request = VNCoreMLRequest(model: visionModel, completionHandler: { [weak self] request, error in
-            self?.handleClassification(request: request, error: error)
-        })
-        
         let handler = VNImageRequestHandler(ciImage: image)
         DispatchQueue.global(qos: .userInitiated).async {
             do {
@@ -277,6 +288,7 @@ class ProductFLNativeView: NSObject, FlutterPlatformView, ARSCNViewDelegate {
             }
         }
     }
+
 
     private func handleClassification(request: VNRequest, error: Error?) {
         DispatchQueue.global().async { [self] in

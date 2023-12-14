@@ -6,7 +6,11 @@ import 'package:local_auth/local_auth.dart';
 import 'package:vibration/vibration.dart';
 import 'package:local_auth_platform_interface/local_auth_platform_interface.dart';
 import 'package:local_auth_android/local_auth_android.dart';
+
+import 'dart:io' show Platform;
 import 'package:local_auth_ios/local_auth_ios.dart';
+
+import 'package:http/http.dart' as http;
 
 class ShoppingBagScreen extends StatefulWidget {
   final Map<String, int>? shoppingbag;
@@ -24,8 +28,6 @@ class _ShoppingBagScreenState extends State<ShoppingBagScreen> {
   FlutterTts flutterTts = FlutterTts();
   bool authenticated = false;
 
-  get http => null;
-
   @override
   void initState() {
     super.initState();
@@ -38,7 +40,6 @@ class _ShoppingBagScreenState extends State<ShoppingBagScreen> {
     //       price: 1000)); // 가격을 1000원으로 고정, 나중에 DB로 바꿀 예정
     // });
     initializeTts();
-    readCartItems();
   }
 
   void _fetchPrices() async {
@@ -58,9 +59,13 @@ class _ShoppingBagScreenState extends State<ShoppingBagScreen> {
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
-        final price = data['price'];
+        final price = (data['price'] as double).toInt();
         tempCartItems
             .add(CartItem(name: name, quantity: quantity, price: price));
+
+        setState(() {
+          cartItems = tempCartItems;
+        });
       } else {
         // 오류 처리
         print('Failed to load price for $name');
@@ -91,6 +96,7 @@ class _ShoppingBagScreenState extends State<ShoppingBagScreen> {
   }
 
   void readCurrentItem() {
+    flutterTts.stop();
     if (cartItems.isNotEmpty && _selectedIndex < cartItems.length) {
       var currentItem = cartItems[_selectedIndex];
       flutterTts.speak('${currentItem.name}, ${currentItem.quantity}개');
@@ -98,6 +104,7 @@ class _ShoppingBagScreenState extends State<ShoppingBagScreen> {
   }
 
   void readCurrentQuantity() {
+    flutterTts.stop();
     if (cartItems.isNotEmpty && _selectedIndex < cartItems.length) {
       var currentItem = cartItems[_selectedIndex];
       flutterTts.speak('${currentItem.quantity}개');
@@ -194,7 +201,12 @@ class _ShoppingBagScreenState extends State<ShoppingBagScreen> {
           Expanded(
             child: GestureDetector(
               onLongPress: () async {
-                if (await authenticateWithFingerprint()) {
+                if (Platform.isAndroid) {
+                  if (await authenticateWithFingerprint()) {
+                    await Vibration.vibrate();
+                    executePurchase();
+                  }
+                } else {
                   await Vibration.vibrate();
                   executePurchase();
                 }
@@ -282,9 +294,13 @@ class _ShoppingBagScreenState extends State<ShoppingBagScreen> {
                           fontSize: 20)),
                   style: ElevatedButton.styleFrom(primary: Colors.red),
                   onPressed: () async {
-                    final authenticate = await LocalAuth.authenticate();
-                    await Vibration.vibrate();
-                    if (await authenticateWithFingerprint()) {
+                    if (Platform.isAndroid) {
+                      final authenticate = await LocalAuth.authenticate();
+                      await Vibration.vibrate();
+                      if (await authenticateWithFingerprint()) {
+                        executePurchase();
+                      }
+                    } else {
                       executePurchase();
                     }
                   },

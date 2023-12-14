@@ -21,6 +21,7 @@
 		6D501FA92B1B6BD500CA7A6B /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 6D501FA62B1B6BD500CA7A6B /* Main.storyboard */; };
 		6D501FAA2B1B6BD500CA7A6B /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 6D501FA72B1B6BD500CA7A6B /* LaunchScreen.storyboard */; };
 		6D7E66D52B05E9F0003179C3 /* FLPlugin.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6D7E66D42B05E9F0003179C3 /* FLPlugin.swift */; };
+		6D7F79C82B2AC2E000719C40 /* SGClassification_1214.mlmodel in Sources */ = {isa = PBXBuildFile; fileRef = 6D7F79C72B2AC2E000719C40 /* SGClassification_1214.mlmodel */; };
 		6DC114E82B10EF0400013D36 /* ARSessionManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6DC114E72B10EF0400013D36 /* ARSessionManager.swift */; };
 		6DC114EA2B10EF4800013D36 /* HumanDetectionManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6DC114E92B10EF4800013D36 /* HumanDetectionManager.swift */; };
 		6DC114EC2B10EF6100013D36 /* HapticFeedbackManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6DC114EB2B10EF6100013D36 /* HapticFeedbackManager.swift */; };
@@ -81,6 +82,7 @@
 		6D501FA62B1B6BD500CA7A6B /* Main.storyboard */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.storyboard; path = Main.storyboard; sourceTree = "<group>"; };
 		6D501FA72B1B6BD500CA7A6B /* LaunchScreen.storyboard */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.storyboard; path = LaunchScreen.storyboard; sourceTree = "<group>"; };
 		6D7E66D42B05E9F0003179C3 /* FLPlugin.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FLPlugin.swift; sourceTree = "<group>"; };
+		6D7F79C72B2AC2E000719C40 /* SGClassification_1214.mlmodel */ = {isa = PBXFileReference; lastKnownFileType = file.mlmodel; path = SGClassification_1214.mlmodel; sourceTree = "<group>"; };
 		6DC114E72B10EF0400013D36 /* ARSessionManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ARSessionManager.swift; sourceTree = "<group>"; };
 		6DC114E92B10EF4800013D36 /* HumanDetectionManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HumanDetectionManager.swift; sourceTree = "<group>"; };
 		6DC114EB2B10EF6100013D36 /* HapticFeedbackManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HapticFeedbackManager.swift; sourceTree = "<group>"; };
@@ -158,6 +160,7 @@
 		6D3DD8932B1A1D80004D3D4D /* Product */ = {
 			isa = PBXGroup;
 			children = (
+				6D7F79C72B2AC2E000719C40 /* SGClassification_1214.mlmodel */,
 				6D4FA77D2B1981FC00B174B6 /* BarcodeProcessor.swift */,
 				6D3DD88F2B1A1B6C004D3D4D /* ProductFLNativeView.swift */,
 				6DCEAA9B2B23178A0015F254 /* RamenClassification_1208.mlmodel */,
@@ -473,6 +476,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				6D3DD8992B1A2050004D3D4D /* GeneratedPluginRegistrant.h in Sources */,
+				6D7F79C82B2AC2E000719C40 /* SGClassification_1214.mlmodel in Sources */,
 				6DCEAA9C2B23178A0015F254 /* RamenClassification_1208.mlmodel in Sources */,
 				6D3DD89A2B1A2050004D3D4D /* Runner-Bridging-Header.h in Sources */,
 				6D3DD89C2B1A2050004D3D4D /* RamenClassification_NEW.mlmodel in Sources */,
