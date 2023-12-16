@@ -3,10 +3,8 @@ import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:flutter_tts/flutter_tts.dart';
 import 'package:haptic_feedback/haptic_feedback.dart';
-import 'package:ishopping/find_iOS.dart';
 
 import 'find_platform.dart';
-import 'find.dart';
 import 'map_platform.dart';
 import 'product_platform.dart';
 import 'storelist.dart';
@@ -49,7 +47,7 @@ class _MainScreenState extends State<MainScreen> {
     flutterTts = FlutterTts();
     await flutterTts.setLanguage("ko-KR");
     await flutterTts.setPitch(1.0);
-    await flutterTts.setSpeechRate(0.8);
+    await flutterTts.setSpeechRate(0.7);
     await flutterTts.speak("세션 모드. 찾기 모드. 제품 모드. ");
   }
 
@@ -97,7 +95,8 @@ class _MainScreenState extends State<MainScreen> {
   }
 
   // 모드가 변경될 때 TTS로 읽어주는 함수
-  void speakCurrentMode() async {
+  void speakCurrentMode() {
+    flutterTts.stop();
     String modeText = "";
     switch (_currentMode) {
       case 0:
@@ -111,7 +110,7 @@ class _MainScreenState extends State<MainScreen> {
         break;
     }
 
-    await flutterTts.speak(modeText);
+    flutterTts.speak(modeText);
   }
 
   void _navigateToCurrentMode(BuildContext context) {
@@ -254,7 +253,11 @@ class _MainScreenState extends State<MainScreen> {
       selectstore = 1;
     } else if (selectstore == 1) {
       Navigator.push(
-          context, MaterialPageRoute(builder: (context) => const FindScreen()));
+          context,
+          MaterialPageRoute(
+              builder: (context) => const PlatformSpecificFindScreen(
+                    shoppingbag: {},
+                  )));
     }
   }
 

@@ -16,7 +16,11 @@ class PlatformSpecificProductScreen extends StatelessWidget {
       return ProductAndroidScreen();
     } else if (Platform.isIOS) {
       // iOS용 화면 로딩
-      return ProductiOSScreen(predictionValue: "ALL", shoppingbag: initMap);
+      return ProductiOSScreen(
+        predictionValue: "ALL",
+        shoppingbag: initMap,
+        callby: 'Self',
+      );
     } else {
       // 다른 플랫폼을 위한 대체 화면
       return const Center(child: Text('Unsupported platform'));

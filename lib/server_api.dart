@@ -29,7 +29,7 @@ Future<void> sendImageData(File imageFile) async {
 
   // 서버 엔드포인트
   Uri uri = Uri.parse(
-      'http://ec2-3-36-61-193.ap-northeast-2.compute.amazonaws.com:8080/api-corner/corner_detect/');
+      'http://ec2-3-36-61-193.ap-northeast-2.compute.amazonaws.com/api-corner/corner_detect/');
 
   // HTTP 클라이언트 생성
   var request = http.MultipartRequest('POST', uri);
@@ -87,7 +87,7 @@ String generatePictureId() {
 // 텐서플로우 라이트
 class ServerAPI {
   static const String _serverEndpoint =
-      'http://ec2-3-36-61-193.ap-northeast-2.compute.amazonaws.com:8080/api-corner/corner_detect/';
+      'http://ec2-3-36-61-193.ap-northeast-2.compute.amazonaws.com/api-corner/corner_detect/';
 
   static Future<void> sendResultToServer(String result) async {
     try {

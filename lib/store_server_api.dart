@@ -5,7 +5,7 @@ import 'package:http/http.dart' as http;
 Future<List<Map<String, dynamic>>> findNearbyGS25(
     double latitude, double longitude) async {
   final String serverEndpoint =
-      'http://ec2-3-36-61-193.ap-northeast-2.compute.amazonaws.com:8080/api-corner/get-location/';
+      'http://ec2-3-36-61-193.ap-northeast-2.compute.amazonaws.com/api-corner/get-location/';
   try {
     // 서버에 POST 요청 보내기
     final response = await http.post(

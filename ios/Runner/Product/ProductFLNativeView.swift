@@ -68,6 +68,8 @@ class ProductFLNativeView: NSObject, FlutterPlatformView, ARSCNViewDelegate {
         }
         self.binaryMessenger = messenger
 
+        TTSManager.shared.stop()
+
         self.channel = FlutterMethodChannel(name: "flutter/SB2S", binaryMessenger: self.binaryMessenger)
         self.nowSection = "제품모드"
         self.shoppingBasketMap = [:]
@@ -114,6 +116,14 @@ class ProductFLNativeView: NSObject, FlutterPlatformView, ARSCNViewDelegate {
             "predictionValue": self.nowSection
         ]
         self.channel.invokeMethod("sendData2S", arguments: data)
+    }
+
+    private func sendDataToFind() {
+        let data: [String: Any] = [
+            "shoppingbag": self.shoppingBasketMap,
+            "predictionValue": self.nowSection
+        ]
+        self.channel.invokeMethod("Product2Find", arguments: data)
     }
 
     private func sendShoppingbagToFlutter() {
@@ -271,7 +281,7 @@ class ProductFLNativeView: NSObject, FlutterPlatformView, ARSCNViewDelegate {
 
         switch self.nowSection {
         case "간편식품매대":
-            coreMLModel = try? SGClassification_1214(configuration: MLModelConfiguration()).model
+            coreMLModel = try? SGClassification_1215(configuration: MLModelConfiguration()).model
         // case "과자매대_스낵":
         // case "과자매대_젤리":
         // case "기획매대":
@@ -358,7 +368,7 @@ class ProductFLNativeView: NSObject, FlutterPlatformView, ARSCNViewDelegate {
 
     func sendProductNameToServer(_ productName: String) {
         // 서버 URL
-        let url = "http://ec2-3-36-61-193.ap-northeast-2.compute.amazonaws.com:8080/api-corner/get-info/"
+        let url = "http://ec2-3-36-61-193.ap-northeast-2.compute.amazonaws.com/api-corner/get-info/"
 
         // POST 요청의 본문에 포함될 파라미터
         let parameters: [String: Any] = ["product_name": productName]
@@ -369,11 +379,11 @@ class ProductFLNativeView: NSObject, FlutterPlatformView, ARSCNViewDelegate {
 
             switch response.result {
             case .success(let value):
-                if let jsonDictionary = value as? [String: Any], let receivedPrice = jsonDictionary["price"] as? Int {
+                if let jsonDictionary = value as? [String: Any], let receivedPrice = jsonDictionary["price"] as? Int, let info = jsonDictionary["info"] as? String {
                     // 서버 응답 후 가격 정보 처리
                     DispatchQueue.main.async {
                         strongSelf.findShelfLabel?.text = productName
-                        strongSelf.handleServerResponse(productName: productName, receivedPrice: receivedPrice)
+                        strongSelf.handleServerResponse(productName: productName, receivedPrice: receivedPrice, info: info)
                     }
                 }
             case .failure(let error):
@@ -387,12 +397,12 @@ class ProductFLNativeView: NSObject, FlutterPlatformView, ARSCNViewDelegate {
     }
     // 예시: 바코드 정보를 서버에 보내고 제품 정보를 받아오는 함수
     func processBarcode2Server(_ barcode: String) {
-        BarcodeProcessor.shared.sendProductInfoToServer(barcode) { [weak self] productName, receivedPrice in
+        BarcodeProcessor.shared.sendProductInfoToServer(barcode) { [weak self] productName, receivedPrice, info in
             // 클로저 내에서 productName과 receivedPrice를 사용하거나 처리
             if let productName = productName, let receivedPrice = receivedPrice {
                 self?.nowProduct = productName
                 self?.findShelfLabel?.text = productName
-                self?.handleServerResponse(productName: productName, receivedPrice: receivedPrice)
+                self?.handleServerResponse(productName: productName, receivedPrice: receivedPrice, info: info)
                 // 여기에서 원하는 작업 수행
             } else {
                 print("제품 정보를 가져오는 데 실패했습니다.")
@@ -402,7 +412,7 @@ class ProductFLNativeView: NSObject, FlutterPlatformView, ARSCNViewDelegate {
         }
     }
 
-    private func handleServerResponse(productName: String?, receivedPrice: Int?) {
+    private func handleServerResponse(productName: String?, receivedPrice: Int?, info: String?) {
         // 서버 응답에 따른 UI 처리
         if let productName = productName {
             self.nowProduct = productName
@@ -418,6 +428,10 @@ class ProductFLNativeView: NSObject, FlutterPlatformView, ARSCNViewDelegate {
             TTSManager.shared.play("가격은 \(receivedPrice)원")
         } else {
             TTSManager.shared.play("가격 정보를 가져오는 데 실패했습니다.")
+        }
+
+        if let info = info {
+            TTSManager.shared.play("\(info)")
         }
 
         TTSManager.shared.play("갯수를 수정하려면 위, 아래로 스와이프")

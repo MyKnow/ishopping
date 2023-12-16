@@ -25,6 +25,8 @@
 		6D501FAA2B1B6BD500CA7A6B /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 6D501FA72B1B6BD500CA7A6B /* LaunchScreen.storyboard */; };
 		6D7E66D52B05E9F0003179C3 /* FLPlugin.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6D7E66D42B05E9F0003179C3 /* FLPlugin.swift */; };
 		6D7F79C82B2AC2E000719C40 /* SGClassification_1214.mlmodel in Sources */ = {isa = PBXBuildFile; fileRef = 6D7F79C72B2AC2E000719C40 /* SGClassification_1214.mlmodel */; };
+		6DAAA7AD2B2C25A600B7B864 /* SectionClassification_A_1215.mlmodel in Sources */ = {isa = PBXBuildFile; fileRef = 6DAAA7AC2B2C25A600B7B864 /* SectionClassification_A_1215.mlmodel */; };
+		6DAAA7B12B2C262500B7B864 /* SGClassification_1215.mlmodel in Sources */ = {isa = PBXBuildFile; fileRef = 6DAAA7B02B2C262500B7B864 /* SGClassification_1215.mlmodel */; };
 		6DC114E82B10EF0400013D36 /* ARSessionManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6DC114E72B10EF0400013D36 /* ARSessionManager.swift */; };
 		6DC114EA2B10EF4800013D36 /* HumanDetectionManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6DC114E92B10EF4800013D36 /* HumanDetectionManager.swift */; };
 		6DC114EC2B10EF6100013D36 /* HapticFeedbackManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6DC114EB2B10EF6100013D36 /* HapticFeedbackManager.swift */; };
@@ -89,6 +91,8 @@
 		6D501FA72B1B6BD500CA7A6B /* LaunchScreen.storyboard */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.storyboard; path = LaunchScreen.storyboard; sourceTree = "<group>"; };
 		6D7E66D42B05E9F0003179C3 /* FLPlugin.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FLPlugin.swift; sourceTree = "<group>"; };
 		6D7F79C72B2AC2E000719C40 /* SGClassification_1214.mlmodel */ = {isa = PBXFileReference; lastKnownFileType = file.mlmodel; path = SGClassification_1214.mlmodel; sourceTree = "<group>"; };
+		6DAAA7AC2B2C25A600B7B864 /* SectionClassification_A_1215.mlmodel */ = {isa = PBXFileReference; lastKnownFileType = file.mlmodel; path = SectionClassification_A_1215.mlmodel; sourceTree = "<group>"; };
+		6DAAA7B02B2C262500B7B864 /* SGClassification_1215.mlmodel */ = {isa = PBXFileReference; lastKnownFileType = file.mlmodel; path = SGClassification_1215.mlmodel; sourceTree = "<group>"; };
 		6DC114E72B10EF0400013D36 /* ARSessionManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ARSessionManager.swift; sourceTree = "<group>"; };
 		6DC114E92B10EF4800013D36 /* HumanDetectionManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HumanDetectionManager.swift; sourceTree = "<group>"; };
 		6DC114EB2B10EF6100013D36 /* HapticFeedbackManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HapticFeedbackManager.swift; sourceTree = "<group>"; };
@@ -167,6 +171,7 @@
 			isa = PBXGroup;
 			children = (
 				6D7F79C72B2AC2E000719C40 /* SGClassification_1214.mlmodel */,
+				6DAAA7B02B2C262500B7B864 /* SGClassification_1215.mlmodel */,
 				6D4FA77D2B1981FC00B174B6 /* BarcodeProcessor.swift */,
 				6D40778F2B2AFF3F007A9959 /* AllClassification_1214.mlmodel */,
 				6D40778D2B2AFD5D007A9959 /* DrinkClassification_1214.mlmodel */,
@@ -183,6 +188,7 @@
 				6DCEAA992B2316D40015F254 /* SectionClassification_1208.mlmodel */,
 				6DD9875C2B1F05240097F296 /* SectionClassification.mlmodel */,
 				6D40778B2B2AFA0C007A9959 /* SectionClassification_A_1214.mlmodel */,
+				6DAAA7AC2B2C25A600B7B864 /* SectionClassification_A_1215.mlmodel */,
 				6D3DD8912B1A1BDB004D3D4D /* SectionFLNativeView.swift */,
 				6DD987622B1F170B0097F296 /* SectionProcessor.swift */,
 			);
@@ -503,6 +509,7 @@
 				6DC114F02B10EF9600013D36 /* UIViewManager.swift in Sources */,
 				6D3DD8922B1A1BDB004D3D4D /* SectionFLNativeView.swift in Sources */,
 				6D7E66D52B05E9F0003179C3 /* FLPlugin.swift in Sources */,
+				6DAAA7B12B2C262500B7B864 /* SGClassification_1215.mlmodel in Sources */,
 				1498D2341E8E89220040F4C2 /* GeneratedPluginRegistrant.m in Sources */,
 				6DC114EA2B10EF4800013D36 /* HumanDetectionManager.swift in Sources */,
 				6D40778C2B2AFA0C007A9959 /* SectionClassification_A_1214.mlmodel in Sources */,
@@ -510,6 +517,7 @@
 				6DC114E82B10EF0400013D36 /* ARSessionManager.swift in Sources */,
 				6DD987632B1F170B0097F296 /* SectionProcessor.swift in Sources */,
 				6DC114EC2B10EF6100013D36 /* HapticFeedbackManager.swift in Sources */,
+				6DAAA7AD2B2C25A600B7B864 /* SectionClassification_A_1215.mlmodel in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

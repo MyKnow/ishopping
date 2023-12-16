@@ -133,6 +133,7 @@ class SectionFLNativeView: NSObject, FlutterPlatformView, ARSCNViewDelegate {
     init( frame: CGRect, viewIdentifier viewId: Int64, arguments args: Any?, binaryMessenger messenger: FlutterBinaryMessenger?) {
         // ARSCNView 인스턴스 생성 및 초기화
         arView = ARSCNView(frame: frame)
+        TTSManager.shared.stop()
         // binaryMessenger 초기화
         guard let messenger = messenger else {
             fatalError("Binary messenger is nil in SectionFLNativeView initializer")
@@ -258,6 +259,14 @@ class SectionFLNativeView: NSObject, FlutterPlatformView, ARSCNViewDelegate {
                 TTSManager.shared.stop()
                 TTSManager.shared.play("취소")
                 self.nodeDelete()
+            } else {
+                // 타이머를 무효화
+                monitoringTimer?.invalidate()
+                monitoringTimer = nil
+                TTSManager.shared.stop()
+                ARSessionManager.shared.pauseSession()
+                self.nodeDelete()
+                Section2Main()
             }
             break
         case .right: // 다음 항목
@@ -305,6 +314,13 @@ class SectionFLNativeView: NSObject, FlutterPlatformView, ARSCNViewDelegate {
             "shoppingbag": shoppingBasketMap // 예시 데이터
         ]
         self.channel.invokeMethod("sendData2F", arguments: data)
+    }
+    private func Section2Main() {
+        let data: [String: Any] = [
+            "shoppingbag": shoppingBasketMap // 예시 데이터
+        ]
+        self.channel.invokeMethod("Section2Main", arguments: data)
+        // self.channel.invokeMethod("Section2Main")
     }
 
     func processBoundingBox(for boundingBox: CGRect) -> UIView  {
@@ -1028,17 +1044,37 @@ class SectionFLNativeView: NSObject, FlutterPlatformView, ARSCNViewDelegate {
                 // 경고 표시 로직
                 if angle <= -5 {
                     self.showOverlay(isLeftSide: true, color: UIColor.red)
-                    TTSManager.shared.play("\(String(format: "왼쪽"))")
                 } else if angle >= 5 {
                     self.showOverlay(isLeftSide: false, color: UIColor.blue)
-                    TTSManager.shared.play("\(String(format: "오른쪽"))")
                 } else {
                     // 해당되지 않는 경우 오버레이 제거
                     self.overlayView?.removeFromSuperview()
-                    TTSManager.shared.play("\(String(format: "직진"))")
                 }
+                TTSManager.shared.play(self.convertToClockwiseAngle(degrees: angle))
             }
         }
+    }
+
+    func convertToClockwiseAngle(degrees: Float) -> String {
+        // 각도를 360으로 나누어 정규화
+        var normalizedDegrees = degrees.truncatingRemainder(dividingBy: 360.0)
+        if normalizedDegrees < 0 {
+            // 음수인 경우 양수로 변환
+            normalizedDegrees += 360.0
+        }
+
+        // 시계방향으로 변환
+        let clockwiseAngle = normalizedDegrees
+
+        // 시계방향 각도를 시계 시간으로 변환
+        let hours = (12 - Int((clockwiseAngle / 30.0).rounded())) % 12
+        var clockPosition = hours == 0 ? 12 : hours
+
+        if clockPosition != 6 && clockPosition != 12 {
+            clockPosition = 12 - clockPosition
+        }
+
+        return "\(clockPosition)시"
     }
 
     // 스파게티 코드 수정해야 함

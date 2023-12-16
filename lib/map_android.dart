@@ -46,7 +46,7 @@ class _CameraScreenState extends State<MapAndroidScreen> {
     flutterTts = FlutterTts();
     await flutterTts.setLanguage("ko-KR");
     await flutterTts.setPitch(1.0);
-    await flutterTts.setSpeechRate(0.75);
+    await flutterTts.setSpeechRate(0.7);
     await flutterTts.speak("세션모드 시작. $_message");
 
     final cameras = await availableCameras();

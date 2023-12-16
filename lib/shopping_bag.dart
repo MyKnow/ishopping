@@ -30,6 +30,7 @@ class _ShoppingBagScreenState extends State<ShoppingBagScreen> {
 
   @override
   void initState() {
+    flutterTts.stop();
     super.initState();
     _fetchPrices();
 
@@ -48,7 +49,7 @@ class _ShoppingBagScreenState extends State<ShoppingBagScreen> {
       final quantity = widget.shoppingbag![name]!;
       final response = await http.post(
         Uri.parse(
-            'http://ec2-3-36-61-193.ap-northeast-2.compute.amazonaws.com:8080/api-corner/get-info/'),
+            'http://ec2-3-36-61-193.ap-northeast-2.compute.amazonaws.com/api-corner/get-info/'),
         headers: <String, String>{
           'Content-Type': 'application/json; charset=UTF-8',
         },
@@ -81,7 +82,7 @@ class _ShoppingBagScreenState extends State<ShoppingBagScreen> {
   void initializeTts() async {
     await flutterTts.setLanguage("ko-KR");
     await flutterTts.setPitch(1.0);
-    await flutterTts.setSpeechRate(0.6);
+    await flutterTts.setSpeechRate(0.7);
   }
 
   void readCartItems() {

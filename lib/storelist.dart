@@ -1,8 +1,12 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_tts/flutter_tts.dart';
 import 'package:geolocator/geolocator.dart';
+import 'package:haptic_feedback/haptic_feedback.dart';
+import 'package:ishopping/find_platform.dart';
 
-import 'find.dart';
+import 'find_platform.dart';
 import 'main.dart';
 import 'map_platform.dart';
 import 'product_platform.dart';
@@ -25,9 +29,10 @@ class _StoreListScreenState extends State<StoreListScreen> {
 
   @override
   void initState() {
-    super.initState();
-    getCurrentLocation();
+    flutterTts.stop();
     initializeTts();
+    getCurrentLocation();
+    super.initState();
   }
 
   void initializeTts() async {
@@ -62,29 +67,40 @@ class _StoreListScreenState extends State<StoreListScreen> {
 
   Future<void> getCurrentLocation() async {
     // 위치 권한 확인 및 요청
-    LocationPermission permission = await Geolocator.checkPermission();
-    if (permission == LocationPermission.denied) {
-      permission = await Geolocator.requestPermission();
+    if (Platform.isAndroid) {
+      LocationPermission permission = await Geolocator.checkPermission();
       if (permission == LocationPermission.denied) {
+        permission = await Geolocator.requestPermission();
+        if (permission == LocationPermission.denied) {
+          _showPermissionDeniedDialog();
+          return;
+        }
+      }
+
+      if (permission == LocationPermission.deniedForever) {
         _showPermissionDeniedDialog();
         return;
       }
     }
-
-    if (permission == LocationPermission.deniedForever) {
-      _showPermissionDeniedDialog();
-      return;
-    }
-
     try {
-      Position position = await Geolocator.getCurrentPosition(
-          desiredAccuracy: LocationAccuracy.high);
-      var storesList =
-          await findNearbyGS25(position.latitude, position.longitude);
-      print("2002 ${position.latitude}, ${position.longitude}");
-      setState(() {
-        stores = storesList;
-      });
+      if (Platform.isIOS) {
+        var storesList = await findNearbyGS25(37.3228288, 127.1272357);
+        print(storesList);
+        setState(() {
+          stores = storesList;
+        });
+      } else if (Platform.isAndroid) {
+        Position position = await Geolocator.getCurrentPosition(
+            desiredAccuracy: LocationAccuracy.high);
+        var storesList =
+            await findNearbyGS25(position.latitude, position.longitude);
+        print("2002 ${position.latitude}, ${position.longitude}");
+
+        setState(() {
+          stores = storesList;
+        });
+      } else {}
+      flutterTts.speak(stores[0]['name']);
     } catch (e) {
       print("위치 정보를 가져오는데 실패했습니다: $e");
     }
@@ -107,22 +123,25 @@ class _StoreListScreenState extends State<StoreListScreen> {
       ),
       body: GestureDetector(
         onTap: () {
+          heavyVibration(1);
           if (widget.currentMode == 0) {
-            Navigator.push(
+            Navigator.pushReplacement(
               context,
               MaterialPageRoute(
                 builder: (context) => PlatformSpecificMapScreen(),
               ),
             );
           } else if (widget.currentMode == 1) {
-            Navigator.push(
+            Navigator.pushReplacement(
               context,
               MaterialPageRoute(
-                builder: (context) => FindScreen(),
+                builder: (context) => PlatformSpecificFindScreen(
+                  shoppingbag: {},
+                ),
               ),
             );
           } else if (widget.currentMode == 2) {
-            Navigator.push(
+            Navigator.pushReplacement(
               context,
               MaterialPageRoute(
                 builder: (context) => PlatformSpecificProductScreen(),
@@ -130,7 +149,20 @@ class _StoreListScreenState extends State<StoreListScreen> {
             );
           }
         },
+        onHorizontalDragEnd: (details) {
+          heavyVibration(1);
+          if (details.primaryVelocity! < 0) {
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(
+                builder: (context) => const MainScreen(),
+              ),
+            );
+          }
+        },
         onVerticalDragEnd: (details) {
+          heavyVibration(1);
+          flutterTts.stop();
           if (details.primaryVelocity! > 0 &&
               _selectedIndex < stores.length - 1) {
             setState(() {
@@ -193,5 +225,15 @@ class _StoreListScreenState extends State<StoreListScreen> {
         ),
       ),
     );
+  }
+
+  // Haptic feedback functions
+  Future<void> heavyVibration(int rep) async {
+    if (await Haptics.canVibrate()) {
+      for (int i = 0; i < rep; i++) {
+        await Haptics.vibrate(HapticsType.heavy);
+        await Future.delayed(const Duration(milliseconds: 300));
+      }
+    }
   }
 }

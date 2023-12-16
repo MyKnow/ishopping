@@ -33,7 +33,7 @@ class ImageProcessor {
     func UIImage2Server(_ image: UIImage) {
         DispatchQueue.global(qos: .userInitiated).async {
             // 서버 URL
-            let url: String = "http://ec2-43-201-111-213.ap-northeast-2.compute.amazonaws.com:8080/api-corner/corner_detect/"
+            let url: String = "http://ec2-43-201-111-213.ap-northeast-2.compute.amazonaws.com/api-corner/corner_detect/"
 
             guard let imageData = image.jpegData(compressionQuality: 1.0) else {
                 print("Failed to convert image to data")

@@ -2,6 +2,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'main.dart';
 import 'product_iOS.dart';
 import 'shopping_bag.dart';
 
@@ -45,6 +46,8 @@ class _MapScreenState extends State<MapScreen> {
       });
       print(_shoppingbag);
       _callSBFLNativeView(_shoppingbag);
+    } else if (call.method == 'Section2Main') {
+      _callMainView();
     }
   }
 
@@ -55,7 +58,10 @@ class _MapScreenState extends State<MapScreen> {
       context,
       MaterialPageRoute(
           builder: (context) => ProductiOSScreen(
-              predictionValue: predictionValue, shoppingbag: shoppingbag)),
+                predictionValue: predictionValue,
+                shoppingbag: shoppingbag,
+                callby: 'Map',
+              )),
     );
   }
 
@@ -66,6 +72,11 @@ class _MapScreenState extends State<MapScreen> {
       MaterialPageRoute(
           builder: (context) => ShoppingBagScreen(shoppingbag: shoppingbag)),
     );
+  }
+
+  void _callMainView() {
+    Navigator.pushReplacement(
+        context, MaterialPageRoute(builder: (context) => const MainScreen()));
   }
 
   @override

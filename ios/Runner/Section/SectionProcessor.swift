@@ -20,7 +20,7 @@ class SectionClassifier {
         self.rows = rows
         self.columns = columns
         let configuration = MLModelConfiguration()
-        self.model = try VNCoreMLModel(for: SectionClassification_A_1214(configuration: configuration).model)
+        self.model = try VNCoreMLModel(for: SectionClassification_A_1215(configuration: configuration).model)
     }
 
     func classifySections(in frame: ARFrame, completion: @escaping ([String]) -> Void) {
@@ -28,7 +28,7 @@ class SectionClassifier {
             print("픽셀 버퍼에서 UIImage를 생성할 수 없습니다.")
             return
         }
-        UIImageWriteToSavedPhotosAlbum(pixelBuffer, nil, nil, nil)
+        //UIImageWriteToSavedPhotosAlbum(pixelBuffer, nil, nil, nil)
 
         let width = pixelBuffer.size.width
         let height = pixelBuffer.size.height
@@ -43,7 +43,7 @@ class SectionClassifier {
                 let yOffset = sectionHeight * CGFloat(rowIndex)
                 let rect = CGRect(x: xOffset, y: yOffset, width: sectionWidth, height: sectionHeight)
                 if let croppedImage = pixelBuffer.cgImage?.cropping(to: rect).flatMap(UIImage.init) {
-                    UIImageWriteToSavedPhotosAlbum(croppedImage, nil, nil, nil)
+                    //UIImageWriteToSavedPhotosAlbum(croppedImage, nil, nil, nil)
                     classifyImage(croppedImage) { prediction in
                         predictions.append(prediction)
                         if predictions.count == self.rows * self.columns {
@@ -64,11 +64,13 @@ class SectionClassifier {
                 return
             }
 
-            let threshold: Float = 0.95
+            let threshold: Float = 0.98
             // Confidence 값이 threshold보다 큰 경우에만 결과 반환
             if topResult.confidence >= threshold {
+                var result = topResult.identifier
+                if (result == "냉동매대") { result = "음료매대" }
                 print(topResult.confidence)
-                completion(topResult.identifier)
+                completion(result)
             } else {
                 completion("알수없음")
             }

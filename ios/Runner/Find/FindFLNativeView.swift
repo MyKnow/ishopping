@@ -25,7 +25,7 @@ class FindFLNativeView: NSObject, FlutterPlatformView, ARSCNViewDelegate {
     // AR 담당 Native View
     private var arView: ARSCNView
     private var binaryMessenger: FlutterBinaryMessenger
-    private var predictionValue: String = "찾기모드"  // 예측값 초기화
+    private var wantSection: String = "찾기모드"  // 예측값 초기화
     public var shoppingBasketMap: [String: Int]
     private var channel: FlutterMethodChannel
 
@@ -62,7 +62,6 @@ class FindFLNativeView: NSObject, FlutterPlatformView, ARSCNViewDelegate {
     private let configuration = ARWorldTrackingConfiguration()
 
     private var selectSection: String?
-    private var wantSection: String?
     private var sectionIndex: Int = 0;
 
     // 가이드 dot 및 거리 label들
@@ -80,7 +79,7 @@ class FindFLNativeView: NSObject, FlutterPlatformView, ARSCNViewDelegate {
 
     // 길게 누르기 인식 시간
     private final var longPressTime: Double = 0.5
-    private final var arriveDistance: Float = 0.5
+    private final var arriveDistance: Float = 1.0
 
     // 거리에 따른 색상을 매핑하는 사전
     private var distanceColorMap: [Float: UIColor] = [
@@ -131,6 +130,12 @@ class FindFLNativeView: NSObject, FlutterPlatformView, ARSCNViewDelegate {
 
     private var alertTimer: Timer?
 
+
+    var findSectionTimer: Timer?
+
+    var isAsking: Bool = false
+
+
     // 뷰의 프레임, 뷰 식별자, 선택적 인자, 그리고 바이너리 메신저를 사용하여 네이티브 뷰를 초기화
     init( frame: CGRect, viewIdentifier viewId: Int64, arguments args: Any?, binaryMessenger messenger: FlutterBinaryMessenger?) {
         // ARSCNView 인스턴스 생성 및 초기화
@@ -139,8 +144,9 @@ class FindFLNativeView: NSObject, FlutterPlatformView, ARSCNViewDelegate {
         guard let messenger = messenger else {
             fatalError("Binary messenger is nil in SectionFLNativeView initializer")
         }
+        TTSManager.shared.stop()
         self.binaryMessenger = messenger
-        self.channel = FlutterMethodChannel(name: "flutter/PV2P", binaryMessenger: binaryMessenger)
+        self.channel = FlutterMethodChannel(name: "flutter/Find", binaryMessenger: binaryMessenger)
 
         self.shoppingBasketMap = [:]
         self.wantSection = "라면매대"
@@ -155,7 +161,7 @@ class FindFLNativeView: NSObject, FlutterPlatformView, ARSCNViewDelegate {
         super.init()
 
         TTSManager.shared.stop()
-        TTSManager.shared.play("찾기 모드")
+        TTSManager.shared.play(self.wantSection)
 
         // 여기에 조건문을 추가
         if type(of: configuration).supportsFrameSemantics(.sceneDepth) {
@@ -178,14 +184,17 @@ class FindFLNativeView: NSObject, FlutterPlatformView, ARSCNViewDelegate {
         addShortPressGesture()
         addLongPressGesture()
         addSwipeGesture()
+        startFindSectionTimer()
     }
     deinit {
         // 타이머를 무효화
         monitoringTimer?.invalidate()
         monitoringTimer = nil
         TTSManager.shared.stop()
-        ARSessionManager.shared.pauseSession()
+        findSectionTimer?.invalidate()
+        findSectionTimer = nil
         self.nodeDelete()
+        ARSessionManager.shared.pauseSession()
     }
 
     // 짧게 누르기 제스쳐 추가
@@ -198,11 +207,11 @@ class FindFLNativeView: NSObject, FlutterPlatformView, ARSCNViewDelegate {
         TTSManager.shared.stop()
         TTSManager.shared.play("짧게 누름")
         hapticC.impactFeedback(style: "heavy")
-        if !self.selectMode {
-            //let screenCenter = CGPoint(x: arView.bounds.midX, y: arView.bounds.midY)
-            //addArText()
-            findSection()
-        }
+        // if !self.selectMode {
+        //     //let screenCenter = CGPoint(x: arView.bounds.midX, y: arView.bounds.midY)
+        //     //addArText()
+        //     findSection()
+        // }
     }
 
     // 길게 누르기 제스쳐 추가
@@ -214,18 +223,19 @@ class FindFLNativeView: NSObject, FlutterPlatformView, ARSCNViewDelegate {
     // 길게 누르기 제스처 핸들러
     @objc func handleLongPress(_ sender: UILongPressGestureRecognizer) {
         if sender.state == .began {
+            hapticC.notificationFeedback(style: "success")
             if self.willFind {
-                sendDataToFlutter()
+                Find2Product()
                 ARSessionManager.shared.pauseSession()
-            } else if self.selectMode {
+            } 
+            else if self.selectMode {
                 self.selectSection = self.sectionBest[self.sectionIndex]
                 self.selectCoord = self.gridWorldCoordinates[self.sectionIndex]
                 self.selectMode = false
                 self.addArText()
             }else {
                 TTSManager.shared.play("길게 누름")
-                hapticC.notificationFeedback(style: "success")
-                sendShoppingbagToFlutter()
+                Find2Shoppingbag()
             }
         }
     }
@@ -249,7 +259,8 @@ class FindFLNativeView: NSObject, FlutterPlatformView, ARSCNViewDelegate {
             TTSManager.shared.play("왼쪽")
             if self.selectMode {
                 self.selectMode = false
-                TTSManager.shared.play("취소")
+                TTSManager.shared.stop()
+                self.Find2Platform()
             } else if self.isGoMode {
                 self.selectMode = false
                 self.isGoMode = false
@@ -257,10 +268,19 @@ class FindFLNativeView: NSObject, FlutterPlatformView, ARSCNViewDelegate {
                 TTSManager.shared.stop()
                 TTSManager.shared.play("취소")
                 self.nodeDelete()
+            } else {
+                // 타이머를 무효화
+                monitoringTimer?.invalidate()
+                monitoringTimer = nil
+                TTSManager.shared.stop()
+                self.nodeDelete()
+                ARSessionManager.shared.pauseSession()
+                self.Find2Platform()
             }
             break
         case .right: // 무언갈 취소하는 것
             TTSManager.shared.play("오른쪽")
+            self.Find2Shoppingbag()
             break
         case .up: // 무언갈 더하는 것
             TTSManager.shared.play("위")
@@ -274,18 +294,24 @@ class FindFLNativeView: NSObject, FlutterPlatformView, ARSCNViewDelegate {
         // 여기에 각 방향에 따른 추가적인 작업 수행
     }
 
-    private func sendDataToFlutter() {
+    private func Find2Product() {
         let data: [String: Any] = [
-            "predictionValue": self.predictionValue,
+            "wantSection": self.wantSection,
             "shoppingbag": self.shoppingBasketMap // 예시 데이터
         ]
-        self.channel.invokeMethod("sendData", arguments: data)
+        self.channel.invokeMethod("Find2Product", arguments: data)
     }
-    private func sendShoppingbagToFlutter() {
+    private func Find2Shoppingbag() {
         let data: [String: Any] = [
             "shoppingbag": shoppingBasketMap // 예시 데이터
         ]
-        self.channel.invokeMethod("sendData2F", arguments: data)
+        self.channel.invokeMethod("Find2Shoppingbag", arguments: data)
+    }
+    private func Find2Platform() {
+        let data: [String: Any] = [
+            "shoppingbag": shoppingBasketMap // 예시 데이터
+        ]
+        self.channel.invokeMethod("Find2Platform", arguments: data)
     }
 
     func processBoundingBox(for boundingBox: CGRect) -> UIView  {
@@ -777,7 +803,7 @@ class FindFLNativeView: NSObject, FlutterPlatformView, ARSCNViewDelegate {
             let label = UILabel()
             label.backgroundColor = UIColor.white
             label.alpha = self.labelAlpha // 투명도 조정
-            label.text = self.predictionValue
+            label.text = self.wantSection
             label.textColor = .red
             label.textAlignment = .center
             label.font = UIFont.boldSystemFont(ofSize: 60)
@@ -834,32 +860,32 @@ class FindFLNativeView: NSObject, FlutterPlatformView, ARSCNViewDelegate {
     }
 
     // findSection 함수
-    func findSection() {
-        sectionPredictions.removeAll()
-        sectionBest.removeAll()
-        guard let currentFrame = ARSessionManager.shared.session.currentFrame else {
-            print("현재 프레임을 가져올 수 없습니다.")
-            return
-        }
+    // func findSection() {
+    //     sectionPredictions.removeAll()
+    //     sectionBest.removeAll()
+    //     guard let currentFrame = ARSessionManager.shared.session.currentFrame else {
+    //         print("현재 프레임을 가져올 수 없습니다.")
+    //         return
+    //     }
 
-        self.hitTestForGrids(in: currentFrame)
+    //     self.hitTestForGrids(in: currentFrame)
 
-        do {
-            let classifier = try SectionClassifier(rows: rw, columns: col)
-            classifier.classifySections(in: currentFrame) { predictions in
-                self.sectionPredictions = predictions
+    //     do {
+    //         let classifier = try SectionClassifier(rows: rw, columns: col)
+    //         classifier.classifySections(in: currentFrame) { predictions in
+    //             self.sectionPredictions = predictions
                 
-                // 예측 결과를 그룹화
-                let groupedPredictions = self.groupPredictions(predictions)
-                let bestPredict = self.findBestPredictions(in: groupedPredictions)
+    //             // 예측 결과를 그룹화
+    //             let groupedPredictions = self.groupPredictions(predictions)
+    //             let bestPredict = self.findBestPredictions(in: groupedPredictions)
 
-                self.sectionBest = bestPredict
-                self.sectionSelector()
-            }
-        } catch {
-            print("분류기 초기화 중 오류 발생: \(error)")
-        }
-    }
+    //             self.sectionBest = bestPredict
+    //             self.sectionSelector()
+    //         }
+    //     } catch {
+    //         print("분류기 초기화 중 오류 발생: \(error)")
+    //     }
+    // }
 
     // 4, 5, 6번 그리드의 중심에 대한 hitTest를 수행하고 결과를 저장하는 함수
     private func hitTestForGrids(in frame: ARFrame) {
@@ -994,8 +1020,9 @@ class FindFLNativeView: NSObject, FlutterPlatformView, ARSCNViewDelegate {
                 self.willFind = true
                 timer.invalidate()
                 TTSManager.shared.stop()
-                TTSManager.shared.play("목표에 도달했습니다. 몸을 돌리고 화면을 터치하여 다른 매대를 찾거나, 화면을 길게 눌러 매대에서 제품을 찾으십시오")
-                self.predictionValue = self.selectSection!
+                TTSManager.shared.play("목표에 도달했습니다. 제품모드로 진입하려면 길게 누르세요")
+                self.wantSection = self.selectSection!
+                findShelfLabel?.text = self.wantSection
             } else {
                 TTSManager.shared.stop()
                 TTSManager.shared.play("\(String(format: "%.1f", distance))미터")
@@ -1003,26 +1030,86 @@ class FindFLNativeView: NSObject, FlutterPlatformView, ARSCNViewDelegate {
                 // 경고 표시 로직
                 if angle <= -5 {
                     self.showOverlay(isLeftSide: true, color: UIColor.red)
-                    TTSManager.shared.play("\(String(format: "왼쪽"))")
                 } else if angle >= 5 {
                     self.showOverlay(isLeftSide: false, color: UIColor.blue)
-                    TTSManager.shared.play("\(String(format: "오른쪽"))")
                 } else {
                     // 해당되지 않는 경우 오버레이 제거
                     self.overlayView?.removeFromSuperview()
-                    TTSManager.shared.play("\(String(format: "직진"))")
                 }
+
+                TTSManager.shared.play(convertToClockwiseAngle(degrees: angle))
             }
         }
     }
 
+    func convertToClockwiseAngle(degrees: Float) -> String {
+        // 각도를 360으로 나누어 정규화
+        var normalizedDegrees = degrees.truncatingRemainder(dividingBy: 360.0)
+        if normalizedDegrees < 0 {
+            // 음수인 경우 양수로 변환
+            normalizedDegrees += 360.0
+        }
+
+        // 시계방향으로 변환
+        let clockwiseAngle = normalizedDegrees
+
+        // 시계방향 각도를 시계 시간으로 변환
+        let hours = (12 - Int((clockwiseAngle / 30.0).rounded())) % 12
+        var clockPosition = hours == 0 ? 12 : hours
+
+        if clockPosition != 6 && clockPosition != 12 {
+            clockPosition = 12 - clockPosition
+        }
+
+        return "\(clockPosition)시"
+    }
+
+
+    func startFindSectionTimer() {
+        // 1초에 한 번씩 findSection 함수 호출
+        findSectionTimer = Timer.scheduledTimer(timeInterval: 0.3, target: self, selector: #selector(findSectionTimerAction), userInfo: nil, repeats: true)
+    }
+
+    @objc func findSectionTimerAction() {
+        findSection()
+    }
+
+
+    // findSection 함수
+    func findSection() {
+        sectionPredictions.removeAll()
+        sectionBest.removeAll()
+        guard let currentFrame = ARSessionManager.shared.session.currentFrame else {
+            print("현재 프레임을 가져올 수 없습니다.")
+            return
+        }
+
+        self.hitTestForGrids(in: currentFrame)
+
+        do {
+            let classifier = try SectionClassifier(rows: rw, columns: col)
+            classifier.classifySections(in: currentFrame) { predictions in
+                self.sectionPredictions = predictions
+                
+                // 예측 결과를 그룹화
+                let groupedPredictions = self.groupPredictions(predictions)
+                let bestPredict = self.findBestPredictions(in: groupedPredictions)
+
+                self.sectionBest = bestPredict
+                self.sectionSelector()
+            }
+        } catch {
+            print("분류기 초기화 중 오류 발생: \(error)")
+        }
+    }
 
     func sectionSelector() {
         self.selectMode = true
+        self.isAsking = true
         let array = self.sectionBest
         self.sectionIndex = 0
         if array.isEmpty || self.gridWorldCoordinates.isEmpty {
-            TTSManager.shared.play("다시 터치해주십시오")
+            //TTSManager.shared.play("다시 터치해주십시오")
             self.selectMode = false
         } else {
             var find: String = ""
@@ -1033,11 +1120,17 @@ class FindFLNativeView: NSObject, FlutterPlatformView, ARSCNViewDelegate {
                 }
                 self.sectionIndex+=1
             }
+            
+            // find 값 확인 및 조건에 따른 TTS 재생
             if find != "" {
                 TTSManager.shared.play("\(self.wantSection)가 시야 내에 있습니다. 안내를 받으려면 화면을 길게 누르세요")
+                findSectionTimer?.invalidate()
+                findSectionTimer = nil
             } else {
-                TTSManager.shared.play("\(self.wantSection)가 시야 내에 없습니다. 이동 후 다시 시도해보세요")
-                self.selectMode = false
+                // 10초에 한 번씩 "다른 곳으로 이동해보세요" 재생
+                // if findSectionTimer?.isValid ?? false {
+                //     TTSManager.shared.play("다른 곳으로 이동해보세요")
+                // }
             }
         }
     }
