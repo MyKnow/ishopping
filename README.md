@@ -23,14 +23,14 @@
 ## 프로젝트 소개
 ### :star: 개발 취지
 시각 장애인이 갖는 쇼핑에서의 불편함을 해소하는데 도움을 주고자, 다양한 솔루션이 내장되어있는 앱을 제작하고자 하였다.
-<br>
+
 ### :star: 제공 기능
 #### :point_right: 매대 찾기 서비스
 * **CoreML 및 Apple ARKit6를 활용한 매대 찾기 및 위치 안내 서비스**
-<br>
+
 #### :point_right: 사람 감지 및 경고 서비스
 * **VNHumanDetector 및 Apple ARKit6를 활용한 전방의 사람 감지 및 거리에 따른 경고 서비스**
-<br>
+
 #### :point_right: 제품 안내 서비스
 * **CoreML을 활용한 제품 인식 및 서버와의 실시간 통신을 통해 상세정보 받아오는 서비스**
 * **결제 방법 추상화 구현**
@@ -46,6 +46,7 @@
 * **[시연 영상](https://youtu.be/mtm9RGZdgqQ)**
 * **[후기 영상](https://youtu.be/GLK5QL7mCrA)**
 <br>
+
 ### 문서 링크
 * **[발표 자료](https://mybox.naver.com/share/list?shareKey=3GYaQ5jG8CLM_aSzIzKbzGEMNahlWG8Ksyr8_9-FSHgA)**
 <br>
