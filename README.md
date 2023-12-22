@@ -4,7 +4,7 @@
 ## 프로젝트 로고
 <br>
 <p align="center">
-    <img src="https://ibb.co/HNmg5LB" alt="iShopping Logo Image" width="200px" height="200px">
+    <img src="https://i.ibb.co/cbzT4Kk/i-Shopping.png" alt="iShopping Logo Image" width="200px" height="200px">
 </p>
 <br>
 
