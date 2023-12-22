@@ -4,7 +4,7 @@
 ## 프로젝트 로고
 <br>
 <p align="center">
-    <img src="https://i.ibb.co/TB3Skx0/Kakao-Talk-Photo-2023-06-07-13-52-46.png" alt="Kakao-Talk-Photo-2023-06-07-13-52-46" width="200px" height="200px">
+    <img src="https://ibb.co/HNmg5LB" alt="iShopping Logo Image" width="200px" height="200px">
 </p>
 <br>
 
