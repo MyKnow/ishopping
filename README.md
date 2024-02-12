@@ -1,4 +1,4 @@
-# Project : iShopping  [Flutter + Native (ARKit+CoreML)]
+# Project : iShopping  [Flutter + Native (ARKit+CoreML) APP]
 <br>
 
 ## 프로젝트 로고
