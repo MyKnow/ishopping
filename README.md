@@ -1,6 +1,10 @@
 # Project : iShopping  [Flutter + Native (ARKit+CoreML) APP]
 <br>
 
+# Preview
+![5455776C-3961-474D-B8D8-EAB1493AFD64_1_201_a](https://github.com/user-attachments/assets/59467bfe-3c0a-466a-9b49-f75b83f6235a)
+
+
 ## 프로젝트 로고
 <br>
 <p align="center">
@@ -12,6 +16,9 @@
 >   팀명 : TABA 5조
 >   개발 기간 : 2023.11.16 ~ 2023.12.18
 <br>
+
+## 성과
+- Top-tier AI Bigdata Academy 4기 우수 프로젝트 수상
 
 ## 팀원 및 역할 소개 :wave:
 * 정민호 (단국대학교 모바일시스템공학과) : 프로젝트 매니저, NativeView 전반 개발
